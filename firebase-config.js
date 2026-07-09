@@ -1,26 +1,20 @@
 /* ============================================================
    Firebase configuration — Financing Partners Portal
    ------------------------------------------------------------
-   Replace the placeholder values below with your project's
-   web app config (Firebase console -> Project settings ->
-   General -> Your apps -> Web app -> SDK setup and config).
-
-   This portal reuses the ClearSky-OMEGA Firebase project so
-   auth and Firestore stay in one place. If you want it fully
-   isolated, create a new project and paste its config here.
-
-   NOTE: these values are NOT secret — the web SDK config is
-   safe to ship to the browser. Real security comes from the
-   Firestore + Storage rules (see firestore.rules / storage.rules).
+   ClearSky-OMEGA · clearsky-portal project.
+   These web-SDK values are NOT secret — they are meant to ship
+   to the browser. Real security comes from the Firestore +
+   Storage rules (firestore.rules / storage.rules).
    ============================================================ */
 
 var firebaseConfig = {
-  apiKey: "REPLACE_WITH_YOUR_API_KEY",
+  apiKey: "AIzaSyABoM1lgOYUnd5ZadaoTMhYmA9cHa8Tyo0",
   authDomain: "clearsky-portal.firebaseapp.com",
   projectId: "clearsky-portal",
-  storageBucket: "clearsky-portal.appspot.com",
-  messagingSenderId: "REPLACE_WITH_YOUR_SENDER_ID",
-  appId: "REPLACE_WITH_YOUR_APP_ID"
+  storageBucket: "clearsky-portal.firebasestorage.app",
+  messagingSenderId: "742134484347",
+  appId: "1:742134484347:web:ab0f95fd221536158481de",
+  measurementId: "G-8D92GNW555"
 };
 
 firebase.initializeApp(firebaseConfig);
