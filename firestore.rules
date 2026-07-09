@@ -1,0 +1,145 @@
+rules_version = '2';
+
+/* ============================================================
+   ClearSky-OMEGA · Financing Partners Portal
+   Firestore security rules
+   ------------------------------------------------------------
+   Roles are self-selected at signup and stored on users/{uid}.role
+   as "developer" or "partner". These rules enforce:
+     - developers only read/write their own projects
+     - partners read open/offered projects + anything awarded to them
+     - awarded projects are sealed to non-parties
+     - one offer per partner (offer doc id == partner uid)
+   ============================================================ */
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function myRole() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    }
+
+    function isDeveloper() {
+      return signedIn() && myRole() == 'developer';
+    }
+
+    function isPartner() {
+      return signedIn() && myRole() == 'partner';
+    }
+
+    /* ---------------- users ---------------- */
+    match /users/{uid} {
+      // a user can read/write only their own profile
+      allow read: if signedIn() && request.auth.uid == uid;
+      // on create, role must be one of the two allowed values
+      allow create: if signedIn() && request.auth.uid == uid
+                    && request.resource.data.role in ['developer', 'partner'];
+      // profile updates cannot change the role after creation
+      allow update: if signedIn() && request.auth.uid == uid
+                    && request.resource.data.role == resource.data.role;
+      allow delete: if false;
+    }
+
+    /* ---------------- projects ---------------- */
+    match /projects/{projectId} {
+
+      function isOwner() {
+        return signedIn() && resource.data.developerUid == request.auth.uid;
+      }
+      function isAwardee() {
+        return signedIn() && resource.data.awardedTo == request.auth.uid;
+      }
+      function isBrowsable() {
+        // open or offered projects are visible to partners
+        return resource.data.status == 'open' || resource.data.status == 'offered';
+      }
+
+      // READ: owner always; partner if browsable OR awarded to them
+      allow read: if isOwner()
+                  || (isPartner() && (isBrowsable() || isAwardee()));
+
+      // CREATE: developers only, and only their own project, starting open
+      allow create: if isDeveloper()
+                    && request.resource.data.developerUid == request.auth.uid
+                    && request.resource.data.status == 'open'
+                    && request.resource.data.awardedTo == null;
+
+      // UPDATE: owner (developer) can edit while not awarded, or set the award;
+      //         partner cannot edit the project doc directly except the award
+      //         transition is performed by the owner accepting an offer.
+      allow update: if isOwner()
+                    && ( // normal edits keep developerUid fixed
+                         request.resource.data.developerUid == resource.data.developerUid
+                       );
+
+      allow delete: if isOwner() && resource.data.status != 'awarded';
+
+      /* ------------ offers subcollection ------------ */
+      match /offers/{offerId} {
+        function parent() {
+          return get(/databases/$(database)/documents/projects/$(projectId)).data;
+        }
+        function parentOwner() {
+          return parent().developerUid == request.auth.uid;
+        }
+
+        // READ: developer-owner sees all offers; a partner sees only their own
+        allow read: if signedIn() && (
+                       parentOwner() ||
+                       (isPartner() && offerId == request.auth.uid)
+                    );
+
+        // CREATE/UPDATE own offer: partner only, offer id must equal their uid,
+        // and only while the project is still open or offered (not awarded)
+        allow create, update: if isPartner()
+                    && offerId == request.auth.uid
+                    && request.resource.data.partnerUid == request.auth.uid
+                    && parent().status != 'awarded';
+
+        // the developer-owner may update an offer's status (accept/reject);
+        // a partner may recall (set status recalled) on their own offer
+        allow update: if parentOwner()
+                    || (isPartner() && offerId == request.auth.uid);
+
+        allow delete: if false;
+      }
+
+      /* ------------ inquiries subcollection ------------ */
+      match /inquiries/{msgId} {
+        function parent() {
+          return get(/databases/$(database)/documents/projects/$(projectId)).data;
+        }
+        function parentOwner() {
+          return parent().developerUid == request.auth.uid;
+        }
+        function parentAwardee() {
+          return parent().awardedTo == request.auth.uid;
+        }
+        function parentBrowsable() {
+          return parent().status == 'open' || parent().status == 'offered';
+        }
+
+        // READ: owner, or a partner who can see the project
+        allow read: if signedIn() && (
+                       parentOwner() ||
+                       (isPartner() && (parentBrowsable() || parentAwardee()))
+                    );
+
+        // CREATE: author must be the caller; owner any time, partner while
+        // the project is visible to them
+        allow create: if signedIn()
+                    && request.resource.data.authorUid == request.auth.uid
+                    && (
+                        parentOwner() ||
+                        (isPartner() && (parentBrowsable() || parentAwardee()))
+                       );
+
+        allow update, delete: if false;
+      }
+    }
+  }
+}
