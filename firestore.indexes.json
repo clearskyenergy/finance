@@ -1,0 +1,47 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "fin_projects",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "fin_projects",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "developerUid",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "fin_projects",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "awardedTo",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}
