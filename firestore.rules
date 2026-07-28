@@ -1,36 +1,90 @@
 rules_version = '2';
-
 /* ============================================================
-   ClearSky-OMEGA · Financing Partners Portal
-   Firestore security rules  (NAMESPACED collections)
-   ------------------------------------------------------------
-   This portal shares the clearsky-portal database with other
-   ClearSky apps. To avoid collision it uses:
-     fin_profiles/{uid}      - this portal's user profiles
-     fin_projects/{id}       - this portal's deals (+ offers, inquiries)
-     partnerAllowlist/{email} - SHARED existing allowlist (read-only here)
-
-   Roles: developer and originator both submit deals and are self-select.
-   partner and admin are granted only by an active allowlist entry whose
-   'role' field matches the role being claimed. Admin is read-only by
-   design: it can see every deal but cannot alter one.
-
-   IMPORTANT: this file is the MERGED ruleset for the whole clearsky-portal
-   database. It covers this portal's namespaced collections, the shared
-   read-only allowlist, AND the existing ClearSky-OMEGA /projects rules
-   (at the bottom). Deploying replaces the entire database's rules, so keep
-   every portal's rules in here.
+   ClearSky-OMEGA · MERGED rules for the clearsky-portal database
+   - OMEGA workspace /projects (isAdmin() cross-org exception)
+   - Team Hub: team_todos, team_messages, team_members,
+     team_conversations, team_convo_messages
+   - Financing portal: fin_profiles, fin_projects (+ offers, inquiries)
+     roles: developer | originator | partner | fin admin (allowlisted)
+   - Distribution Marketplace: mkt_profiles, mkt_distributors (+ catalog),
+     mkt_projects (+ quote, invoice, messages)
+   - VDC Exchange: vdc_profiles, vdc_assets, vdc_rfqs, vdc_quotes,
+     vdc_connectors, vdc_events
+   - Shared partnerAllowlist (PUBLIC read; OPEN registration)
+   - Tool registry /tools + /meta, and per-tenant /toolData
+   - Admin console shared data /admin
+       · /admin/improvements  → any signed-in user may read + write
+         (shared Tool Improvement board across every tenant portal)
+       · /admin/{other}       → any signed-in user may READ; only
+         ClearSky admins may WRITE
+   - Site Lifecycle Console: slc_* + omega_orgs (tier registry)
+   - O&M / Operations Suite: om_*, sla_*, fs_*, rpt_*, fc_*
+   - DEMO BUCKETS (demo.clearskyomega.com sales sandbox): three demo
+     email domains may read/write ONLY their own dedicated demo orgId
+     ('demo-clearsky' / 'demo-sunesol' / 'demo-ogisolar'). These orgIds
+     are NOT real tenants, so real tenant data is never exposed.
+   - CONSOLE VIEWERS (admin console read-only collaborators): sunesol.com
+     and ogisolar.com may READ every /projects doc cross-org (so they see
+     the Recent Projects grid) but may NOT create/update/delete cross-org.
+   Deploying replaces the WHOLE database's rules, so everything lives here.
    ============================================================ */
-
 service cloud.firestore {
   match /databases/{database}/documents {
-
     function signedIn() {
       return request.auth != null;
     }
-    /* email-domain org id — used by the existing OMEGA projects rules below */
+    /* email-domain org id — used by the OMEGA projects rules + tool data */
     function userOrg() {
       return request.auth.token.email.split('@')[1];
+    }
+
+    /* ============================================================
+       DEMO BUCKET HELPERS  (demo.clearskyomega.com sales sandbox)
+       ------------------------------------------------------------
+       The demo portal forces three login domains into dedicated demo
+       orgIds that are NOT real tenants:
+         @clearsky-usa.com -> demo-clearsky
+         @sunesol.com      -> demo-sunesol
+         @ogisolar.com     -> demo-ogisolar
+       These helpers let ONLY those domains touch ONLY their own demo
+       bucket. Because the demo orgIds differ from every real orgId
+       (which are the raw email domains), no real tenant data — including
+       the REAL sunesol.com / ogisolar.com / clearsky-usa.com data — is
+       ever reachable through a demo bucket, and demo writes never land
+       in a real tenant. Real portals keep using userOrg()==orgId and are
+       completely unaffected by these clauses.
+       ============================================================ */
+    function demoBucketOrg() {
+      return userOrg() == 'clearsky-usa.com' ? 'demo-clearsky'
+           : userOrg() == 'sunesol.com'      ? 'demo-sunesol'
+           : userOrg() == 'ogisolar.com'     ? 'demo-ogisolar'
+           : '';
+    }
+    /* True only when `org` is exactly the demo bucket assigned to the
+       signed-in user's domain. Never matches a real orgId. */
+    function ownsDemoBucket(org) {
+      return signedIn() && demoBucketOrg() != '' && org == demoBucketOrg();
+    }
+
+    /* internal ClearSky team — may publish the tool catalog, onboard
+       distributors, administer the marketplace, AND manage every OMEGA
+       project from the admin console regardless of the project's orgId. */
+    function isAdmin() {
+      return signedIn() && (
+        request.auth.token.email.matches('.*@clearsky-usa[.]com')
+        || request.auth.token.email.matches('.*@csebuilders[.]com')
+      );
+    }
+    /* Admin console read-only collaborators. These domains may READ every
+       /projects doc cross-org (so the Recent Projects grid populates), but
+       they are NOT admins — they get no cross-org write, and none of the
+       admin-only write powers elsewhere in this file. */
+    function isConsoleViewer() {
+      return signedIn() && (
+        isAdmin()
+        || request.auth.token.email.matches('.*@sunesol[.]com')
+        || request.auth.token.email.matches('.*@ogisolar[.]com')
+      );
     }
     function myProfile() {
       return get(/databases/$(database)/documents/fin_profiles/$(request.auth.uid)).data;
@@ -41,63 +95,248 @@ service cloud.firestore {
     function isDeveloper() {
       return signedIn() && myRole() == 'developer';
     }
-    function isOriginator() {
-      return signedIn() && myRole() == 'originator';
-    }
-    /* anyone who may bring a deal to the marketplace */
-    function isSubmitter() {
-      return signedIn() && myRole() in ['developer', 'originator'];
-    }
     function isPartner() {
       return signedIn() && myRole() == 'partner';
     }
-    /* marketplace operator: reads everything, writes nothing */
-    function isAdmin() {
+    function isOriginator() {
+      return signedIn() && myRole() == 'originator';
+    }
+    /* anyone who may bring a deal to the financing marketplace */
+    function isSubmitter() {
+      return signedIn() && myRole() in ['developer', 'originator'];
+    }
+    /* Financing marketplace operator. NOTE: deliberately NOT called
+       isAdmin() — that name is already taken above by the ClearSky
+       email-domain check and is used across every other portal in this
+       file. This one is the fin_profiles role, and it is read-only. */
+    function isFinAdmin() {
       return signedIn() && myRole() == 'admin';
     }
-
-    /* roles a user may assign themselves vs. roles the allowlist grants */
-    function selfRole(r) { return r in ['developer', 'originator']; }
-    function grantedRole(r) { return r in ['partner', 'admin']; }
-
-    /* ---------------- shared partner allowlist (read-only) ----------------
-       The app reads partnerAllowlist/{email} during signup to decide if a
-       user may hold the partner role. Keep any write rules your other
-       portal already defines for this collection; this portal never writes it. */
+    /* ---------------- marketplace role helpers ---------------- */
+    function mktProfile() {
+      return get(/databases/$(database)/documents/mkt_profiles/$(request.auth.uid)).data;
+    }
+    function mktRole() {
+      return mktProfile().role;
+    }
+    function isMktDeveloper() {
+      return signedIn() && mktRole() == 'developer';
+    }
+    function isMktDistributor() {
+      return signedIn() && mktRole() == 'distributor';
+    }
+    function myDistId() {
+      return mktProfile().distributorId;
+    }
+    /* Approved distributor email domains. Add more here as you onboard
+       new distribution partners. */
+    function isDistributorDomain() {
+      return signedIn() && (
+        request.auth.token.email.matches('.*@clearsky-usa[.]com')
+        || request.auth.token.email.matches('.*@rexelusa[.]com')
+      );
+    }
+    /* ---------------- VDC Exchange role helpers ----------------
+       Operators are the three companies that run the exchange:
+       ClearSky, Molecule Systems, Lightsmith Energy. Membership is
+       decided by email domain (like isAdmin / isDistributorDomain),
+       NOT by a profile read — so it never deadlocks on first login. */
+    function isVdcOperatorDomain() {
+      return signedIn() && (
+        request.auth.token.email.matches('.*@clearsky-usa[.]com')
+        || request.auth.token.email.matches('.*@csebuilders[.]com')
+        || request.auth.token.email.matches('.*@moleculesystems[.]com')
+        || request.auth.token.email.matches('.*@molecule[.]io')
+        || request.auth.token.email.matches('.*@lightsmithenergy[.]com')
+        || request.auth.token.email.matches('.*@lightsmith[.]energy')
+      );
+    }
+    /* Which operator org a signed-in operator belongs to (for connector
+       ownership checks). Returns '' for non-operators. */
+    function vdcOperatorOrg() {
+      return (request.auth.token.email.matches('.*@clearsky-usa[.]com')
+              || request.auth.token.email.matches('.*@csebuilders[.]com')) ? 'clearsky'
+           : (request.auth.token.email.matches('.*@moleculesystems[.]com')
+              || request.auth.token.email.matches('.*@molecule[.]io')) ? 'molecule'
+           : (request.auth.token.email.matches('.*@lightsmithenergy[.]com')
+              || request.auth.token.email.matches('.*@lightsmith[.]energy')) ? 'lightsmith'
+           : '';
+    }
+    /* ---------------- shared partner allowlist ----------------
+       PUBLIC read so any pre-auth signup flow can consult it.
+       Writes remain locked to the internal ClearSky team. */
     match /partnerAllowlist/{email} {
-      allow read: if signedIn();
-      // writes governed by your admin tooling / other portal rules
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    /* ============================================================
+       ADMIN CONSOLE  —  shared internal source of truth.
+
+       The Tool Improvement board (admin/improvements) is a SHARED
+       bug/feature log that every tenant portal (SUN, NextNRG, etc.)
+       reads and writes, so it stays open to any signed-in user. The
+       rest of /admin (clients, partners, offerings, logs) is readable
+       by any signed-in user but writable only by ClearSky admins.
+
+       NOTE: the more-specific match on /admin/improvements takes
+       precedence over the general /admin/{docId} match for that doc.
+       ============================================================ */
+    match /admin/improvements {
+      allow read:  if signedIn();
+      allow write: if signedIn();
+    }
+    match /admin/{docId} {
+      allow read:  if signedIn();
+      allow write: if isAdmin();
+    }
+    /* ============================================================
+       TOOL REGISTRY
+       ============================================================ */
+    match /tools/{toolId} {
+      allow read:  if signedIn();
+      allow write: if isAdmin();
+    }
+    match /meta/{docId} {
+      allow read:  if signedIn();
+      allow write: if isAdmin();
+    }
+    /* ============================================================
+       PER-TENANT TOOL DATA
+       Demo buckets may read/write their own demo orgId under toolData.
+       ============================================================ */
+    match /toolData/{orgId}/tools/{toolKey} {
+      allow read:  if signedIn() && (userOrg() == orgId || ownsDemoBucket(orgId) || isAdmin());
+      allow write: if signedIn() && (userOrg() == orgId || ownsDemoBucket(orgId));
+    }
+    match /toolData/{orgId}/prefs/{prefId} {
+      allow read:  if signedIn() && (userOrg() == orgId || ownsDemoBucket(orgId) || isAdmin());
+      allow write: if signedIn() && (userOrg() == orgId || ownsDemoBucket(orgId));
+    }
+    /* ============================================================
+       TEAM HUB — to-dos, company board, member profiles, and
+       conversations (1:1 + groups). Scoped per tenant by orgId
+       (email domain), exactly like /projects. One deploy to this
+       shared database enables the Team Hub in EVERY tenant repo.
+       NOTE: the client stores all emails lowercased, so equality
+       checks against request.auth.token.email are safe.
+       Demo buckets are supported so the demo dashboard's Team Hub
+       works — scoped to the demo orgId, isolated from real orgs.
+       ============================================================ */
+
+    /* -------- Team to-dos --------
+       Any teammate in the same org (or the same demo bucket) may add,
+       toggle done, edit, or delete. orgId is immutable on update. */
+    match /team_todos/{docId} {
+      allow read:   if signedIn() && (resource.data.orgId == userOrg() || ownsDemoBucket(resource.data.orgId) || isAdmin());
+      allow create: if signedIn() && (request.resource.data.orgId == userOrg() || ownsDemoBucket(request.resource.data.orgId));
+      allow update: if signedIn()
+                    && (resource.data.orgId == userOrg() || ownsDemoBucket(resource.data.orgId))
+                    && request.resource.data.orgId == resource.data.orgId;
+      allow delete: if signedIn() && (resource.data.orgId == userOrg() || ownsDemoBucket(resource.data.orgId));
     }
 
-    /* ---------------- this portal's user profiles ---------------- */
-    match /fin_profiles/{uid} {
-      allow read: if signedIn() && request.auth.uid == uid;
+    /* -------- Company message board --------
+       Shared team space. Messages are immutable once posted; the author
+       (or any teammate in the org) may delete. */
+    match /team_messages/{docId} {
+      allow read:   if signedIn() && (resource.data.orgId == userOrg() || ownsDemoBucket(resource.data.orgId) || isAdmin());
+      allow create: if signedIn()
+                    && (request.resource.data.orgId == userOrg() || ownsDemoBucket(request.resource.data.orgId))
+                    && request.resource.data.authorEmail == request.auth.token.email;
+      allow update: if false;
+      allow delete: if signedIn()
+                    && (resource.data.orgId == userOrg() || ownsDemoBucket(resource.data.orgId))
+                    && resource.data.authorEmail == request.auth.token.email;
+    }
 
-      // On create: a user writes only their own profile. Developer and
-      // originator are self-select. Partner and admin require an active
-      // allowlist entry for that exact email AND that exact role, which is
-      // what stops anyone from self-assigning elevated access.
-      allow create: if signedIn() && request.auth.uid == uid
-        && (selfRole(request.resource.data.role) || grantedRole(request.resource.data.role))
-        && (
-             selfRole(request.resource.data.role)
-             || (
-                  exists(/databases/$(database)/documents/partnerAllowlist/$(request.resource.data.emailLower))
-                  && get(/databases/$(database)/documents/partnerAllowlist/$(request.resource.data.emailLower)).data.active == true
-                  && get(/databases/$(database)/documents/partnerAllowlist/$(request.resource.data.emailLower)).data.role == request.resource.data.role
-                )
-           );
-
-      // Role can't change after creation.
-      allow update: if signedIn() && request.auth.uid == uid
-        && request.resource.data.role == resource.data.role;
-
+    /* -------- Team member directory / profile (display name + photo) --------
+       Doc id is "<orgId>__<email>". A user may only write their OWN member
+       doc; everyone in the org (or demo bucket) may read the roster. */
+    match /team_members/{memberId} {
+      allow read:   if signedIn() && (resource.data.orgId == userOrg() || ownsDemoBucket(resource.data.orgId) || isAdmin());
+      allow create: if signedIn()
+                    && (request.resource.data.orgId == userOrg() || ownsDemoBucket(request.resource.data.orgId))
+                    && request.resource.data.email == request.auth.token.email
+                    && memberId == request.resource.data.orgId + '__' + request.auth.token.email;
+      allow update: if signedIn()
+                    && (resource.data.orgId == userOrg() || ownsDemoBucket(resource.data.orgId))
+                    && resource.data.email == request.auth.token.email
+                    && request.resource.data.orgId == resource.data.orgId
+                    && request.resource.data.email == resource.data.email;
       allow delete: if false;
     }
 
-    /* ---------------- this portal's projects ---------------- */
-    match /fin_projects/{projectId} {
+    /* -------- Conversations (1:1 + named groups) --------
+       A conversation lists its participants in members[] (array of emails).
+       You may read/write a conversation only if you're a member, within your
+       org (or demo bucket). */
+    match /team_conversations/{convoId} {
+      allow read:   if signedIn()
+                    && (resource.data.orgId == userOrg() || ownsDemoBucket(resource.data.orgId))
+                    && request.auth.token.email in resource.data.members;
+      allow create: if signedIn()
+                    && (request.resource.data.orgId == userOrg() || ownsDemoBucket(request.resource.data.orgId))
+                    && request.auth.token.email in request.resource.data.members;
+      allow update: if signedIn()
+                    && (resource.data.orgId == userOrg() || ownsDemoBucket(resource.data.orgId))
+                    && request.auth.token.email in resource.data.members
+                    && request.resource.data.orgId == resource.data.orgId
+                    && request.resource.data.kind == resource.data.kind;
+      allow delete: if signedIn()
+                    && (resource.data.orgId == userOrg() || ownsDemoBucket(resource.data.orgId))
+                    && resource.data.createdBy == request.auth.token.email;
+    }
 
+    /* -------- Conversation messages --------
+       Readable/writable only by members of the parent conversation. */
+    match /team_convo_messages/{msgId} {
+      function convoNew() {
+        return get(/databases/$(database)/documents/team_conversations/$(request.resource.data.convoId)).data;
+      }
+      function convoCur() {
+        return get(/databases/$(database)/documents/team_conversations/$(resource.data.convoId)).data;
+      }
+      allow read:   if signedIn()
+                    && (resource.data.orgId == userOrg() || ownsDemoBucket(resource.data.orgId))
+                    && request.auth.token.email in convoCur().members;
+      allow create: if signedIn()
+                    && (request.resource.data.orgId == userOrg() || ownsDemoBucket(request.resource.data.orgId))
+                    && request.auth.token.email in convoNew().members;
+      allow update, delete: if false;
+    }
+
+    /* ---------------- Financing portal user profiles ----------------
+       OPEN registration is UNCHANGED for 'developer', 'partner', and the
+       new 'originator' role: any signed-in user may create their own
+       profile with any of those three. No allowlist gate, exactly as before.
+
+       'admin' is the one exception. It reads EVERY deal in the financing
+       marketplace, so it must not be self-assignable. It requires either
+       a ClearSky staff email (isAdmin()) or an active partnerAllowlist
+       entry for that email whose role is 'admin'. */
+    match /fin_profiles/{uid} {
+      allow read: if signedIn() && request.auth.uid == uid;
+      allow create: if signedIn() && request.auth.uid == uid
+        && (
+             request.resource.data.role in ['developer', 'originator', 'partner']
+             || (
+                  request.resource.data.role == 'admin'
+                  && (
+                       isAdmin()
+                       || (
+                            exists(/databases/$(database)/documents/partnerAllowlist/$(request.resource.data.emailLower))
+                            && get(/databases/$(database)/documents/partnerAllowlist/$(request.resource.data.emailLower)).data.active == true
+                            && get(/databases/$(database)/documents/partnerAllowlist/$(request.resource.data.emailLower)).data.role == 'admin'
+                          )
+                     )
+                )
+           );
+      allow update: if signedIn() && request.auth.uid == uid
+        && request.resource.data.role == resource.data.role;
+      allow delete: if false;
+    }
+    /* ---------------- Financing portal projects ---------------- */
+    match /fin_projects/{projectId} {
       function isOwner() {
         return signedIn() && resource.data.developerUid == request.auth.uid;
       }
@@ -105,29 +344,33 @@ service cloud.firestore {
         return signedIn() && resource.data.awardedTo == request.auth.uid;
       }
       function isBrowsable() {
-        return resource.data.status == 'open' || resource.data.status == 'offered';
+        // Partners browse only OPEN projects. 'closed' and 'awarded' excluded.
+        return resource.data.status == 'open';
       }
-
-      // READ: owner always; admin always; partner if browsable OR theirs.
+      // Read granted if you own it (developer or originator), or you're
+      // ClearSky staff / a financing admin, or you're a partner and it's
+      // browsable (open), or you're the awarded partner.
+      // Order matters: isOwner() and isAdmin() need no profile read, so a
+      // user with no fin_profile short-circuits out before myRole() runs.
       allow read: if isOwner()
                   || isAdmin()
-                  || (isPartner() && (isBrowsable() || isAwardee()));
-
-      // CREATE: developers and originators, own deal, starting open + unawarded.
+                  || isFinAdmin()
+                  || (isPartner() && isBrowsable())
+                  || (isPartner() && isAwardee());
+      // CREATE: developers AND originators may submit a deal.
       allow create: if isSubmitter()
                     && request.resource.data.developerUid == request.auth.uid
                     && request.resource.data.status == 'open'
                     && request.resource.data.awardedTo == null;
-
-      // UPDATE: only the submitting owner edits the deal doc (incl. the
-      // award transition when they accept an offer). developerUid is fixed.
-      // Admins deliberately have no write access — this console is read-only.
+      // Owner (developer or originator) may edit their own deal
+      // (developerUid fixed). Admins get NO write access here by design.
+      // This also covers awarding and closing (status -> 'awarded' / 'closed').
       allow update: if isOwner()
                     && request.resource.data.developerUid == resource.data.developerUid;
-
+      // (No partner-side project update: the project stays 'open'. Each
+      //  partner's offer carries pending/rejected/accepted. Only the owner
+      //  changes project status — via the owner update rule above.)
       allow delete: if isOwner() && resource.data.status != 'awarded';
-
-      /* ------------ offers ------------ */
       match /offers/{offerId} {
         function parent() {
           return get(/databases/$(database)/documents/fin_projects/$(projectId)).data;
@@ -135,29 +378,20 @@ service cloud.firestore {
         function parentOwner() {
           return parent().developerUid == request.auth.uid;
         }
-
-        // submitting owner reads all offers; admin reads all offers;
-        // a partner reads only their own.
         allow read: if signedIn() && (
                        parentOwner() ||
                        isAdmin() ||
+                       isFinAdmin() ||
                        (isPartner() && offerId == request.auth.uid)
                     );
-
-        // partner writes only their own offer (offerId == uid) pre-award.
         allow create, update: if isPartner()
                     && offerId == request.auth.uid
                     && request.resource.data.partnerUid == request.auth.uid
                     && parent().status != 'awarded';
-
-        // owner accepts/rejects; partner may recall their own.
         allow update: if parentOwner()
                     || (isPartner() && offerId == request.auth.uid);
-
         allow delete: if false;
       }
-
-      /* ------------ inquiries ------------ */
       match /inquiries/{msgId} {
         function parent() {
           return get(/databases/$(database)/documents/fin_projects/$(projectId)).data;
@@ -169,56 +403,465 @@ service cloud.firestore {
           return parent().awardedTo == request.auth.uid;
         }
         function parentBrowsable() {
-          return parent().status == 'open' || parent().status == 'offered';
+          return parent().status == 'open';
         }
-
         allow read: if signedIn() && (
                        parentOwner() ||
                        isAdmin() ||
+                       isFinAdmin() ||
                        (isPartner() && (parentBrowsable() || parentAwardee()))
                     );
-
         allow create: if signedIn()
                     && request.resource.data.authorUid == request.auth.uid
                     && (
                         parentOwner() ||
                         (isPartner() && (parentBrowsable() || parentAwardee()))
                        );
-
         allow update, delete: if false;
       }
     }
-
     /* ============================================================
-       OTHER PORTALS' RULES — merged in so this deploy protects them.
-       ------------------------------------------------------------
-       ClearSky-OMEGA workspace projects: org-scoped by email domain,
-       with a legacy uid-only fallback. (userOrg() defined up top.)
+       DISTRIBUTION MARKETPLACE — mkt_*
+       ============================================================ */
+    /* -------- marketplace profiles -------- */
+    match /mkt_profiles/{uid} {
+      allow read: if signedIn() && (request.auth.uid == uid || isAdmin());
+      allow create: if signedIn() && request.auth.uid == uid
+        && (
+            request.resource.data.role == 'developer'
+            || isAdmin()
+            || (request.resource.data.role == 'distributor' && isDistributorDomain())
+           );
+      allow update: if signedIn() && request.auth.uid == uid
+        && request.resource.data.role == resource.data.role
+        && request.resource.data.distributorId == resource.data.distributorId;
+      allow delete: if false;
+    }
+    /* -------- distributors (onboarded suppliers) -------- */
+    match /mkt_distributors/{distId} {
+      allow read: if signedIn();
+      allow create: if isAdmin();
+      allow update: if isAdmin()
+                    || (isMktDistributor() && myDistId() == distId);
+      allow delete: if isAdmin();
+      match /catalog/{productId} {
+        allow read: if signedIn();
+        allow create, update, delete: if isAdmin()
+                    || (isMktDistributor() && myDistId() == distId);
+      }
+    }
+    /* -------- marketplace projects (developer -> distributor) -------- */
+    match /mkt_projects/{projectId} {
+      function isProjDev() {
+        return signedIn() && resource.data.developerUid == request.auth.uid;
+      }
+      function isTargetDistributor() {
+        return isMktDistributor() && resource.data.targetDistId == myDistId();
+      }
+      allow read: if isProjDev() || isTargetDistributor() || isAdmin();
+      allow create: if isMktDeveloper()
+                    && request.resource.data.developerUid == request.auth.uid
+                    && request.resource.data.status == 'submitted';
+      allow update: if (isProjDev()
+                        && request.resource.data.developerUid == resource.data.developerUid
+                        && request.resource.data.targetDistId == resource.data.targetDistId)
+                    || isTargetDistributor()
+                    || isAdmin();
+      allow delete: if (isProjDev() && resource.data.status == 'submitted') || isAdmin();
+      function pParent() {
+        return get(/databases/$(database)/documents/mkt_projects/$(projectId)).data;
+      }
+      function pIsDev() {
+        return signedIn() && pParent().developerUid == request.auth.uid;
+      }
+      function pIsDist() {
+        return isMktDistributor() && pParent().targetDistId == myDistId();
+      }
+      match /quote/{quoteId} {
+        allow read: if pIsDev() || pIsDist() || isAdmin();
+        allow create, update: if pIsDist() || isAdmin();
+        allow delete: if isAdmin();
+      }
+      match /invoice/{invoiceId} {
+        allow read: if pIsDev() || pIsDist() || isAdmin();
+        allow create, update: if pIsDist() || isAdmin()
+                    || (pIsDev()
+                        && request.resource.data.provider == resource.data.provider
+                        && request.resource.data.amount == resource.data.amount);
+        allow delete: if isAdmin();
+      }
+      match /messages/{msgId} {
+        allow read: if pIsDev() || pIsDist() || isAdmin();
+        allow create: if signedIn()
+                    && request.resource.data.authorUid == request.auth.uid
+                    && (pIsDev() || pIsDist() || isAdmin());
+        allow update, delete: if false;
+      }
+    }
+    /* ============================================================
+       VDC EXCHANGE — vdc_*
+       Buyers/sellers self-register (role 'buyer'); operators are the
+       three exchange companies, gated by email domain
+       (isVdcOperatorDomain) so no profile read is needed to authorize.
+       Profile reads elsewhere are guarded with exists() to avoid a
+       first-login deadlock.
+       ============================================================ */
+    /* -------- VDC profiles --------
+       OPEN registration: any signed-in user creates their own profile.
+       Role is self-asserted 'buyer' or 'operator'; operators additionally
+       must be on an approved operator domain. */
+    match /vdc_profiles/{uid} {
+      allow read: if signedIn() && (request.auth.uid == uid || isVdcOperatorDomain());
+      allow create: if signedIn() && request.auth.uid == uid
+        && (
+            request.resource.data.role == 'buyer'
+            || (request.resource.data.role == 'operator' && isVdcOperatorDomain())
+           );
+      allow update: if signedIn() && request.auth.uid == uid;
+      allow delete: if false;
+    }
+    /* -------- VDC assets (powered data assets + compute SKUs) -------- */
+    match /vdc_assets/{id} {
+      allow read: if signedIn() && (
+                    resource.data.ownerUid == request.auth.uid
+                    || isVdcOperatorDomain()
+                    || resource.data.status == 'live'
+                    || resource.data.status == 'matched'
+                  );
+      allow create: if signedIn()
+                    && request.resource.data.ownerUid == request.auth.uid;
+      allow update: if signedIn() && (
+                      resource.data.ownerUid == request.auth.uid
+                      || isVdcOperatorDomain()
+                    );
+      allow delete: if signedIn() && resource.data.ownerUid == request.auth.uid;
+    }
+    /* -------- VDC RFQs (buyer quote requests) -------- */
+    match /vdc_rfqs/{id} {
+      allow read: if signedIn() && (
+                    resource.data.buyerUid == request.auth.uid
+                    || isVdcOperatorDomain()
+                  );
+      allow create: if signedIn()
+                    && request.resource.data.buyerUid == request.auth.uid;
+      allow update: if signedIn() && (
+                      resource.data.buyerUid == request.auth.uid
+                      || isVdcOperatorDomain()
+                    );
+      allow delete: if signedIn() && resource.data.buyerUid == request.auth.uid;
+    }
+    /* -------- VDC quotes (operator responses to an RFQ) -------- */
+    match /vdc_quotes/{id} {
+      allow read: if signedIn() && (
+                    isVdcOperatorDomain()
+                    || get(/databases/$(database)/documents/vdc_rfqs/$(resource.data.rfqId)).data.buyerUid == request.auth.uid
+                  );
+      allow create: if isVdcOperatorDomain()
+                    && request.resource.data.providerUid == request.auth.uid;
+      allow update: if isVdcOperatorDomain()
+                    && resource.data.providerUid == request.auth.uid;
+      allow delete: if isAdmin();
+    }
+    /* -------- VDC connectors (backend API integrations) --------
+       Operators read all; writes limited to the owning org or ClearSky. */
+    match /vdc_connectors/{key} {
+      allow read: if isVdcOperatorDomain();
+      allow write: if isVdcOperatorDomain() && (
+                     vdcOperatorOrg() == 'clearsky'
+                     || vdcOperatorOrg() == resource.data.owner
+                     || vdcOperatorOrg() == request.resource.data.owner
+                   );
+    }
+    /* -------- VDC events (append-only audit log) -------- */
+    match /vdc_events/{id} {
+      allow read: if isVdcOperatorDomain();
+      allow create: if signedIn()
+                    && request.resource.data.byUid == request.auth.uid;
+      allow update, delete: if false;
+    }
+    /* ============================================================
+       OMEGA workspace projects.
+       Demo buckets ('demo-*') are allowed for the three demo domains,
+       scoped so each demo login only sees its own demo bucket. Real
+       tenant projects (orgId == real email domain) are unaffected.
+
+       CONSOLE VIEWERS: sunesol.com / ogisolar.com (via isConsoleViewer)
+       get cross-org READ so the admin console's Recent Projects grid
+       populates for them. They do NOT get cross-org create/update/delete
+       — those stay on isAdmin(), so collaborators can look but not touch
+       projects outside their own org.
        ============================================================ */
     match /projects/{projectId} {
-      // Read: org projects OR your own legacy (uid-only) projects
       allow read: if request.auth != null
                   && (
                     resource.data.orgId == userOrg()
                     || resource.data.uid == request.auth.uid
+                    || ownsDemoBucket(resource.data.orgId)
+                    || isConsoleViewer()
                   );
       allow create: if request.auth != null
-                    && request.resource.data.orgId == userOrg();
-      // UPDATE: you own the doc (by org or legacy uid), and the result is
-      // still stamped with your org.
+                    && (
+                      request.resource.data.orgId == userOrg()
+                      || ownsDemoBucket(request.resource.data.orgId)
+                      || isAdmin()
+                    );
       allow update: if request.auth != null
                     && (
-                      resource.data.orgId == userOrg()
-                      || resource.data.uid == request.auth.uid
-                    )
-                    && request.resource.data.orgId == userOrg();
-      // DELETE: you own the doc. No request.resource check on deletes.
+                      (
+                        (
+                          resource.data.orgId == userOrg()
+                          || resource.data.uid == request.auth.uid
+                        )
+                        && request.resource.data.orgId == userOrg()
+                      )
+                      || (
+                        ownsDemoBucket(resource.data.orgId)
+                        && request.resource.data.orgId == resource.data.orgId
+                      )
+                      || isAdmin()
+                    );
       allow delete: if request.auth != null
                     && (
                       resource.data.orgId == userOrg()
                       || resource.data.uid == request.auth.uid
+                      || ownsDemoBucket(resource.data.orgId)
+                      || isAdmin()
                     );
     }
 
+    /* ============================================================
+       SITE LIFECYCLE CONSOLE — slc_*  +  omega_orgs (tier registry)
+       Add-on for the Site Lifecycle Console tool.
+       Reuses your existing helpers: signedIn(), userOrg(), isAdmin().
+       Tenant isolation by orgId == userOrg() (email domain), exactly
+       like /projects and team_*. Admin (ClearSky) can cross-org, matching
+       the isAdmin() exception you already use elsewhere.
+
+       ============================================================ */
+
+    /* -------- OMEGA org tier registry --------
+       Doc id = org domain (e.g. "nextnrg.com"). Holds { tier, apps[] }.
+       - Any signed-in user may READ their own org's tier (tools need it
+         to decide entitlements); admins may read any.
+       - Only ClearSky admins may WRITE tier. An org can NEVER upgrade
+         itself — tier is sold/provisioned by ClearSky. */
+    match /omega_orgs/{orgId} {
+      allow read:  if signedIn() && (orgId == userOrg() || ownsDemoBucket(orgId) || isAdmin());
+      allow write: if isAdmin();
+    }
+
+    /* -------- Site Lifecycle records --------
+       candidates / leases / assets / permits / projects.
+       orgId (email domain) scopes every record. orgId is immutable on
+       update so records can't be moved between orgs. Admins cross-org.
+       Demo buckets supported so the SLC tool works in the demo too. */
+
+    match /slc_candidates/{id} {
+      allow read:   if signedIn() && (resource.data.orgId == userOrg() || ownsDemoBucket(resource.data.orgId) || isAdmin());
+      allow create: if signedIn() && (request.resource.data.orgId == userOrg() || ownsDemoBucket(request.resource.data.orgId));
+      allow update: if signedIn()
+                    && (resource.data.orgId == userOrg() || ownsDemoBucket(resource.data.orgId) || isAdmin())
+                    && request.resource.data.orgId == resource.data.orgId;
+      allow delete: if signedIn() && (resource.data.orgId == userOrg() || ownsDemoBucket(resource.data.orgId) || isAdmin());
+    }
+
+    match /slc_leases/{id} {
+      allow read:   if signedIn() && (resource.data.orgId == userOrg() || ownsDemoBucket(resource.data.orgId) || isAdmin());
+      allow create: if signedIn() && (request.resource.data.orgId == userOrg() || ownsDemoBucket(request.resource.data.orgId));
+      allow update: if signedIn()
+                    && (resource.data.orgId == userOrg() || ownsDemoBucket(resource.data.orgId) || isAdmin())
+                    && request.resource.data.orgId == resource.data.orgId;
+      allow delete: if signedIn() && (resource.data.orgId == userOrg() || ownsDemoBucket(resource.data.orgId) || isAdmin());
+    }
+
+    match /slc_assets/{id} {
+      allow read:   if signedIn() && (resource.data.orgId == userOrg() || ownsDemoBucket(resource.data.orgId) || isAdmin());
+      allow create: if signedIn() && (request.resource.data.orgId == userOrg() || ownsDemoBucket(request.resource.data.orgId));
+      allow update: if signedIn()
+                    && (resource.data.orgId == userOrg() || ownsDemoBucket(resource.data.orgId) || isAdmin())
+                    && request.resource.data.orgId == resource.data.orgId;
+      allow delete: if signedIn() && (resource.data.orgId == userOrg() || ownsDemoBucket(resource.data.orgId) || isAdmin());
+    }
+
+    match /slc_permits/{id} {
+      allow read:   if signedIn() && (resource.data.orgId == userOrg() || ownsDemoBucket(resource.data.orgId) || isAdmin());
+      allow create: if signedIn() && (request.resource.data.orgId == userOrg() || ownsDemoBucket(request.resource.data.orgId));
+      allow update: if signedIn()
+                    && (resource.data.orgId == userOrg() || ownsDemoBucket(resource.data.orgId) || isAdmin())
+                    && request.resource.data.orgId == resource.data.orgId;
+      allow delete: if signedIn() && (resource.data.orgId == userOrg() || ownsDemoBucket(resource.data.orgId) || isAdmin());
+    }
+
+    match /slc_projects/{id} {
+      allow read:   if signedIn() && (resource.data.orgId == userOrg() || ownsDemoBucket(resource.data.orgId) || isAdmin());
+      allow create: if signedIn() && (request.resource.data.orgId == userOrg() || ownsDemoBucket(request.resource.data.orgId));
+      allow update: if signedIn()
+                    && (resource.data.orgId == userOrg() || ownsDemoBucket(resource.data.orgId) || isAdmin())
+                    && request.resource.data.orgId == resource.data.orgId;
+      allow delete: if signedIn() && (resource.data.orgId == userOrg() || ownsDemoBucket(resource.data.orgId) || isAdmin());
+    }
+
+    /* -------- CRM config (NON-SECRET metadata only) --------
+       Doc id = orgId (email domain). Holds provider name, connected flag,
+       board/object targets, and field mappings. NO credentials here — CRM
+       tokens live server-side in Upstash via /api/crm-sync. */
+    match /slc_crm_config/{orgId} {
+      allow read:  if signedIn() && (orgId == userOrg() || ownsDemoBucket(orgId) || isAdmin());
+      allow write: if signedIn() && (orgId == userOrg() || ownsDemoBucket(orgId) || isAdmin());
+    }
+
+    /* ============================================================
+       O&M / OPERATIONS SUITE  —  om_* · sla_* · fs_* · rpt_* · fc_*
+       Add-on for the five post-COD operations consoles:
+         · O&M Operations Console         (om_sites, om_tickets, om_techs, om_integrations)
+         · SLA & Contractual Intelligence (sla_contracts/_events/_breaches)
+         · Field Service & Dispatch       (fs_calls/_crews/_signals)
+         · Owner Reporting & Audit         (rpt_owners/_reports; READS om_/sla_/fs_)
+         · Fleet Command                   (fc_assets/_sources; READS om_sites)
+
+       Same idiom as slc_* above: tenant isolation by orgId == userOrg()
+       (email domain), orgId immutable on update, demo buckets supported,
+       ClearSky admins cross-org via isAdmin(). Reuses signedIn(), userOrg(),
+       ownsDemoBucket(), isAdmin() — no new helpers needed.
+
+       om_integrations is keyed by orgId as the doc id (one per tenant), so
+       it gates on the {orgId} path segment like omega_orgs / slc_crm_config
+       — NOT on resource.data.orgId.
+       ============================================================ */
+
+    /* -------- O&M Operations Console --------
+       Uses om_sites (fleet), om_tickets (work orders), om_techs
+       (technician roster), and om_integrations (config, below). */
+    match /om_sites/{id} {
+      allow read:   if signedIn() && (resource.data.orgId == userOrg() || ownsDemoBucket(resource.data.orgId) || isAdmin());
+      allow create: if signedIn() && (request.resource.data.orgId == userOrg() || ownsDemoBucket(request.resource.data.orgId));
+      allow update: if signedIn()
+                    && (resource.data.orgId == userOrg() || ownsDemoBucket(resource.data.orgId) || isAdmin())
+                    && request.resource.data.orgId == resource.data.orgId;
+      allow delete: if signedIn() && (resource.data.orgId == userOrg() || ownsDemoBucket(resource.data.orgId) || isAdmin());
+    }
+
+    match /om_tickets/{id} {
+      allow read:   if signedIn() && (resource.data.orgId == userOrg() || ownsDemoBucket(resource.data.orgId) || isAdmin());
+      allow create: if signedIn() && (request.resource.data.orgId == userOrg() || ownsDemoBucket(request.resource.data.orgId));
+      allow update: if signedIn()
+                    && (resource.data.orgId == userOrg() || ownsDemoBucket(resource.data.orgId) || isAdmin())
+                    && request.resource.data.orgId == resource.data.orgId;
+      allow delete: if signedIn() && (resource.data.orgId == userOrg() || ownsDemoBucket(resource.data.orgId) || isAdmin());
+    }
+
+    match /om_techs/{id} {
+      allow read:   if signedIn() && (resource.data.orgId == userOrg() || ownsDemoBucket(resource.data.orgId) || isAdmin());
+      allow create: if signedIn() && (request.resource.data.orgId == userOrg() || ownsDemoBucket(request.resource.data.orgId));
+      allow update: if signedIn()
+                    && (resource.data.orgId == userOrg() || ownsDemoBucket(resource.data.orgId) || isAdmin())
+                    && request.resource.data.orgId == resource.data.orgId;
+      allow delete: if signedIn() && (resource.data.orgId == userOrg() || ownsDemoBucket(resource.data.orgId) || isAdmin());
+    }
+
+    /* Integration hub (NON-SECRET metadata only; credentials live server-side
+       in the om-integrations proxy). Doc id = orgId. Shared by the O&M,
+       SLA, and Field Service tools for alert routing. */
+    match /om_integrations/{orgId} {
+      allow read:  if signedIn() && (orgId == userOrg() || ownsDemoBucket(orgId) || isAdmin());
+      allow write: if signedIn() && (orgId == userOrg() || ownsDemoBucket(orgId) || isAdmin());
+    }
+
+    /* -------- SLA & Contractual Intelligence -------- */
+    match /sla_contracts/{id} {
+      allow read:   if signedIn() && (resource.data.orgId == userOrg() || ownsDemoBucket(resource.data.orgId) || isAdmin());
+      allow create: if signedIn() && (request.resource.data.orgId == userOrg() || ownsDemoBucket(request.resource.data.orgId));
+      allow update: if signedIn()
+                    && (resource.data.orgId == userOrg() || ownsDemoBucket(resource.data.orgId) || isAdmin())
+                    && request.resource.data.orgId == resource.data.orgId;
+      allow delete: if signedIn() && (resource.data.orgId == userOrg() || ownsDemoBucket(resource.data.orgId) || isAdmin());
+    }
+
+    match /sla_events/{id} {
+      allow read:   if signedIn() && (resource.data.orgId == userOrg() || ownsDemoBucket(resource.data.orgId) || isAdmin());
+      allow create: if signedIn() && (request.resource.data.orgId == userOrg() || ownsDemoBucket(request.resource.data.orgId));
+      allow update: if signedIn()
+                    && (resource.data.orgId == userOrg() || ownsDemoBucket(resource.data.orgId) || isAdmin())
+                    && request.resource.data.orgId == resource.data.orgId;
+      allow delete: if signedIn() && (resource.data.orgId == userOrg() || ownsDemoBucket(resource.data.orgId) || isAdmin());
+    }
+
+    match /sla_breaches/{id} {
+      allow read:   if signedIn() && (resource.data.orgId == userOrg() || ownsDemoBucket(resource.data.orgId) || isAdmin());
+      allow create: if signedIn() && (request.resource.data.orgId == userOrg() || ownsDemoBucket(request.resource.data.orgId));
+      allow update: if signedIn()
+                    && (resource.data.orgId == userOrg() || ownsDemoBucket(resource.data.orgId) || isAdmin())
+                    && request.resource.data.orgId == resource.data.orgId;
+      allow delete: if signedIn() && (resource.data.orgId == userOrg() || ownsDemoBucket(resource.data.orgId) || isAdmin());
+    }
+
+    /* -------- Field Service & Dispatch -------- */
+    match /fs_calls/{id} {
+      allow read:   if signedIn() && (resource.data.orgId == userOrg() || ownsDemoBucket(resource.data.orgId) || isAdmin());
+      allow create: if signedIn() && (request.resource.data.orgId == userOrg() || ownsDemoBucket(request.resource.data.orgId));
+      allow update: if signedIn()
+                    && (resource.data.orgId == userOrg() || ownsDemoBucket(resource.data.orgId) || isAdmin())
+                    && request.resource.data.orgId == resource.data.orgId;
+      allow delete: if signedIn() && (resource.data.orgId == userOrg() || ownsDemoBucket(resource.data.orgId) || isAdmin());
+    }
+
+    match /fs_crews/{id} {
+      allow read:   if signedIn() && (resource.data.orgId == userOrg() || ownsDemoBucket(resource.data.orgId) || isAdmin());
+      allow create: if signedIn() && (request.resource.data.orgId == userOrg() || ownsDemoBucket(request.resource.data.orgId));
+      allow update: if signedIn()
+                    && (resource.data.orgId == userOrg() || ownsDemoBucket(resource.data.orgId) || isAdmin())
+                    && request.resource.data.orgId == resource.data.orgId;
+      allow delete: if signedIn() && (resource.data.orgId == userOrg() || ownsDemoBucket(resource.data.orgId) || isAdmin());
+    }
+
+    match /fs_signals/{id} {
+      allow read:   if signedIn() && (resource.data.orgId == userOrg() || ownsDemoBucket(resource.data.orgId) || isAdmin());
+      allow create: if signedIn() && (request.resource.data.orgId == userOrg() || ownsDemoBucket(request.resource.data.orgId));
+      allow update: if signedIn()
+                    && (resource.data.orgId == userOrg() || ownsDemoBucket(resource.data.orgId) || isAdmin())
+                    && request.resource.data.orgId == resource.data.orgId;
+      allow delete: if signedIn() && (resource.data.orgId == userOrg() || ownsDemoBucket(resource.data.orgId) || isAdmin());
+    }
+
+    /* -------- Owner Reporting & Audit --------
+       Owns rpt_*; also READS om_sites / sla_* / fs_* above (same tenant,
+       already scoped, so cross-tool reads succeed). */
+    match /rpt_owners/{id} {
+      allow read:   if signedIn() && (resource.data.orgId == userOrg() || ownsDemoBucket(resource.data.orgId) || isAdmin());
+      allow create: if signedIn() && (request.resource.data.orgId == userOrg() || ownsDemoBucket(request.resource.data.orgId));
+      allow update: if signedIn()
+                    && (resource.data.orgId == userOrg() || ownsDemoBucket(resource.data.orgId) || isAdmin())
+                    && request.resource.data.orgId == resource.data.orgId;
+      allow delete: if signedIn() && (resource.data.orgId == userOrg() || ownsDemoBucket(resource.data.orgId) || isAdmin());
+    }
+
+    match /rpt_reports/{id} {
+      allow read:   if signedIn() && (resource.data.orgId == userOrg() || ownsDemoBucket(resource.data.orgId) || isAdmin());
+      allow create: if signedIn() && (request.resource.data.orgId == userOrg() || ownsDemoBucket(request.resource.data.orgId));
+      allow update: if signedIn()
+                    && (resource.data.orgId == userOrg() || ownsDemoBucket(resource.data.orgId) || isAdmin())
+                    && request.resource.data.orgId == resource.data.orgId;
+      allow delete: if signedIn() && (resource.data.orgId == userOrg() || ownsDemoBucket(resource.data.orgId) || isAdmin());
+    }
+
+    /* -------- Fleet Command --------
+       Owns fc_*; also READS om_sites above. */
+    match /fc_assets/{id} {
+      allow read:   if signedIn() && (resource.data.orgId == userOrg() || ownsDemoBucket(resource.data.orgId) || isAdmin());
+      allow create: if signedIn() && (request.resource.data.orgId == userOrg() || ownsDemoBucket(request.resource.data.orgId));
+      allow update: if signedIn()
+                    && (resource.data.orgId == userOrg() || ownsDemoBucket(resource.data.orgId) || isAdmin())
+                    && request.resource.data.orgId == resource.data.orgId;
+      allow delete: if signedIn() && (resource.data.orgId == userOrg() || ownsDemoBucket(resource.data.orgId) || isAdmin());
+    }
+
+    match /fc_sources/{id} {
+      allow read:   if signedIn() && (resource.data.orgId == userOrg() || ownsDemoBucket(resource.data.orgId) || isAdmin());
+      allow create: if signedIn() && (request.resource.data.orgId == userOrg() || ownsDemoBucket(request.resource.data.orgId));
+      allow update: if signedIn()
+                    && (resource.data.orgId == userOrg() || ownsDemoBucket(resource.data.orgId) || isAdmin())
+                    && request.resource.data.orgId == resource.data.orgId;
+      allow delete: if signedIn() && (resource.data.orgId == userOrg() || ownsDemoBucket(resource.data.orgId) || isAdmin());
+    }
   }
 }
