@@ -1,10 +1,11 @@
 # ClearSky-OMEGA · Financing Partners Portal
 
-A Firebase-backed deal room where **developers** submit permit-ready energy
-projects (site map + cost basis + pro forma) and **capital partners** review the
-open pipeline, then **offer, accept, reject, or inquire**. When a project is
-awarded it **locks** — it drops off every other partner's board and persists only
-as a project name.
+A Firebase-backed deal room where **developers** and **originators** submit
+permit-ready energy deals (numbers + documents + cloud links) and **capital
+partners** review the open pipeline, then **offer, accept, reject, or inquire**.
+**Admins** see every deal in a filterable spreadsheet and export it to CSV.
+When a deal is awarded it **locks** — it drops off every other partner's board
+and persists only as a project name.
 
 Built to ClearSky house style: **single-file ES5** app logic, **Firebase compat
 (v8) SDK** from the gstatic CDN, deployed via **GitHub → Vercel** (or Firebase
@@ -40,16 +41,21 @@ Hosting). No build step, no bundler, no local tooling required.
 ## Data model (Firestore)
 
 ```
-users/{uid}
-  name, org, email, role ("developer" | "partner"), createdAt
+fin_profiles/{uid}
+  name, org, email, emailLower,
+  role ("developer" | "originator" | "partner" | "admin"),
+  allowlisted, createdAt
 
-projects/{projectId}
+fin_projects/{projectId}
   name, type, capacityKw, costBasis, proformaSummary, location, notes,
-  developerUid, developerOrg, developerName,
-  status ("open" | "offered" | "awarded"),
+  developerUid, developerOrg, developerName,     # owner — any submitter role
+  submitterRole ("developer" | "originator"),    # how they submitted it
+  submitterEmail,
+  status ("open" | "closed" | "awarded"),
   offerCount,
   awardedTo (partner uid | null), awardedToOrg (string | null),
   docs { sitemap:{name,url,path}, cost:{...}, proforma:{...} },
+  links [ { label, url } ],                      # cloud share links
   createdAt, updatedAt
 
 projects/{projectId}/offers/{offerId}      # offerId == partnerUid (one per partner)
@@ -71,23 +77,84 @@ project's `docs` map.
 
 ## Access model (enforced by `firestore.rules`)
 
-| Capability                         | Developer            | Partner                       |
-|------------------------------------|----------------------|-------------------------------|
-| See own submissions                | ✅                   | —                             |
-| See all open / offered projects    | own only             | ✅                            |
-| See a project awarded to someone   | if party             | if winner                     |
-| Upload site map / cost / pro forma | ✅ (own, pre-award)  | —                             |
-| Make / update an offer             | —                    | ✅ (pre-award, one per partner)|
-| Accept an offer → award & lock     | ✅                   | —                             |
-| Reject an offer                    | ✅                   | —                             |
-| Recall an offer                    | —                    | ✅ (own)                      |
-| Post an inquiry                    | ✅ (own project)     | ✅ (visible projects)         |
+| Capability                         | Developer / Originator | Partner                       | Admin        |
+|------------------------------------|------------------------|-------------------------------|--------------|
+| Submit a deal                      | ✅                     | —                             | —            |
+| See own submissions                | ✅                     | —                             | ✅ (all)     |
+| See all open deals                 | own only               | ✅                            | ✅           |
+| See a deal awarded to someone      | if party               | if winner                     | ✅           |
+| Upload files                       | ✅ (own, pre-award)    | —                             | —            |
+| Add / edit cloud links             | ✅ (own, pre-award)    | —                             | —            |
+| Open files and links               | ✅ (own)               | ✅ (visible deals)            | ✅           |
+| Make / update an offer             | —                      | ✅ (pre-award, one per partner)| —            |
+| Accept an offer → award & lock     | ✅                     | —                             | —            |
+| Reject an offer                    | ✅                     | —                             | —            |
+| Recall an offer                    | —                      | ✅ (own)                      | —            |
+| Post an inquiry                    | ✅ (own deal)          | ✅ (visible deals)            | — (read-only)|
+| Spreadsheet view + CSV export      | —                      | —                             | ✅           |
+
+**Admin is deliberately read-only.** It can see every deal in the marketplace
+but the rules grant it no write access to any project, offer, or inquiry.
 
 The **award transaction** (`acceptOffer` in `app.js`) flips the project to
 `awarded`, stamps `awardedTo`, marks the winning offer `accepted`, and rejects
 all other pending offers. Once `status == "awarded"`, the rules stop returning
 the project to any partner except the awardee — the app also shows a **sealed**
 placeholder if a stale link is opened.
+
+---
+
+## Roles
+
+| Role         | How it's granted                              |
+|--------------|-----------------------------------------------|
+| `developer`  | Self-select at signup                         |
+| `originator` | Self-select at signup                         |
+| `partner`    | Active `partnerAllowlist` entry, `role: "partner"` |
+| `admin`      | Active `partnerAllowlist` entry, `role: "admin"`   |
+
+`developer` and `originator` have identical permissions — the split exists so
+you can tell a builder's own project from sourced deal flow, and so the copy
+reads correctly on each side. Both write `developerUid` as the owner field
+(which is what the rules key off) plus a `submitterRole` field for reporting.
+
+### Adding an admin
+
+Create or edit a doc in the shared `partnerAllowlist` collection:
+
+```
+partnerAllowlist/{email-lowercased}
+  active: true
+  role:   "admin"
+  partner account: "ClearSky Builders"   # optional, overrides typed org name
+```
+
+Then have them register at `/?mode=register` with that exact email. The
+allowlist role always wins over whatever they pick on the form. Roles are
+immutable after signup — to change one, edit the profile doc directly in the
+Firebase console.
+
+### Cloud links
+
+Every deal carries a `links` array of `{ label, url }`. The submit form seeds
+two rows — *Utility bills* and *Site details* — and more can be added with any
+label. Only `http://` and `https://` URLs are accepted or rendered; anything
+else is rejected at save time and again at render time, so a pasted
+`javascript:` URL can never become a live anchor.
+
+Links are just URLs — the portal does not proxy them. If a Drive or SharePoint
+link is set to "restricted", partners will hit a permission wall rather than the
+file. The form says so, but it's worth repeating to submitters.
+
+### Admin console
+
+Signing in as `admin` replaces the card grid with a sortable spreadsheet:
+search across names, people, orgs, locations and notes; dropdown filters for
+submitter, role and deal type; the existing status tabs still apply. **Export
+CSV** writes whatever is currently on screen, including every file URL and a
+flattened `label: url` column for the cloud links. The export is UTF-8 with a
+BOM so Excel opens it cleanly, and cells beginning `=`, `+`, `-` or `@` are
+prefixed with an apostrophe to defuse spreadsheet formula injection.
 
 ---
 
@@ -190,3 +257,10 @@ send users to this portal at `https://financing.csebuilders.com/?mode=register`
 - **Stricter Storage rules:** front uploads with a Cloud Function that verifies
   the caller owns the project, or encode `developerUid` into the storage path.
 - **Amperage Capital** and other launch partners onboard as `partner` accounts.
+- **XLSX export:** the CSV path is `exportAdminCsv()` in `app.js`. Swapping in
+  SheetJS from a CDN would give a real `.xlsx` with typed number columns; the
+  `ADMIN_COLS` / `ADMIN_CSV_EXTRA` definitions already carry everything needed.
+- **Server-side admin queries:** the admin console currently pulls the whole
+  `fin_projects` collection to the browser and filters there. That is fine into
+  the low thousands of deals; past that, move filtering into Firestore queries
+  or a Cloud Function.

@@ -38,17 +38,45 @@
    other portals sharing the clearsky-portal Firestore) ---------- */
 var COL_PROFILES = "fin_profiles";      // this portal's user profiles
 var COL_PROJECTS = "fin_projects";      // this portal's projects
-var COL_ALLOWLIST = "partnerAllowlist"; // SHARED existing partner allowlist
+var COL_ALLOWLIST = "partnerAllowlist"; // SHARED existing allowlist (partner + admin)
+
+/* ---------- roles ----------
+   developer  - builds projects, submits own deals
+   originator - brings deal flow, submits deals, not a builder
+   partner    - capital side; underwrites and offers (allowlist-gated)
+   admin      - sees every deal, table view, CSV export (allowlist-gated)
+   ------------------------------------------------------------------ */
+var ROLE_LABELS = {
+  developer: "Developer",
+  originator: "Originator",
+  partner: "Capital partner",
+  admin: "Administrator"
+};
+
+/* roles that may create a project */
+function isSubmitterRole(r) { return r === "developer" || r === "originator"; }
+function canSubmit() { return isSubmitterRole(STATE.role); }
+function isAdminRole() { return STATE.role === "admin"; }
+function isPartnerRole() { return STATE.role === "partner"; }
+
+/* roles a user may pick for themselves at signup (the rest are allowlisted) */
+var SELF_ROLES = ["developer", "originator"];
+/* roles that may only be granted by an allowlist entry */
+var GRANTED_ROLES = ["partner", "admin"];
 
 /* ---------- global state ---------- */
 var STATE = {
   user: null,          // firebase user
-  profile: null,       // users/{uid} doc data
-  role: null,          // "developer" | "partner"
+  profile: null,       // fin_profiles/{uid} doc data
+  role: null,          // "developer" | "originator" | "partner" | "admin"
   projects: [],        // loaded project list (role-scoped)
   activeTab: null,     // current filter tab id
   regRole: "developer",// selected role on register form
-  unsub: null          // active Firestore listener unsubscribe
+  unsub: null,         // active Firestore listener unsubscribe
+  adminFilters: {      // admin table filter state
+    q: "", submitter: "", role: "", status: "", type: ""
+  },
+  adminSort: { key: "createdAt", dir: -1 }
 };
 
 var STRUCTURE_LABELS = {
@@ -83,6 +111,70 @@ function esc(s) {
     .replace(/&/g, "&amp;").replace(/</g, "&lt;")
     .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
+
+/* Only ever render http(s) links. User-supplied URLs are otherwise an
+   easy route to javascript: / data: injection via an anchor href. */
+function safeUrl(u) {
+  if (!u) { return null; }
+  u = String(u).trim();
+  if (/^https?:\/\//i.test(u)) { return u; }
+  return null;
+}
+
+/* pull the hostname out of a URL so a link row can show where it goes */
+function linkHost(u) {
+  var m = /^https?:\/\/([^\/?#]+)/i.exec(String(u || ""));
+  if (!m) { return ""; }
+  return m[1].replace(/^www\./i, "");
+}
+
+/* label presets offered when adding a shared link */
+var LINK_PRESETS = [
+  "Utility bills",
+  "Site details",
+  "Interconnection",
+  "Offtake / PPA",
+  "Permits",
+  "Diligence folder"
+];
+
+/* ---------- project accessors ---------- */
+var DOC_SLOTS = [
+  ["sitemap", "Site map"],
+  ["cost", "Cost basis"],
+  ["proforma", "Pro forma"]
+];
+
+/* normalise p.links into a clean array of {label,url} with safe urls only */
+function projectLinks(p) {
+  var out = [];
+  var raw = (p && p.links) ? p.links : [];
+  if (!raw.length) { return out; }
+  for (var i = 0; i < raw.length; i++) {
+    var u = safeUrl(raw[i] && raw[i].url);
+    if (!u) { continue; }
+    out.push({ label: (raw[i].label || "Link"), url: u });
+  }
+  return out;
+}
+
+function countLinks(p) { return projectLinks(p).length; }
+
+function countDocs(p) {
+  var docs = (p && p.docs) ? p.docs : {};
+  var n = 0;
+  for (var i = 0; i < DOC_SLOTS.length; i++) {
+    var k = DOC_SLOTS[i][0];
+    if (docs[k] && docs[k].url) { n++; }
+  }
+  return n;
+}
+
+/* who submitted this deal, for display and admin filtering */
+function submitterName(p) { return (p && (p.developerName || p.developerOrg)) || "Unknown"; }
+function submitterOrg(p) { return (p && (p.developerOrg || p.developerName)) || "Unknown"; }
+function submitterRole(p) { return (p && p.submitterRole) || "developer"; }
+function submitterKey(p) { return submitterOrg(p) + " \u00b7 " + submitterName(p); }
 
 function initials(name) {
   if (!name) { return "?"; }
@@ -167,6 +259,7 @@ function wireAuthUI() {
 
   /* role pick */
   $("roleDev").onclick = function () { selectRegRole("developer"); };
+  $("roleOrig").onclick = function () { selectRegRole("originator"); };
   $("rolePartner").onclick = function () { selectRegRole("partner"); };
 
   /* login */
@@ -194,7 +287,19 @@ function wireAuthUI() {
 function selectRegRole(role) {
   STATE.regRole = role;
   $("roleDev").className = "role-opt" + (role === "developer" ? " sel" : "");
+  $("roleOrig").className = "role-opt" + (role === "originator" ? " sel" : "");
   $("rolePartner").className = "role-opt" + (role === "partner" ? " sel" : "");
+
+  var hint = $("regRoleHint");
+  if (hint) {
+    if (role === "originator") {
+      hint.textContent = "Originators submit deals they source but don't build. You'll manage offers on everything you bring in.";
+    } else if (role === "partner") {
+      hint.textContent = "Capital partner access is granted by invitation. Use the email we have on file.";
+    } else {
+      hint.textContent = "Developers submit projects they're building and take offers on them.";
+    }
+  }
 }
 
 function doLogin() {
@@ -218,23 +323,31 @@ function doRegister() {
   if (pass.length < 6) { showAuthErr("Password must be at least 6 characters."); return; }
 
   $("registerBtn").disabled = true;
-  var wantsPartner = (STATE.regRole === "partner");
+  var wantsGranted = (GRANTED_ROLES.indexOf(STATE.regRole) > -1);
   var emailKey = email.toLowerCase();
 
-  /* Partner role is gated by the shared partnerAllowlist. Anyone can be a
-     developer by self-selecting; only allowlisted emails become partners. */
+  /* Elevated roles (partner, admin) are gated by the shared allowlist.
+     Developer and originator are self-select. If an email is allowlisted,
+     the allowlist role always wins over whatever they picked. */
   db.collection(COL_ALLOWLIST).doc(emailKey).get()
     .then(function (snap) {
-      var allowed = snap.exists && snap.data() && snap.data().active === true
-        && (snap.data().role === "partner");
       var allowData = snap.exists ? snap.data() : null;
+      var grantedRole = null;
+      if (allowData && allowData.active === true
+          && GRANTED_ROLES.indexOf(allowData.role) > -1) {
+        grantedRole = allowData.role;
+      }
+      var allowed = !!grantedRole;
 
-      if (wantsPartner && !allowed) {
+      if (wantsGranted && grantedRole !== STATE.regRole) {
         throw { code: "app/not-allowlisted" };
       }
 
-      var role = allowed ? "partner" : "developer";
-      /* let an allowlisted partner keep the org name we already have on file */
+      var role = grantedRole || STATE.regRole;
+      if (SELF_ROLES.indexOf(role) === -1 && GRANTED_ROLES.indexOf(role) === -1) {
+        role = "developer";
+      }
+      /* let an allowlisted account keep the org name we already have on file */
       var finalOrg = org;
       if (allowed && allowData && allowData["partner account"]) {
         finalOrg = allowData["partner account"];
@@ -250,7 +363,9 @@ function doRegister() {
     })
     .catch(function (err) {
       if (err && err.code === "app/not-allowlisted") {
-        showAuthErr("That email isn't on the partner allowlist yet. Register as a developer, or contact info@csebuilders.com to be added as a capital partner.");
+        showAuthErr("That email isn't on the allowlist for " +
+          (ROLE_LABELS[STATE.regRole] || "that role").toLowerCase() +
+          " access yet. Register as a developer or originator, or contact info@csebuilders.com to be added.");
       } else {
         showAuthErr(friendlyAuthError(err));
       }
@@ -271,12 +386,19 @@ function doGoogle() {
            same as email/password signup. */
         var emailKey = (u.email || "").toLowerCase();
         return db.collection(COL_ALLOWLIST).doc(emailKey).get().then(function (al) {
-          var allowed = al.exists && al.data() && al.data().active === true
-            && (al.data().role === "partner");
-          var role = allowed ? "partner" : "developer";
+          var alData = al.exists ? al.data() : null;
+          var grantedRole = null;
+          if (alData && alData.active === true
+              && GRANTED_ROLES.indexOf(alData.role) > -1) {
+            grantedRole = alData.role;
+          }
+          var allowed = !!grantedRole;
+          /* fall back to whatever they picked on the form, else developer */
+          var picked = SELF_ROLES.indexOf(STATE.regRole) > -1 ? STATE.regRole : "developer";
+          var role = grantedRole || picked;
           var domain = (u.email || "").split("@")[1] || "";
           var org = domain;
-          if (allowed && al.data()["partner account"]) { org = al.data()["partner account"]; }
+          if (allowed && alData["partner account"]) { org = alData["partner account"]; }
           return ref.set({
             name: u.displayName || u.email,
             org: org,
@@ -326,19 +448,39 @@ function enterApp() {
   $("userName").textContent = STATE.profile.name || STATE.profile.email;
   $("userAvatar").textContent = initials(STATE.profile.name || STATE.profile.email);
   var chip = $("roleChip");
+  chip.textContent = ROLE_LABELS[STATE.role] || STATE.role;
+
   if (STATE.role === "developer") {
-    chip.className = "role-chip dev"; chip.textContent = "Developer";
+    chip.className = "role-chip dev";
     $("pageTitle").textContent = "My projects";
     $("pageSub").textContent = "Submit projects and manage the offers on them.";
     $("newProjectBtn").style.display = "inline-flex";
+    $("newProjectBtn").lastChild.nodeValue = " Submit a project";
+  } else if (STATE.role === "originator") {
+    chip.className = "role-chip orig";
+    $("pageTitle").textContent = "My deals";
+    $("pageSub").textContent = "Submit the deals you source and manage the offers that come in.";
+    $("newProjectBtn").style.display = "inline-flex";
+    $("newProjectBtn").lastChild.nodeValue = " Submit a deal";
+  } else if (STATE.role === "admin") {
+    chip.className = "role-chip admin";
+    $("pageTitle").textContent = "All deals";
+    $("pageSub").textContent = "Every submission across the marketplace. Filter, open, and export.";
+    $("newProjectBtn").style.display = "none";
   } else {
-    chip.className = "role-chip partner"; chip.textContent = "Capital partner";
+    chip.className = "role-chip partner";
     $("pageTitle").textContent = "Open pipeline";
-    $("pageSub").textContent = "Underwrite open projects, then offer, decline, or inquire.";
+    $("pageSub").textContent = "Underwrite open deals, then offer, decline, or inquire.";
     $("newProjectBtn").style.display = "none";
   }
 
   $("newProjectBtn").onclick = openSubmitModal;
+
+  /* fresh view state for this session — a previous user's filters and the
+     old admin sheet must not survive a sign-out / sign-in on the same tab */
+  STATE.adminFilters = { q: "", submitter: "", role: "", status: "", type: "" };
+  STATE.adminSort = { key: "createdAt", dir: -1 };
+  $("listArea").innerHTML = '<div class="loading"><div class="spinner"></div></div>';
 
   buildTabs();
   subscribeProjects();
@@ -351,9 +493,16 @@ function buildTabs() {
   var tabs = $("tabs");
   tabs.innerHTML = "";
   var defs;
-  if (STATE.role === "developer") {
+  if (isAdminRole()) {
     defs = [
-      { id: "all", label: "All projects" },
+      { id: "all", label: "All deals" },
+      { id: "open", label: "Open" },
+      { id: "offered", label: "Closed" },
+      { id: "awarded", label: "Awarded" }
+    ];
+  } else if (canSubmit()) {
+    defs = [
+      { id: "all", label: STATE.role === "originator" ? "All deals" : "All projects" },
       { id: "open", label: "Open" },
       { id: "offered", label: "Closed" },
       { id: "awarded", label: "Awarded" }
@@ -409,8 +558,11 @@ function subscribeProjects() {
   if (STATE.unsub) { STATE.unsub(); STATE.unsub = null; }
 
   var q;
-  if (STATE.role === "developer") {
-    /* developers see ONLY their own projects */
+  if (isAdminRole()) {
+    /* admin sees the whole marketplace, unfiltered */
+    q = db.collection(COL_PROJECTS);
+  } else if (canSubmit()) {
+    /* developers and originators see ONLY the deals they submitted */
     q = db.collection(COL_PROJECTS).where("developerUid", "==", STATE.user.uid);
   } else {
     /* partners browse OPEN projects (project stays open even with offers in;
@@ -425,8 +577,8 @@ function subscribeProjects() {
       var d = doc.data(); d._id = doc.id; list.push(d);
     });
 
-    if (STATE.role === "partner") {
-      /* merge in projects awarded to this partner */
+    if (isPartnerRole()) {
+      /* merge in deals awarded to this partner */
       db.collection(COL_PROJECTS).where("awardedTo", "==", STATE.user.uid).get()
         .then(function (wonSnap) {
           wonSnap.forEach(function (doc) {
@@ -463,7 +615,7 @@ function filteredProjects() {
   var uid = STATE.user.uid;
   var t = STATE.activeTab;
 
-  if (STATE.role === "developer") {
+  if (canSubmit() || isAdminRole()) {
     if (t === "open") { return p.filter(function (x) { return x.status === "open"; }); }
     if (t === "offered") { return p.filter(function (x) { return x.status === "closed"; }); }
     if (t === "awarded") { return p.filter(function (x) { return x.status === "awarded"; }); }
@@ -483,7 +635,7 @@ function filteredProjects() {
 function updateTabCounts() {
   var p = STATE.projects; var uid = STATE.user.uid;
   function setc(id, n) { var e = $("cnt-" + id); if (e) { e.textContent = n; } }
-  if (STATE.role === "developer") {
+  if (canSubmit() || isAdminRole()) {
     setc("all", p.length);
     setc("open", p.filter(function (x) { return x.status === "open"; }).length);
     setc("offered", p.filter(function (x) { return x.status === "closed"; }).length);
@@ -501,8 +653,13 @@ function updateTabCounts() {
 function renderList() {
   updateTabCounts();
   var area = $("listArea");
-  area.innerHTML = "";
 
+  /* Admins get the spreadsheet view. It manages its own DOM so that a live
+     snapshot update refreshes the rows without stealing focus from the
+     filter box mid-keystroke. */
+  if (isAdminRole()) { renderAdminTable(area); return; }
+
+  area.innerHTML = "";
   var items = filteredProjects();
 
   /* sort: newest first */
@@ -524,13 +681,15 @@ function renderList() {
 function emptyState() {
   var e = el("div", "empty");
   var icon = '<div class="e-ic"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 9h6M9 13h6M9 17h3"/></svg></div>';
-  if (STATE.role === "developer") {
+  if (canSubmit()) {
+    var noun = (STATE.role === "originator") ? "deal" : "project";
     if (STATE.activeTab === "all") {
-      e.innerHTML = icon + '<h3>No projects yet</h3><p>Submit your first financeable project \u2014 site map, cost basis, and pro forma \u2014 and capital partners can start underwriting it.</p>';
-      var b = el("button", "btn btn-primary", "Submit a project");
+      e.innerHTML = icon + '<h3>No ' + noun + 's yet</h3><p>Submit your first ' + noun +
+        ' \u2014 the numbers, any documents, and links to your utility bills and site details \u2014 and capital partners can start underwriting it.</p>';
+      var b = el("button", "btn btn-primary", "Submit a " + noun);
       b.onclick = openSubmitModal; e.appendChild(b);
     } else {
-      e.innerHTML = icon + '<h3>Nothing here</h3><p>No projects match this filter yet.</p>';
+      e.innerHTML = icon + '<h3>Nothing here</h3><p>No ' + noun + 's match this filter yet.</p>';
     }
   } else {
     if (STATE.activeTab === "won") {
@@ -545,11 +704,11 @@ function emptyState() {
 }
 
 function projectCard(p) {
-  var locked = (STATE.role === "partner" && p.status === "awarded" && p.awardedTo !== STATE.user.uid);
+  var locked = (isPartnerRole() && p.status === "awarded" && p.awardedTo !== STATE.user.uid);
   var card = el("div", "proj-card" + (locked ? " locked" : ""));
 
   var statusCls, statusTxt;
-  if (STATE.role === "partner") {
+  if (isPartnerRole()) {
     /* Partner sees the status of THEIR OWN offer, not the project's global
        state. The project stays 'open' to everyone; each partner's card
        reflects their own bid. */
@@ -606,10 +765,19 @@ function projectCard(p) {
     card.appendChild(pf);
   }
 
+  /* attachment summary — how complete is this package? */
+  var nDocs = countDocs(p), nLinks = countLinks(p);
+  if (nDocs || nLinks) {
+    var tags = el("div", "pc-tags");
+    if (nDocs) { tags.appendChild(el("span", "pc-tag", nDocs + " file" + (nDocs === 1 ? "" : "s"))); }
+    if (nLinks) { tags.appendChild(el("span", "pc-tag", nLinks + " link" + (nLinks === 1 ? "" : "s"))); }
+    card.appendChild(tags);
+  }
+
   /* foot */
   var foot = el("div", "pc-foot");
   var offers = el("div", "pc-offers");
-  if (STATE.role === "developer") {
+  if (canSubmit()) {
     var n = p.offerCount || 0;
     offers.innerHTML = "<b>" + n + "</b> offer" + (n === 1 ? "" : "s");
   } else if (p.awardedTo === STATE.user.uid) {
@@ -644,14 +812,96 @@ $("modalBackdrop").onclick = function (e) { if (e.target === $("modalBackdrop"))
 var PENDING_FILES = { sitemap: null, cost: null, proforma: null };
 
 /* ============================================================
+   CLOUD LINKS — shared editor used by the submit form and the
+   "edit links" modal. Rows live in the DOM and are scraped on save,
+   so there is no parallel state to keep in sync.
+   ============================================================ */
+function linksField(existing, label, hint) {
+  var f = el("div", "field");
+  f.innerHTML = '<label>' + esc(label || "Shared links") + '</label>' +
+    '<div class="field-note" style="margin-top:0;margin-bottom:9px;">' +
+    esc(hint || "Paste a share link to a cloud folder or file \u2014 Drive, Dropbox, SharePoint, Box. Make sure the link is viewable by anyone who has it, or partners will hit a permission wall.") +
+    '</div>';
+
+  var rows = el("div"); rows.id = "linkRows";
+  f.appendChild(rows);
+
+  var add = el("button", "btn btn-ghost btn-sm", "+ Add a link");
+  add.type = "button";
+  add.style.marginTop = "4px";
+  add.onclick = function () { addLinkRow(rows, "", ""); };
+  f.appendChild(add);
+
+  /* seed rows: existing links, or two prompts for the usual suspects */
+  var seed = existing && existing.length ? existing : [
+    { label: "Utility bills", url: "" },
+    { label: "Site details", url: "" }
+  ];
+  setTimeout(function () {
+    for (var i = 0; i < seed.length; i++) {
+      addLinkRow(rows, seed[i].label, seed[i].url);
+    }
+  }, 0);
+
+  return f;
+}
+
+function addLinkRow(rows, label, url) {
+  var row = el("div", "link-row");
+
+  var lab = document.createElement("input");
+  lab.type = "text";
+  lab.className = "lr-label";
+  lab.setAttribute("list", "linkPresets");
+  lab.placeholder = "What is it?";
+  lab.value = label || "";
+
+  var u = document.createElement("input");
+  u.type = "url";
+  u.className = "lr-url";
+  u.placeholder = "https://\u2026";
+  u.value = url || "";
+
+  var x = el("button", "lr-x", "&times;");
+  x.type = "button";
+  x.title = "Remove this link";
+  x.onclick = function () { rows.removeChild(row); };
+
+  row.appendChild(lab); row.appendChild(u); row.appendChild(x);
+  rows.appendChild(row);
+  return row;
+}
+
+/* scrape the rows; returns {links:[], bad:[]} */
+function readLinkRows() {
+  var rows = $("linkRows");
+  var out = { links: [], bad: [] };
+  if (!rows) { return out; }
+  var nodes = rows.querySelectorAll(".link-row");
+  for (var i = 0; i < nodes.length; i++) {
+    var lab = nodes[i].querySelector(".lr-label").value.trim();
+    var raw = nodes[i].querySelector(".lr-url").value.trim();
+    if (!raw) { continue; }                 /* blank row: skip silently */
+    var u = safeUrl(raw);
+    if (!u) { out.bad.push(raw); continue; }
+    out.links.push({ label: lab || "Link", url: u });
+  }
+  return out;
+}
+
+/* ============================================================
    SUBMIT PROJECT (developer)
    ============================================================ */
 function openSubmitModal() {
   PENDING_FILES = { sitemap: null, cost: null, proforma: null };
+  var isOrig = (STATE.role === "originator");
   var wrap = el("div");
 
-  wrap.appendChild(modalHead("Submit a project",
-    "Attach the site map, cost basis, and pro forma. This becomes the package capital partners underwrite."));
+  wrap.appendChild(modalHead(
+    isOrig ? "Submit a deal" : "Submit a project",
+    isOrig
+      ? "Give partners the numbers and a way into your files. Upload what you have, link the rest."
+      : "Attach the site map, cost basis, and pro forma. This becomes the package capital partners underwrite."));
 
   var body = el("div", "modal-body");
   body.innerHTML =
@@ -674,16 +924,34 @@ function openSubmitModal() {
     '<div class="field"><label>Pro forma summary</label><textarea id="f-pf" placeholder="Headline returns \u2014 e.g. 14.2% unlevered IRR, 8-yr payback, $410K/yr stacked revenue (arbitrage + capacity + SDVPP)."></textarea></div>' +
     '<div class="field"><label>Notes for partners (optional)</label><textarea id="f-notes" placeholder="Interconnection status, offtake, timeline, incentives, what you\'re looking for (finance vs. acquire)\u2026"></textarea></div>';
 
-  /* file drops */
-  body.appendChild(fileDropField("sitemap", "Site map", "PDF, PNG, or exported from the SiteMap Designer"));
-  body.appendChild(fileDropField("cost", "Cost basis", "Cost stack workbook or PDF"));
-  body.appendChild(fileDropField("proforma", "Pro forma", "Pro forma model (XLSX) or PDF"));
+  /* ---- cloud links: the fast path, and the one everyone can use ---- */
+  body.appendChild(el("div", "form-rule"));
+  body.appendChild(linksField(null, "Utility bills, site details, and anything else",
+    "Paste a share link to a cloud folder or file \u2014 Drive, Dropbox, SharePoint, Box. Set it to \u201canyone with the link can view\u201d or partners will hit a permission wall."));
+
+  /* ---- direct uploads: optional, collapsed by default ---- */
+  body.appendChild(el("div", "form-rule"));
+  var upToggle = el("button", "disclosure", "Or upload files directly \u2014 site map, cost basis, pro forma");
+  upToggle.type = "button";
+  var upBox = el("div", "disclosure-body");
+  upBox.style.display = "none";
+  upBox.appendChild(fileDropField("sitemap", "Site map", "PDF, PNG, or exported from the SiteMap Designer"));
+  upBox.appendChild(fileDropField("cost", "Cost basis", "Cost stack workbook or PDF"));
+  upBox.appendChild(fileDropField("proforma", "Pro forma", "Pro forma model (XLSX) or PDF"));
+  upToggle.onclick = function () {
+    var open = (upBox.style.display !== "none");
+    upBox.style.display = open ? "none" : "block";
+    upToggle.className = "disclosure" + (open ? "" : " open");
+  };
+  body.appendChild(upToggle);
+  body.appendChild(upBox);
 
   wrap.appendChild(body);
 
   var foot = el("div", "modal-foot");
   var cancel = el("button", "btn btn-ghost", "Cancel"); cancel.onclick = closeModal;
-  var submit = el("button", "btn btn-primary", "Submit project"); submit.id = "submitProjBtn";
+  var submit = el("button", "btn btn-primary", isOrig ? "Submit deal" : "Submit project");
+  submit.id = "submitProjBtn";
   submit.onclick = doSubmitProject;
   foot.appendChild(cancel); foot.appendChild(submit);
   wrap.appendChild(foot);
@@ -759,10 +1027,18 @@ function doSubmitProject() {
   var pf = $("f-pf").value.trim();
   var notes = $("f-notes").value.trim();
 
-  if (!name) { toast("Give the project a name.", true); return; }
+  var noun = (STATE.role === "originator") ? "deal" : "project";
+  if (!name) { toast("Give the " + noun + " a name.", true); return; }
   if (!pf) { toast("Add a short pro forma summary.", true); return; }
 
+  var linkRead = readLinkRows();
+  if (linkRead.bad.length) {
+    toast("Links need to start with http:// or https:// \u2014 check " + linkRead.bad[0], true);
+    return;
+  }
+
   var btn = $("submitProjBtn");
+  var origLabel = btn.textContent;
   btn.disabled = true; btn.textContent = "Creating\u2026";
 
   var proj = {
@@ -770,14 +1046,19 @@ function doSubmitProject() {
     capacityKw: cap ? Number(cap) : null,
     costBasis: cost ? Number(cost) : null,
     proformaSummary: pf, notes: notes,
+    /* developerUid stays the canonical owner field for every submitter role
+       so the security rules and existing indexes keep working unchanged. */
     developerUid: STATE.user.uid,
     developerOrg: STATE.profile.org || "",
     developerName: STATE.profile.name || STATE.profile.email,
+    submitterRole: STATE.role,
+    submitterEmail: STATE.profile.email || "",
     status: "open",
     offerCount: 0,
     awardedTo: null,
     awardedToOrg: null,
     docs: {},
+    links: linkRead.links,
     createdAt: FieldValue.serverTimestamp(),
     updatedAt: FieldValue.serverTimestamp()
   };
@@ -812,12 +1093,12 @@ function doSubmitProject() {
       closeModal();
     });
   }).catch(function (err) {
-    btn.disabled = false; btn.textContent = "Submit project";
+    btn.disabled = false; btn.textContent = origLabel;
     toast(friendlyAuthError(err), true);
   });
 
   function finishSubmit() {
-    toast("Project submitted to the pipeline.");
+    toast(noun === "deal" ? "Deal submitted to the marketplace." : "Project submitted to the pipeline.");
     closeModal();
   }
 }
@@ -839,7 +1120,7 @@ function openDetail(pid) {
     var p = snap.data(); p._id = pid;
 
     /* guard: partner cannot open a deal awarded to someone else */
-    if (STATE.role === "partner" && p.status === "awarded" && p.awardedTo !== STATE.user.uid) {
+    if (isPartnerRole() && p.status === "awarded" && p.awardedTo !== STATE.user.uid) {
       renderSealed(p); return;
     }
 
@@ -850,7 +1131,7 @@ function openDetail(pid) {
          so query just that single doc, not the whole collection. */
     var offersCol = db.collection(COL_PROJECTS).doc(pid).collection("offers");
     var offersP;
-    if (STATE.role === "developer") {
+    if (canSubmit() || isAdminRole()) {
       offersP = offersCol.get().then(function (snap) {
         var arr = []; snap.forEach(function (d) { var o = d.data(); o._id = d.id; arr.push(o); });
         return arr;
@@ -902,8 +1183,12 @@ function renderSealed(p) {
 }
 
 function renderDetail(p, offers, inqs) {
-  var isDev = (STATE.role === "developer");
+  var isAdmin = isAdminRole();
+  var isPartner = isPartnerRole();
   var isOwner = (p.developerUid === STATE.user.uid);
+  /* the deal's own side of the table: whoever submitted it, plus admins */
+  var isSeller = (canSubmit() && isOwner);
+  var seesAllOffers = isSeller || isAdmin;
   var myOffer = null;
   for (var i = 0; i < offers.length; i++) {
     if (offers[i].partnerUid === STATE.user.uid) { myOffer = offers[i]; }
@@ -935,7 +1220,9 @@ function renderDetail(p, offers, inqs) {
   facts.innerHTML = '<h4>Project package</h4>';
   var kv = el("div", "kv-list");
   kv.innerHTML =
-    row("Developer", esc(p.developerOrg || p.developerName || "\u2014")) +
+    row("Submitted by", esc(submitterOrg(p)) +
+      ' <span class="kv-role">' + esc(ROLE_LABELS[submitterRole(p)] || "Developer") + '</span>') +
+    (isAdmin ? row("Contact", esc(p.submitterEmail || p.developerName || "\u2014")) : "") +
     row("Capacity", fmtKw(p.capacityKw)) +
     row("Cost basis", fmtMoney(p.costBasis)) +
     row("Submitted", esc(fmtDate(p.createdAt)));
@@ -959,7 +1246,7 @@ function renderDetail(p, offers, inqs) {
   var docSec = el("div", "detail-sec");
   docSec.innerHTML = '<h4>Documents</h4>';
   var docs = p.docs || {};
-  var docDefs = [["sitemap", "Site map"], ["cost", "Cost basis"], ["proforma", "Pro forma"]];
+  var docDefs = DOC_SLOTS;
   var anyDoc = false;
   for (var d = 0; d < docDefs.length; d++) {
     var key = docDefs[d][0], lbl = docDefs[d][1];
@@ -974,16 +1261,42 @@ function renderDetail(p, offers, inqs) {
       docSec.appendChild(a);
     }
   }
-  if (!anyDoc) { docSec.appendChild(el("div", "doc-missing", "No documents attached to this submission.")); }
+  if (!anyDoc) { docSec.appendChild(el("div", "doc-missing", "No files uploaded to this submission.")); }
 
-  /* developer can add/replace files on own open project */
-  if (isDev && isOwner && !isAwarded) {
+  /* the submitter can add/replace files on their own open deal */
+  if (isSeller && !isAwarded) {
     var addBtn = el("button", "btn btn-ghost btn-sm", "Upload / replace files");
     addBtn.style.marginTop = "6px";
     addBtn.onclick = function () { openUploadFilesModal(p); };
     docSec.appendChild(addBtn);
   }
   left.appendChild(docSec);
+
+  /* ---- shared cloud links: utility bills, site details, diligence ---- */
+  var linkSec = el("div", "detail-sec");
+  linkSec.innerHTML = '<h4>Shared links</h4>';
+  var lks = projectLinks(p);
+  if (lks.length) {
+    for (var li = 0; li < lks.length; li++) {
+      var la = el("a", "doc-link link-ext");
+      la.href = lks[li].url; la.target = "_blank"; la.rel = "noopener noreferrer";
+      la.innerHTML =
+        '<span class="dl-ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></span>' +
+        '<span class="dl-name">' + esc(lks[li].label) +
+        '<span class="dl-host">' + esc(linkHost(lks[li].url)) + '</span></span>' +
+        '<span class="dl-go">Open &rarr;</span>';
+      linkSec.appendChild(la);
+    }
+  } else {
+    linkSec.appendChild(el("div", "doc-missing", "No links shared on this submission."));
+  }
+  if (isSeller && !isAwarded) {
+    var editLinks = el("button", "btn btn-ghost btn-sm", lks.length ? "Edit links" : "Add links");
+    editLinks.style.marginTop = "6px";
+    editLinks.onclick = function () { openLinksModal(p); };
+    linkSec.appendChild(editLinks);
+  }
+  left.appendChild(linkSec);
 
   grid.appendChild(left);
 
@@ -994,7 +1307,8 @@ function renderDetail(p, offers, inqs) {
   if (isAwarded) {
     var ab = el("div");
     ab.style.cssText = "background:var(--cs-green-dim);border:1px solid rgba(18,128,92,.25);border-radius:11px;padding:14px 16px;margin-bottom:18px;";
-    var who = isDev ? esc(p.awardedToOrg || "the selected partner") : (isAwardedToMe ? "you" : "another partner");
+    var who = (isSeller || isAdmin) ? esc(p.awardedToOrg || "the selected partner")
+      : (isAwardedToMe ? "you" : "another partner");
     ab.innerHTML = '<div style="font-family:Syne,sans-serif;font-weight:700;font-size:14px;color:var(--cs-green);margin-bottom:3px;">Awarded</div>' +
       '<div style="font-size:12.5px;color:var(--cs-ink);line-height:1.5;">This project has been awarded to ' + who + '. It is now locked to other partners.</div>';
     right.appendChild(ab);
@@ -1002,10 +1316,10 @@ function renderDetail(p, offers, inqs) {
 
   /* OFFERS section */
   var offSec = el("div", "detail-sec");
-  offSec.innerHTML = '<h4>Offers' + (isDev ? " (" + offers.length + ")" : "") + '</h4>';
+  offSec.innerHTML = '<h4>Offers' + (seesAllOffers ? " (" + offers.length + ")" : "") + '</h4>';
 
-  if (isDev) {
-    /* developer sees ALL offers */
+  if (seesAllOffers) {
+    /* the submitting side (and admins) see ALL offers */
     if (offers.length === 0) {
       offSec.appendChild(el("div", "doc-missing", "No offers yet. Partners can review and make offers while this stays open."));
     } else {
@@ -1018,13 +1332,13 @@ function renderDetail(p, offers, inqs) {
         return tb - ta;
       });
       for (var o = 0; o < offers.length; o++) {
-        offSec.appendChild(offerItem(p, offers[o], false));
+        offSec.appendChild(offerItem(p, offers[o], false, isSeller));
       }
     }
   } else {
     /* partner sees ONLY their own offer */
     if (myOffer) {
-      offSec.appendChild(offerItem(p, myOffer, true));
+      offSec.appendChild(offerItem(p, myOffer, true, false));
     } else if (!isAwarded) {
       offSec.appendChild(el("div", "doc-missing", "You haven't made an offer on this project yet."));
       var mk = el("button", "btn btn-green btn-sm", "Make an offer");
@@ -1047,15 +1361,16 @@ function renderDetail(p, offers, inqs) {
       var mine = (m.authorUid === STATE.user.uid);
       var mm = el("div", "msg " + (mine ? "me" : "them"));
       mm.innerHTML = '<div class="m-who">' + esc(m.authorName) +
-        " \u00b7 " + esc(m.authorRole === "developer" ? "Developer" : "Partner") +
+        " \u00b7 " + esc(ROLE_LABELS[m.authorRole] || "Developer") +
         " \u00b7 " + esc(timeAgo(m.createdAt)) + '</div>' + esc(m.body);
       thread.appendChild(mm);
     }
   }
   inqSec.appendChild(thread);
 
-  /* compose inquiry — allowed for owner-dev, or partner on non-awarded (or their won deal) */
-  var canInquire = (isDev && isOwner) || (!isDev && (!isAwarded || isAwardedToMe));
+  /* compose inquiry — the submitter on their own deal, or a partner on a deal
+     they can still act on. Admins observe without posting. */
+  var canInquire = isSeller || (isPartner && (!isAwarded || isAwardedToMe));
   if (canInquire) {
     var comp = el("div", "msg-compose");
     comp.innerHTML = '<input type="text" id="inqInput" placeholder="Ask a question\u2026" maxlength="500">';
@@ -1081,13 +1396,13 @@ function renderDetail(p, offers, inqs) {
 
   /* developer: close their own OPEN project (soft close — removes it from the
      partner pipeline; the developer still sees it under Closed). */
-  if (isDev && isOwner && p.status === "open") {
-    var closeProjBtn = el("button", "btn btn-ghost", "Close project");
+  if (isSeller && p.status === "open") {
+    var closeProjBtn = el("button", "btn btn-ghost", "Close to new offers");
     closeProjBtn.onclick = function () { closeProject(p); };
     foot.appendChild(closeProjBtn);
   }
 
-  if (!isDev && !myOffer && !isAwarded) {
+  if (isPartner && !myOffer && !isAwarded) {
     var offerBtn = el("button", "btn btn-green", "Make an offer");
     offerBtn.onclick = function () { openOfferModal(p); };
     foot.appendChild(offerBtn);
@@ -1098,11 +1413,11 @@ function renderDetail(p, offers, inqs) {
 
 /* ---------- close a project (developer, soft close) ---------- */
 function closeProject(p) {
-  if (!window.confirm("Close this project? It will be removed from the partner pipeline. You can still see it under Closed. Existing offers are left as-is.")) { return; }
+  if (!window.confirm("Close this to new offers? It comes off the partner pipeline and moves to your Closed tab. Offers already in are left as they are.")) { return; }
   db.collection(COL_PROJECTS).doc(p._id)
     .update({ status: "closed", updatedAt: FieldValue.serverTimestamp() })
     .then(function () {
-      toast("Project closed.");
+      toast("Closed to new offers.");
       closeModal();
     })
     .catch(function (err) { toast(friendlyAuthError(err), true); });
@@ -1116,7 +1431,7 @@ function row(k, v) {
 /* ============================================================
    OFFERS — render item + actions (accept / reject / recall)
    ============================================================ */
-function offerItem(p, o, mine) {
+function offerItem(p, o, mine, canAct) {
   var wrap = el("div", "offer-item" + (mine ? " mine" : ""));
 
   var stCls = "st-open", stTxt = "Pending";
@@ -1125,7 +1440,7 @@ function offerItem(p, o, mine) {
   else if (o.status === "recalled") { stCls = "st-locked"; stTxt = "Recalled"; }
   else { stCls = "st-offered"; stTxt = "Pending"; }
 
-  var who = STATE.role === "developer" ? esc(o.partnerOrg || o.partnerName || "Partner") : "Your offer";
+  var who = mine ? "Your offer" : esc(o.partnerOrg || o.partnerName || "Partner");
   var amt = (o.amount !== null && o.amount !== undefined && o.amount !== "") ? fmtMoney(o.amount) : "\u2014";
   var hold = (o.structure === "long_hold" && o.holdYears) ? (" \u00b7 " + esc(String(o.holdYears)) + "-yr hold") : "";
 
@@ -1147,7 +1462,7 @@ function offerItem(p, o, mine) {
   var isPending = (o.status === "pending");
   var isAwarded = (p.status === "awarded");
 
-  if (STATE.role === "developer" && isPending && !isAwarded) {
+  if (canAct && isPending && !isAwarded) {
     var acts = el("div");
     acts.style.cssText = "display:flex;gap:8px;margin-top:12px;";
     var acc = el("button", "btn btn-green btn-sm", "Accept &amp; award");
@@ -1158,7 +1473,7 @@ function offerItem(p, o, mine) {
     wrap.appendChild(acts);
   }
 
-  if (STATE.role === "partner" && mine && isPending && !isAwarded) {
+  if (isPartnerRole() && mine && isPending && !isAwarded) {
     var pacts = el("div");
     pacts.style.cssText = "display:flex;gap:8px;margin-top:12px;";
     var rc = el("button", "btn btn-ghost btn-sm", "Recall offer");
@@ -1410,6 +1725,477 @@ function doUploadFiles(p, btn) {
   });
 }
 
+
+/* ============================================================
+   EDIT SHARED LINKS — submitter, own pre-award deal
+   ============================================================ */
+function openLinksModal(p) {
+  var wrap = el("div");
+  wrap.appendChild(modalHead("Shared links", esc(p.name || "Project")));
+  var body = el("div", "modal-body");
+  body.appendChild(linksField(projectLinks(p),
+    "Links partners can open",
+    "Utility bills, site details, diligence folders \u2014 anything already living in the cloud. Check the sharing setting before you save: if it's restricted, partners see a permission wall instead of your deal."));
+  wrap.appendChild(body);
+
+  var foot = el("div", "modal-foot");
+  var cancel = el("button", "btn btn-ghost", "Cancel"); cancel.onclick = closeModal;
+  var save = el("button", "btn btn-primary", "Save links");
+  save.onclick = function () { doSaveLinks(p, save); };
+  foot.appendChild(cancel); foot.appendChild(save);
+  wrap.appendChild(foot);
+
+  openModal(wrap, false);
+}
+
+function doSaveLinks(p, btn) {
+  var read = readLinkRows();
+  if (read.bad.length) {
+    toast("Links need to start with http:// or https:// \u2014 check " + read.bad[0], true);
+    return;
+  }
+  btn.disabled = true; btn.textContent = "Saving\u2026";
+  db.collection(COL_PROJECTS).doc(p._id).update({
+    links: read.links,
+    updatedAt: FieldValue.serverTimestamp()
+  }).then(function () {
+    toast("Links saved.");
+    closeModal();
+    openDetail(p._id);
+  }).catch(function (err) {
+    btn.disabled = false; btn.textContent = "Save links";
+    toast(friendlyAuthError(err), true);
+  });
+}
+
+/* ============================================================
+   ADMIN — spreadsheet view, filters, CSV export
+   ------------------------------------------------------------
+   ADMIN_COLS is the single source of truth for both the on-screen
+   table and the CSV, so the two can never drift apart. Each column
+   supplies get() for plain text; html() is optional and only affects
+   the rendered table.
+   ============================================================ */
+function adminDate(p) {
+  if (!p.createdAt) { return ""; }
+  var d = p.createdAt.toDate ? p.createdAt.toDate() : new Date(p.createdAt);
+  var mm = String(d.getMonth() + 1); if (mm.length < 2) { mm = "0" + mm; }
+  var dd = String(d.getDate()); if (dd.length < 2) { dd = "0" + dd; }
+  return d.getFullYear() + "-" + mm + "-" + dd;
+}
+function docUrl(p, k) {
+  var docs = p.docs || {};
+  return (docs[k] && docs[k].url) ? docs[k].url : "";
+}
+function flattenLinks(p) {
+  var l = projectLinks(p), out = [];
+  for (var i = 0; i < l.length; i++) { out.push(l[i].label + ": " + l[i].url); }
+  return out.join(" | ");
+}
+function statusLabel(s) {
+  if (s === "open") { return "Open"; }
+  if (s === "closed") { return "Closed"; }
+  if (s === "awarded") { return "Awarded"; }
+  return s || "";
+}
+
+var ADMIN_COLS = [
+  { key: "name", label: "Deal", cls: "c-name",
+    get: function (p) { return p.name || "Untitled"; },
+    sort: function (p) { return (p.name || "").toLowerCase(); } },
+  { key: "submitter", label: "Submitted by",
+    get: function (p) { return submitterName(p); },
+    sort: function (p) { return submitterName(p).toLowerCase(); } },
+  { key: "org", label: "Organization",
+    get: function (p) { return p.developerOrg || ""; },
+    sort: function (p) { return (p.developerOrg || "").toLowerCase(); } },
+  { key: "srole", label: "Acting as",
+    get: function (p) { return ROLE_LABELS[submitterRole(p)] || "Developer"; },
+    html: function (p) {
+      var r = submitterRole(p);
+      return '<span class="sheet-role r-' + esc(r) + '">' + esc(ROLE_LABELS[r] || "Developer") + '</span>';
+    },
+    sort: function (p) { return submitterRole(p); } },
+  { key: "email", label: "Contact",
+    get: function (p) { return p.submitterEmail || ""; },
+    sort: function (p) { return (p.submitterEmail || "").toLowerCase(); } },
+  { key: "type", label: "Type",
+    get: function (p) { return TYPE_LABELS[p.type] || p.type || ""; },
+    sort: function (p) { return TYPE_LABELS[p.type] || p.type || ""; } },
+  { key: "location", label: "Location",
+    get: function (p) { return p.location || ""; },
+    sort: function (p) { return (p.location || "").toLowerCase(); } },
+  { key: "capacityKw", label: "Capacity (kW)", num: true,
+    get: function (p) { return (p.capacityKw || p.capacityKw === 0) ? String(p.capacityKw) : ""; },
+    sort: function (p) { return Number(p.capacityKw) || 0; } },
+  { key: "costBasis", label: "Cost basis (USD)", num: true,
+    get: function (p) { return (p.costBasis || p.costBasis === 0) ? String(p.costBasis) : ""; },
+    html: function (p) { return esc(fmtMoney(p.costBasis)); },
+    sort: function (p) { return Number(p.costBasis) || 0; } },
+  { key: "status", label: "Status",
+    get: function (p) { return statusLabel(p.status); },
+    html: function (p) {
+      var cls = p.status === "open" ? "st-open" : p.status === "awarded" ? "st-awarded" : "st-locked";
+      return '<span class="status-pill ' + cls + '">' + esc(statusLabel(p.status)) + '</span>';
+    },
+    sort: function (p) { return p.status || ""; } },
+  { key: "offerCount", label: "Offers", num: true,
+    get: function (p) { return String(p.offerCount || 0); },
+    sort: function (p) { return Number(p.offerCount) || 0; } },
+  { key: "awardedToOrg", label: "Awarded to",
+    get: function (p) { return p.awardedToOrg || ""; },
+    sort: function (p) { return (p.awardedToOrg || "").toLowerCase(); } },
+  { key: "createdAt", label: "Submitted",
+    get: function (p) { return adminDate(p); },
+    sort: function (p) { return (p.createdAt && p.createdAt.seconds) ? p.createdAt.seconds : 0; } },
+  { key: "files", label: "Files", num: true,
+    get: function (p) { return String(countDocs(p)); },
+    html: function (p) { return adminAttachCell(p, "docs"); },
+    sort: function (p) { return countDocs(p); } },
+  { key: "links", label: "Links", num: true,
+    get: function (p) { return String(countLinks(p)); },
+    html: function (p) { return adminAttachCell(p, "links"); },
+    sort: function (p) { return countLinks(p); } }
+];
+
+/* URL columns live in the CSV only — they would make the table unreadable,
+   but they are the whole point of the export. */
+var ADMIN_CSV_EXTRA = [
+  { label: "Site map URL", get: function (p) { return docUrl(p, "sitemap"); } },
+  { label: "Cost basis URL", get: function (p) { return docUrl(p, "cost"); } },
+  { label: "Pro forma URL", get: function (p) { return docUrl(p, "proforma"); } },
+  { label: "Shared links", get: function (p) { return flattenLinks(p); } },
+  { label: "Pro forma summary", get: function (p) { return p.proformaSummary || ""; } },
+  { label: "Notes", get: function (p) { return p.notes || ""; } },
+  { label: "Deal ID", get: function (p) { return p._id || ""; } }
+];
+
+/* small clickable chips inside the Files / Links cells */
+function adminAttachCell(p, which) {
+  var items = [];
+  if (which === "docs") {
+    for (var i = 0; i < DOC_SLOTS.length; i++) {
+      var u = docUrl(p, DOC_SLOTS[i][0]);
+      if (u) { items.push({ label: DOC_SLOTS[i][1], url: u }); }
+    }
+  } else {
+    items = projectLinks(p);
+  }
+  if (!items.length) { return '<span class="sheet-dash">\u2014</span>'; }
+  var html = "";
+  for (var j = 0; j < items.length; j++) {
+    html += '<a class="sheet-chip" href="' + esc(items[j].url) +
+      '" target="_blank" rel="noopener noreferrer" title="' + esc(items[j].url) +
+      '" onclick="event.stopPropagation();">' + esc(items[j].label) + '</a>';
+  }
+  return html;
+}
+
+/* ---------- filtering ---------- */
+function adminRows() {
+  var rows = filteredProjects();   /* respects the status tab */
+  var f = STATE.adminFilters;
+  var q = (f.q || "").toLowerCase();
+
+  rows = rows.filter(function (p) {
+    if (f.submitter && submitterKey(p) !== f.submitter) { return false; }
+    if (f.role && submitterRole(p) !== f.role) { return false; }
+    if (f.status && (p.status || "") !== f.status) { return false; }
+    if (f.type && (p.type || "") !== f.type) { return false; }
+    if (q) {
+      var hay = [
+        p.name, p.developerOrg, p.developerName, p.submitterEmail,
+        p.location, p.proformaSummary, p.notes, p.awardedToOrg
+      ].join(" ").toLowerCase();
+      if (hay.indexOf(q) === -1) { return false; }
+    }
+    return true;
+  });
+
+  var col = null;
+  for (var i = 0; i < ADMIN_COLS.length; i++) {
+    if (ADMIN_COLS[i].key === STATE.adminSort.key) { col = ADMIN_COLS[i]; }
+  }
+  if (col) {
+    var dir = STATE.adminSort.dir;
+    rows.sort(function (a, b) {
+      var va = col.sort(a), vb = col.sort(b);
+      if (va < vb) { return -1 * dir; }
+      if (va > vb) { return 1 * dir; }
+      return 0;
+    });
+  }
+  return rows;
+}
+
+/* ---------- shell ---------- */
+function renderAdminTable(area) {
+  if (!$("adminSheet")) { buildAdminShell(area); }
+  refreshSubmitterOptions();
+  renderAdminRows();
+}
+
+function buildAdminShell(area) {
+  area.innerHTML = "";
+
+  var bar = el("div", "admin-toolbar");
+
+  var search = document.createElement("input");
+  search.type = "search"; search.id = "adminQ"; search.className = "admin-search";
+  search.placeholder = "Search deals, people, organizations, locations\u2026";
+  search.value = STATE.adminFilters.q;
+  search.oninput = function () {
+    STATE.adminFilters.q = search.value;
+    renderAdminRows();
+  };
+  bar.appendChild(search);
+
+  bar.appendChild(adminSelect("adminSubmitter", "submitter", "Everyone", []));
+  bar.appendChild(adminSelect("adminRole", "role", "Any role", [
+    { v: "developer", l: "Developers" },
+    { v: "originator", l: "Originators" }
+  ]));
+  bar.appendChild(adminSelect("adminType", "type", "Any type", (function () {
+    var o = [], k;
+    for (k in TYPE_LABELS) { if (TYPE_LABELS.hasOwnProperty(k)) { o.push({ v: k, l: TYPE_LABELS[k] }); } }
+    return o;
+  })()));
+
+  var clear = el("button", "btn btn-ghost btn-sm", "Clear");
+  clear.onclick = function () {
+    STATE.adminFilters = { q: "", submitter: "", role: "", status: "", type: "" };
+    $("adminQ").value = "";
+    $("adminSubmitter").value = ""; $("adminRole").value = ""; $("adminType").value = "";
+    renderAdminRows();
+  };
+  bar.appendChild(clear);
+
+  var exp = el("button", "btn btn-primary btn-sm", "Export CSV");
+  exp.id = "adminExport";
+  exp.onclick = exportAdminCsv;
+  bar.appendChild(exp);
+
+  area.appendChild(bar);
+
+  var stats = el("div", "admin-stats"); stats.id = "adminStats";
+  area.appendChild(stats);
+
+  var wrapEl = el("div", "sheet-wrap");
+  var table = document.createElement("table");
+  table.className = "sheet"; table.id = "adminSheet";
+
+  var thead = document.createElement("thead");
+  var tr = document.createElement("tr");
+  var rowNum = document.createElement("th");
+  rowNum.className = "c-num"; rowNum.innerHTML = "#";
+  tr.appendChild(rowNum);
+  for (var i = 0; i < ADMIN_COLS.length; i++) {
+    (function (c) {
+      var th = document.createElement("th");
+      th.className = (c.cls || "") + (c.num ? " num" : "");
+      th.innerHTML = esc(c.label) + '<span class="sort-ind"></span>';
+      th.onclick = function () {
+        if (STATE.adminSort.key === c.key) { STATE.adminSort.dir *= -1; }
+        else { STATE.adminSort.key = c.key; STATE.adminSort.dir = 1; }
+        renderAdminRows();
+      };
+      tr.appendChild(th);
+    })(ADMIN_COLS[i]);
+  }
+  thead.appendChild(tr);
+  table.appendChild(thead);
+
+  var tbody = document.createElement("tbody");
+  tbody.id = "adminSheetBody";
+  table.appendChild(tbody);
+
+  wrapEl.appendChild(table);
+  area.appendChild(wrapEl);
+}
+
+function adminSelect(id, filterKey, allLabel, opts) {
+  var s = document.createElement("select");
+  s.id = id; s.className = "admin-select";
+  var first = document.createElement("option");
+  first.value = ""; first.textContent = allLabel;
+  s.appendChild(first);
+  for (var i = 0; i < opts.length; i++) {
+    var o = document.createElement("option");
+    o.value = opts[i].v; o.textContent = opts[i].l;
+    s.appendChild(o);
+  }
+  s.value = STATE.adminFilters[filterKey] || "";
+  s.onchange = function () {
+    STATE.adminFilters[filterKey] = s.value;
+    renderAdminRows();
+  };
+  return s;
+}
+
+/* rebuild the "submitted by" options from live data, keeping the selection */
+function refreshSubmitterOptions() {
+  var sel = $("adminSubmitter");
+  if (!sel) { return; }
+  var seen = {}, names = [];
+  for (var i = 0; i < STATE.projects.length; i++) {
+    var k = submitterKey(STATE.projects[i]);
+    if (!seen[k]) { seen[k] = true; names.push(k); }
+  }
+  names.sort();
+
+  var current = STATE.adminFilters.submitter || "";
+  var signature = names.join("\u0000");
+  if (sel.getAttribute("data-sig") === signature) { return; }
+  sel.setAttribute("data-sig", signature);
+
+  sel.innerHTML = "";
+  var first = document.createElement("option");
+  first.value = ""; first.textContent = "Everyone";
+  sel.appendChild(first);
+  for (var j = 0; j < names.length; j++) {
+    var o = document.createElement("option");
+    o.value = names[j]; o.textContent = names[j];
+    sel.appendChild(o);
+  }
+  /* the selected submitter may have dropped out of the current tab */
+  sel.value = current;
+  if (sel.value !== current) { STATE.adminFilters.submitter = ""; sel.value = ""; }
+}
+
+/* ---------- rows ---------- */
+function renderAdminRows() {
+  var tbody = $("adminSheetBody");
+  if (!tbody) { return; }
+  var rows = adminRows();
+
+  /* sort indicators */
+  var ths = $("adminSheet").querySelectorAll("thead th");
+  for (var t = 1; t < ths.length; t++) {
+    var c = ADMIN_COLS[t - 1];
+    var ind = ths[t].querySelector(".sort-ind");
+    if (!ind) { continue; }
+    if (c.key === STATE.adminSort.key) {
+      ind.textContent = STATE.adminSort.dir === 1 ? " \u2191" : " \u2193";
+      ths[t].className = (ths[t].className.replace(/ sorted/g, "")) + " sorted";
+    } else {
+      ind.textContent = "";
+      ths[t].className = ths[t].className.replace(/ sorted/g, "");
+    }
+  }
+
+  tbody.innerHTML = "";
+
+  if (!rows.length) {
+    var tr0 = document.createElement("tr");
+    var td0 = document.createElement("td");
+    td0.colSpan = ADMIN_COLS.length + 1;
+    td0.className = "sheet-empty";
+    td0.textContent = STATE.projects.length
+      ? "No deals match these filters."
+      : "No deals have been submitted yet.";
+    tr0.appendChild(td0); tbody.appendChild(tr0);
+  }
+
+  for (var i = 0; i < rows.length; i++) {
+    (function (p, idx) {
+      var tr = document.createElement("tr");
+      tr.onclick = function () { openDetail(p._id); };
+
+      var n = document.createElement("td");
+      n.className = "c-num"; n.textContent = String(idx + 1);
+      tr.appendChild(n);
+
+      for (var j = 0; j < ADMIN_COLS.length; j++) {
+        var c = ADMIN_COLS[j];
+        var td = document.createElement("td");
+        td.className = (c.cls || "") + (c.num ? " num" : "");
+        if (c.html) { td.innerHTML = c.html(p); }
+        else { td.textContent = c.get(p); }
+        tr.appendChild(td);
+      }
+      tbody.appendChild(tr);
+    })(rows[i], i);
+  }
+
+  renderAdminStats(rows);
+}
+
+function renderAdminStats(rows) {
+  var box = $("adminStats");
+  if (!box) { return; }
+  var totalCost = 0, totalKw = 0, offers = 0, withLinks = 0;
+  for (var i = 0; i < rows.length; i++) {
+    totalCost += Number(rows[i].costBasis) || 0;
+    totalKw += Number(rows[i].capacityKw) || 0;
+    offers += Number(rows[i].offerCount) || 0;
+    if (countLinks(rows[i]) || countDocs(rows[i])) { withLinks++; }
+  }
+  function stat(k, v) {
+    return '<div class="astat"><div class="k">' + esc(k) + '</div><div class="v">' + v + '</div></div>';
+  }
+  box.innerHTML =
+    stat("Showing", rows.length + " of " + STATE.projects.length) +
+    stat("Combined capacity", esc(fmtKw(totalKw))) +
+    stat("Combined cost basis", esc(fmtMoney(totalCost))) +
+    stat("Offers in", String(offers)) +
+    stat("With attachments", withLinks + " of " + rows.length);
+}
+
+/* ---------- CSV export ---------- */
+function csvCell(v) {
+  if (v === null || v === undefined) { v = ""; }
+  v = String(v);
+  /* Neutralise spreadsheet formula injection: a cell opening with = + - @
+     is executed by Excel and Sheets on open. */
+  if (/^[=+\-@\t\r]/.test(v)) { v = "'" + v; }
+  if (v.indexOf('"') > -1 || v.indexOf(",") > -1 || v.indexOf("\n") > -1 || v.indexOf("\r") > -1) {
+    v = '"' + v.replace(/"/g, '""') + '"';
+  }
+  return v;
+}
+
+function exportAdminCsv() {
+  var rows = adminRows();
+  if (!rows.length) { toast("Nothing to export with these filters.", true); return; }
+
+  var cols = ADMIN_COLS.concat(ADMIN_CSV_EXTRA);
+  var lines = [];
+
+  var head = [];
+  for (var h = 0; h < cols.length; h++) { head.push(csvCell(cols[h].label)); }
+  lines.push(head.join(","));
+
+  for (var i = 0; i < rows.length; i++) {
+    var line = [];
+    for (var j = 0; j < cols.length; j++) { line.push(csvCell(cols[j].get(rows[i]))); }
+    lines.push(line.join(","));
+  }
+
+  /* BOM so Excel opens it as UTF-8 rather than mangling accents */
+  var csv = "\ufeff" + lines.join("\r\n");
+  var blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+
+  var stamp = new Date();
+  var mm = String(stamp.getMonth() + 1); if (mm.length < 2) { mm = "0" + mm; }
+  var dd = String(stamp.getDate()); if (dd.length < 2) { dd = "0" + dd; }
+  var who = STATE.adminFilters.submitter
+    ? "-" + STATE.adminFilters.submitter.replace(/[^A-Za-z0-9]+/g, "_")
+    : "";
+  var fname = "clearsky-deals" + who + "-" + stamp.getFullYear() + mm + dd + ".csv";
+
+  if (window.navigator && window.navigator.msSaveBlob) {
+    window.navigator.msSaveBlob(blob, fname);
+  } else {
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url; a.download = fname;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1500);
+  }
+  toast("Exported " + rows.length + " deal" + (rows.length === 1 ? "" : "s") + ".");
+}
 
 /* ============================================================
    BOOT

@@ -7,8 +7,13 @@ rules_version = '2';
    This portal shares the clearsky-portal database with other
    ClearSky apps. To avoid collision it uses:
      fin_profiles/{uid}      - this portal's user profiles
-     fin_projects/{id}       - this portal's projects (+ offers, inquiries)
+     fin_projects/{id}       - this portal's deals (+ offers, inquiries)
      partnerAllowlist/{email} - SHARED existing allowlist (read-only here)
+
+   Roles: developer and originator both submit deals and are self-select.
+   partner and admin are granted only by an active allowlist entry whose
+   'role' field matches the role being claimed. Admin is read-only by
+   design: it can see every deal but cannot alter one.
 
    IMPORTANT: this file is the MERGED ruleset for the whole clearsky-portal
    database. It covers this portal's namespaced collections, the shared
@@ -36,9 +41,24 @@ service cloud.firestore {
     function isDeveloper() {
       return signedIn() && myRole() == 'developer';
     }
+    function isOriginator() {
+      return signedIn() && myRole() == 'originator';
+    }
+    /* anyone who may bring a deal to the marketplace */
+    function isSubmitter() {
+      return signedIn() && myRole() in ['developer', 'originator'];
+    }
     function isPartner() {
       return signedIn() && myRole() == 'partner';
     }
+    /* marketplace operator: reads everything, writes nothing */
+    function isAdmin() {
+      return signedIn() && myRole() == 'admin';
+    }
+
+    /* roles a user may assign themselves vs. roles the allowlist grants */
+    function selfRole(r) { return r in ['developer', 'originator']; }
+    function grantedRole(r) { return r in ['partner', 'admin']; }
 
     /* ---------------- shared partner allowlist (read-only) ----------------
        The app reads partnerAllowlist/{email} during signup to decide if a
@@ -53,17 +73,18 @@ service cloud.firestore {
     match /fin_profiles/{uid} {
       allow read: if signedIn() && request.auth.uid == uid;
 
-      // On create: a user writes only their own profile. Role must be
-      // 'developer', OR 'partner' only if their email is on the active
-      // partner allowlist. This blocks self-assigning partner access.
+      // On create: a user writes only their own profile. Developer and
+      // originator are self-select. Partner and admin require an active
+      // allowlist entry for that exact email AND that exact role, which is
+      // what stops anyone from self-assigning elevated access.
       allow create: if signedIn() && request.auth.uid == uid
-        && request.resource.data.role in ['developer', 'partner']
+        && (selfRole(request.resource.data.role) || grantedRole(request.resource.data.role))
         && (
-             request.resource.data.role == 'developer'
+             selfRole(request.resource.data.role)
              || (
                   exists(/databases/$(database)/documents/partnerAllowlist/$(request.resource.data.emailLower))
                   && get(/databases/$(database)/documents/partnerAllowlist/$(request.resource.data.emailLower)).data.active == true
-                  && get(/databases/$(database)/documents/partnerAllowlist/$(request.resource.data.emailLower)).data.role == 'partner'
+                  && get(/databases/$(database)/documents/partnerAllowlist/$(request.resource.data.emailLower)).data.role == request.resource.data.role
                 )
            );
 
@@ -87,18 +108,20 @@ service cloud.firestore {
         return resource.data.status == 'open' || resource.data.status == 'offered';
       }
 
-      // READ: owner always; partner if browsable OR awarded to them.
+      // READ: owner always; admin always; partner if browsable OR theirs.
       allow read: if isOwner()
+                  || isAdmin()
                   || (isPartner() && (isBrowsable() || isAwardee()));
 
-      // CREATE: developers only, own project, starting open + unawarded.
-      allow create: if isDeveloper()
+      // CREATE: developers and originators, own deal, starting open + unawarded.
+      allow create: if isSubmitter()
                     && request.resource.data.developerUid == request.auth.uid
                     && request.resource.data.status == 'open'
                     && request.resource.data.awardedTo == null;
 
-      // UPDATE: only the owner-developer edits the project doc (incl. the
+      // UPDATE: only the submitting owner edits the deal doc (incl. the
       // award transition when they accept an offer). developerUid is fixed.
+      // Admins deliberately have no write access — this console is read-only.
       allow update: if isOwner()
                     && request.resource.data.developerUid == resource.data.developerUid;
 
@@ -113,9 +136,11 @@ service cloud.firestore {
           return parent().developerUid == request.auth.uid;
         }
 
-        // developer-owner reads all offers; a partner reads only their own.
+        // submitting owner reads all offers; admin reads all offers;
+        // a partner reads only their own.
         allow read: if signedIn() && (
                        parentOwner() ||
+                       isAdmin() ||
                        (isPartner() && offerId == request.auth.uid)
                     );
 
@@ -149,6 +174,7 @@ service cloud.firestore {
 
         allow read: if signedIn() && (
                        parentOwner() ||
+                       isAdmin() ||
                        (isPartner() && (parentBrowsable() || parentAwardee()))
                     );
 

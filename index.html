@@ -81,13 +81,14 @@
     .field input:focus, .field select:focus, .field textarea:focus { outline: none; border-color: var(--cs-blue); background: #fff; }
     .field textarea { resize: vertical; min-height: 84px; line-height: 1.5; }
 
-    .role-pick { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
-    .role-opt { border: 1px solid var(--cs-border); border-radius: 10px; padding: 16px 14px; text-align: left; background: var(--cs-card-2); transition: border-color .18s, background .18s; }
+    .role-pick { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
+    .role-opt { display: flex; align-items: flex-start; gap: 13px; border: 1px solid var(--cs-border); border-radius: 10px; padding: 13px 15px; text-align: left; background: var(--cs-card-2); transition: border-color .18s, background .18s; }
     .role-opt:hover { border-color: var(--cs-border-blue); }
     .role-opt.sel { border-color: var(--cs-blue); background: var(--cs-blue-dim); }
-    .role-opt .r-ic { color: var(--cs-blue); margin-bottom: 9px; }
-    .role-opt h4 { font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+    .role-opt .r-ic { color: var(--cs-blue); flex: none; margin-top: 1px; }
+    .role-opt h4 { font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700; margin-bottom: 3px; }
     .role-opt p { font-size: 11.5px; color: var(--cs-muted); line-height: 1.45; }
+    .role-hint { font-size: 11.5px; color: var(--cs-muted-2); line-height: 1.5; margin-bottom: 18px; padding-left: 2px; }
 
     .auth-switch { font-size: 13px; color: var(--cs-muted); margin-top: 20px; text-align: center; }
     .auth-switch button { background: none; border: none; color: var(--cs-blue); font-weight: 600; font-size: 13px; }
@@ -107,6 +108,8 @@
     .topbar-right { display: flex; align-items: center; gap: 16px; }
     .role-chip { font-size: 11px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; padding: 5px 12px; border-radius: 20px; }
     .role-chip.dev { background: rgba(0,174,239,.18); color: var(--cs-blue-bright); }
+    .role-chip.orig { background: rgba(199,122,0,.22); color: #F0B45C; }
+    .role-chip.admin { background: rgba(255,255,255,.16); color: #fff; }
     .role-chip.partner { background: rgba(18,128,92,.22); color: #4FD1A5; }
     .user-mini { display: flex; align-items: center; gap: 9px; color: rgba(255,255,255,.85); font-size: 13px; }
     .user-mini .avatar { width: 30px; height: 30px; border-radius: 50%; background: var(--cs-blue); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px; }
@@ -183,6 +186,27 @@
     .file-chip .fc-x:hover { color: var(--cs-red); }
     .field-note { font-size: 11.5px; color: var(--cs-muted-2); margin-top: 6px; line-height: 1.45; }
 
+    /* ---------- CLOUD LINK ROWS ---------- */
+    .form-rule { height: 1px; background: var(--cs-border); margin: 22px 0 18px; }
+    .link-row { display: grid; grid-template-columns: 150px 1fr 30px; gap: 8px; align-items: center; margin-bottom: 8px; }
+    .link-row input { padding: 10px 12px; border: 1px solid var(--cs-border); border-radius: 8px; background: var(--cs-card-2); color: var(--cs-ink); width: 100%; font-size: 13px; transition: border-color .18s, background .18s; }
+    .link-row input:focus { outline: none; border-color: var(--cs-blue); background: #fff; }
+    .link-row .lr-label { font-weight: 500; }
+    .link-row .lr-x { background: none; border: none; color: var(--cs-muted-2); font-size: 19px; line-height: 1; border-radius: 6px; padding: 4px 6px; }
+    .link-row .lr-x:hover { color: var(--cs-red); background: var(--cs-red-dim); }
+
+    /* ---------- DISCLOSURE ---------- */
+    .disclosure { display: flex; align-items: center; gap: 8px; width: 100%; background: none; border: none; padding: 4px 0; font-size: 13px; font-weight: 600; color: var(--cs-blue); text-align: left; }
+    .disclosure::before { content: '+'; display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; border-radius: 5px; background: var(--cs-blue-dim); font-size: 14px; line-height: 1; flex: none; }
+    .disclosure.open::before { content: '\2212'; }
+    .disclosure:hover { color: var(--cs-blue-bright); }
+    .disclosure-body { margin-top: 14px; }
+
+    /* link rows inside the detail drawer */
+    .doc-link .dl-host { display: block; font-size: 11px; font-weight: 400; color: var(--cs-muted-2); margin-top: 2px; }
+    .doc-link.link-ext .dl-ic { color: var(--cs-amber); }
+    .kv .kv-role { display: inline-block; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; padding: 2px 7px; border-radius: 10px; background: var(--cs-card-2); color: var(--cs-muted); margin-left: 6px; vertical-align: middle; }
+
     /* ---------- DETAIL DRAWER ---------- */
     .detail-grid { display: grid; grid-template-columns: 1.4fr 1fr; gap: 22px; }
     .detail-sec { margin-bottom: 24px; }
@@ -229,6 +253,42 @@
     .locked-banner h3 { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 700; margin-bottom: 6px; }
     .locked-banner p { font-size: 13.5px; color: rgba(255,255,255,.7); line-height: 1.6; max-width: 44ch; margin: 0 auto; }
 
+    /* ---------- ADMIN SPREADSHEET ---------- */
+    .admin-toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 14px; }
+    .admin-search { flex: 1 1 260px; min-width: 200px; padding: 10px 14px; border: 1px solid var(--cs-border); border-radius: 8px; background: var(--cs-card); color: var(--cs-ink); font-size: 13.5px; }
+    .admin-search:focus { outline: none; border-color: var(--cs-blue); }
+    .admin-select { padding: 10px 12px; border: 1px solid var(--cs-border); border-radius: 8px; background: var(--cs-card); color: var(--cs-ink); font-size: 13px; max-width: 200px; }
+    .admin-select:focus { outline: none; border-color: var(--cs-blue); }
+    .admin-toolbar .btn { flex: none; }
+
+    .admin-stats { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+    .astat { background: var(--cs-card); border: 1px solid var(--cs-border); border-radius: 9px; padding: 9px 14px; min-width: 118px; }
+    .astat .k { font-size: 10px; color: var(--cs-muted-2); text-transform: uppercase; letter-spacing: .06em; }
+    .astat .v { font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700; margin-top: 2px; }
+
+    .sheet-wrap { background: var(--cs-card); border: 1px solid var(--cs-border); border-radius: 12px; overflow: auto; max-height: 68vh; }
+    .sheet { border-collapse: separate; border-spacing: 0; width: 100%; font-size: 12.5px; white-space: nowrap; }
+    .sheet thead th { position: sticky; top: 0; z-index: 2; background: var(--cs-card-2); text-align: left; font-size: 10.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--cs-muted); padding: 11px 13px; border-bottom: 1px solid var(--cs-border); cursor: pointer; user-select: none; }
+    .sheet thead th:hover { color: var(--cs-blue); }
+    .sheet thead th.sorted { color: var(--cs-blue); }
+    .sheet .sort-ind { font-size: 11px; }
+    .sheet tbody td { padding: 10px 13px; border-bottom: 1px solid var(--cs-border); color: var(--cs-ink); vertical-align: middle; }
+    .sheet tbody tr { cursor: pointer; transition: background .12s; }
+    .sheet tbody tr:hover td { background: var(--cs-blue-dim); }
+    .sheet tbody tr:last-child td { border-bottom: none; }
+    .sheet .num { text-align: right; font-variant-numeric: tabular-nums; }
+    .sheet .c-num { width: 46px; color: var(--cs-muted-2); text-align: right; font-variant-numeric: tabular-nums; }
+    .sheet .c-name { font-weight: 600; white-space: normal; min-width: 190px; max-width: 280px; }
+    .sheet-empty { padding: 48px 20px !important; text-align: center; color: var(--cs-muted-2); font-style: italic; white-space: normal; }
+    .sheet-dash { color: var(--cs-muted-2); }
+    .sheet-chip { display: inline-block; font-size: 11px; font-weight: 500; color: var(--cs-blue); background: var(--cs-blue-dim); padding: 3px 8px; border-radius: 12px; margin: 1px 3px 1px 0; max-width: 130px; overflow: hidden; text-overflow: ellipsis; vertical-align: middle; }
+    .sheet-chip:hover { background: var(--cs-blue); color: #fff; }
+    .sheet-role { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; padding: 3px 8px; border-radius: 11px; }
+    .sheet-role.r-developer { background: var(--cs-blue-dim); color: var(--cs-blue); }
+    .sheet-role.r-originator { background: var(--cs-amber-dim); color: var(--cs-amber); }
+    .sheet-role.r-partner { background: var(--cs-green-dim); color: var(--cs-green); }
+    .sheet-role.r-admin { background: rgba(14,26,36,.08); color: var(--cs-muted); }
+
     /* toast */
     #toast { position: fixed; bottom: 26px; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--cs-navy); color: #fff; padding: 13px 22px; border-radius: 10px; font-size: 13.5px; font-weight: 500; box-shadow: 0 12px 40px rgba(14,26,36,.3); opacity: 0; transition: opacity .25s, transform .25s; z-index: 80; pointer-events: none; }
     #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
@@ -251,6 +311,12 @@
       .user-mini span { display: none; }
       .field-row { grid-template-columns: 1fr; }
       .proj-grid { grid-template-columns: 1fr; }
+      .link-row { grid-template-columns: 1fr 30px; grid-template-areas: "label x" "url url"; }
+      .link-row .lr-label { grid-area: label; }
+      .link-row .lr-x { grid-area: x; }
+      .link-row .lr-url { grid-area: url; }
+      .admin-select { max-width: none; flex: 1 1 140px; }
+      .sheet-wrap { max-height: none; }
     }
   </style>
 </head>
@@ -267,7 +333,7 @@
       <div class="auth-hero">
         <p class="eyebrow">Capital Deal Room</p>
         <h1>Where financeable projects meet <span class="accent">the capital to build them</span></h1>
-        <p>Developers submit permit-ready storage, EV, microgrid, and compute projects with the site map, cost basis, and pro forma attached. Capital partners review the open pipeline, then offer, finance, or acquire.</p>
+        <p>Developers and originators bring permit-ready storage, EV, microgrid, and compute deals &mdash; with the numbers, the documents, and links to utility bills and site details attached. Capital partners review the open pipeline, then offer, finance, or acquire.</p>
       </div>
       <div class="auth-foot">&copy; 2025 ClearSky Builders LLC &middot; ClearSky Energy Solutions LLC</div>
     </div>
@@ -294,17 +360,22 @@
         <!-- REGISTER -->
         <div id="registerForm" style="display:none;">
           <h2>Create your account</h2>
-          <p class="sub">Join the deal room as a developer or a capital partner.</p>
+          <p class="sub">Join the deal room as a developer, an originator, or a capital partner.</p>
           <div class="role-pick">
             <button type="button" class="role-opt sel" data-role="developer" id="roleDev">
               <div class="r-ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg></div>
-              <h4>Developer</h4><p>Submit projects &amp; take offers</p>
+              <div><h4>Developer</h4><p>You build the projects you submit</p></div>
+            </button>
+            <button type="button" class="role-opt" data-role="originator" id="roleOrig">
+              <div class="r-ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></div>
+              <div><h4>Originator</h4><p>You bring the deal flow, not the build</p></div>
             </button>
             <button type="button" class="role-opt" data-role="partner" id="rolePartner">
               <div class="r-ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
-              <h4>Capital partner</h4><p>Underwrite &amp; make offers</p>
+              <div><h4>Capital partner</h4><p>You underwrite and make offers</p></div>
             </button>
           </div>
+          <p class="role-hint" id="regRoleHint">Developers submit projects they're building and take offers on them.</p>
           <div class="field"><label>Full name</label><input type="text" id="regName" placeholder="Jane Sponsor" autocomplete="name"></div>
           <div class="field"><label>Organization</label><input type="text" id="regOrg" placeholder="Company or fund name" autocomplete="organization"></div>
           <div class="field"><label>Work email</label><input type="email" id="regEmail" placeholder="you@company.com" autocomplete="email"></div>
@@ -360,6 +431,16 @@
   </div>
 
   <div id="toast"></div>
+
+  <!-- label suggestions for the shared-link editor -->
+  <datalist id="linkPresets">
+    <option value="Utility bills"></option>
+    <option value="Site details"></option>
+    <option value="Interconnection"></option>
+    <option value="Offtake / PPA"></option>
+    <option value="Permits"></option>
+    <option value="Diligence folder"></option>
+  </datalist>
 
   <!-- Firebase compat SDK (v8-style) -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>

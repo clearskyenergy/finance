@@ -14,9 +14,33 @@ rules_version = '2';
        by the app, which only surfaces it to authorized roles)
      - any signed-in user may WRITE under fin_projects/, with size and
        content-type limits to prevent abuse
-   For stricter control, front uploads with a Cloud Function that
-   verifies the caller owns the project, or encode developerUid in
-   the path and match on it.
+
+   ⚠ READ THIS BEFORE OPENING SELF-SERVE SIGNUP
+   "Any signed-in user" used to mean a small, vetted set of developers
+   and allowlisted partners. Now that `originator` is self-select, anyone
+   who can create an account can read every file under fin_projects/ if
+   they can guess or obtain a path — and can write files there too. The
+   app never shows them those paths, but the rules no longer stop them.
+
+   Two ways to close this, in increasing order of effort:
+
+   1. Encode the owner uid in the path (cheap, no Cloud Functions).
+      Change the upload path in app.js from
+        fin_projects/{projectId}/{file}
+      to
+        fin_projects/{ownerUid}/{projectId}/{file}
+      and swap the match block below for the commented-out one. Writes
+      then require you to own the folder. Reads stay open to signed-in
+      users so partners can still open documents on deals they're
+      underwriting — which is the behaviour you want.
+
+   2. Front uploads with a Cloud Function that verifies the caller owns
+      the project, and serve downloads through short-lived signed URLs.
+      Strictest, but it is real backend work.
+
+   Note that cloud LINKS bypass Storage entirely — their privacy is
+   whatever the submitter set on Drive / Dropbox / SharePoint. Nothing
+   in these rules governs them.
    ============================================================ */
 
 service firebase.storage {
@@ -42,6 +66,17 @@ service firebase.storage {
       allow read: if signedIn();
       allow write: if signedIn() && okFile();
     }
+
+    /* ---- OPTION 1: owner-scoped writes ----
+       Swap the block above for this one AFTER changing the upload path in
+       app.js to include the owner uid. Reads stay open to signed-in users
+       so partners can open documents on deals they are underwriting.
+
+    match /fin_projects/{ownerUid}/{projectId}/{fileName} {
+      allow read: if signedIn();
+      allow write: if signedIn() && request.auth.uid == ownerUid && okFile();
+    }
+    */
 
     // deny everything else by default
     match /{allPaths=**} {
