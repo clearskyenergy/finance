@@ -72,6 +72,14 @@ input,select,textarea{font-family:inherit;font-size:14px}
 .setup-panel li.y::before{content:'✓';color:var(--cs-green)}
 .setup-panel li.n::before{content:'✕';color:var(--cs-red)}
 .setup-panel p{font-size:12px;line-height:1.55;color:var(--cs-muted)}
+.auth-or{display:flex;align-items:center;gap:12px;margin:16px 0;color:var(--cs-muted-2);font-size:11.5px}
+.auth-or::before,.auth-or::after{content:'';flex:1;height:1px;background:var(--cs-border)}
+.btn-google{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:11px 18px;
+  border:1px solid var(--cs-border);border-radius:7px;background:#fff;color:var(--cs-ink);
+  font-family:inherit;font-size:14px;font-weight:600;transition:border-color .18s,background .18s}
+.btn-google:hover{border-color:var(--cs-muted-2);background:var(--cs-card-2)}
+.btn-google:disabled{opacity:.55;cursor:not-allowed}
+.btn-google svg{flex:none}
 .auth-right{width:490px;max-width:46%;background:var(--cs-card);padding:56px 50px;display:flex;flex-direction:column;justify-content:center;overflow-y:auto}
 .auth-card h2{font-family:'Syne',sans-serif;font-size:25px;font-weight:700;letter-spacing:-.5px;margin-bottom:6px}
 .auth-card .sub{font-size:13.5px;color:var(--cs-muted);margin-bottom:26px;line-height:1.55}
@@ -85,8 +93,12 @@ input,select,textarea{font-family:inherit;font-size:14px}
 .role-hint{font-size:11.5px;color:var(--cs-muted-2);line-height:1.5;margin-bottom:16px}
 .auth-switch{font-size:13px;color:var(--cs-muted);margin-top:18px;text-align:center}
 .auth-switch button{background:none;border:none;color:var(--cs-blue);font-weight:600;font-size:13px}
-.auth-err{background:var(--cs-red-dim);color:var(--cs-red);font-size:13px;padding:11px 14px;border-radius:8px;margin-bottom:16px;line-height:1.45;display:none}
-.auth-err.show{display:block}
+.auth-err{display:none;gap:11px;align-items:flex-start;background:var(--cs-red-dim);border:1px solid rgba(180,50,42,.22);border-radius:10px;padding:13px 15px;margin-bottom:18px}
+.auth-err.show{display:flex}
+.auth-err svg{width:17px;height:17px;flex:none;color:var(--cs-red);margin-top:1px}
+.auth-err strong{display:block;font-size:13.5px;font-weight:600;color:var(--cs-red);line-height:1.4}
+.auth-err span{display:block;font-size:12.5px;color:var(--cs-muted);line-height:1.5;margin-top:3px}
+.auth-err em{display:block;font-family:var(--mono);font-size:10.5px;font-style:normal;color:var(--cs-muted-2);margin-top:6px;opacity:.8}
 .role-chip{font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:5px 12px;border-radius:20px}
 .role-chip.dev{background:rgba(0,174,239,.18);color:var(--cs-blue-bright)}
 .role-chip.orig{background:rgba(199,122,0,.22);color:#F0B45C}
@@ -517,6 +529,16 @@ input,select,textarea{font-family:inherit;font-size:14px}
         <div class="field"><label for="loginEmail">Work email</label><input type="email" id="loginEmail" placeholder="you@company.com" autocomplete="email"></div>
         <div class="field"><label for="loginPass">Password</label><input type="password" id="loginPass" placeholder="Your password" autocomplete="current-password"></div>
         <button class="btn btn-primary btn-block" id="loginBtn">Sign in</button>
+        <div class="auth-or"><span>or</span></div>
+        <button class="btn-google" data-google="1">
+          <svg width="17" height="17" viewBox="0 0 48 48" aria-hidden="true">
+            <path fill="#4285F4" d="M45.1 24.5c0-1.6-.1-3.1-.4-4.5H24v8.5h11.8c-.5 2.7-2 5-4.4 6.6v5.5h7.1c4.2-3.8 6.6-9.5 6.6-16.1z"/>
+            <path fill="#34A853" d="M24 46c6 0 11-2 14.6-5.4l-7.1-5.5c-2 1.3-4.5 2.1-7.5 2.1-5.8 0-10.7-3.9-12.4-9.716H4.3v5.7C7.9 40.9 15.4 46 24 46z"/>
+            <path fill="#FBBC05" d="M11.6 27.5c-.4-1.3-.7-2.7-.7-4.1s.2-2.8.7-4.1v-5.7H4.3C2.8 16.6 2 20.2 2 23.4s.8 6.8 2.3 9.8l7.3-5.7z"/>
+            <path fill="#EA4335" d="M24 10.2c3.3 0 6.2 1.1 8.5 3.3l6.3-6.3C34.9 3.6 30 1.4 24 1.4 15.4 1.4 7.9 6.5 4.3 13.6l7.3 5.7C13.3 14.1 18.2 10.2 24 10.2z"/>
+          </svg>
+          Continue with Google
+        </button>
         <p class="auth-switch">New here? <button id="toRegister">Create an account</button></p>
       </div>
 
@@ -542,6 +564,18 @@ input,select,textarea{font-family:inherit;font-size:14px}
           <div class="field"><label for="regPass">Password</label><input type="password" id="regPass" placeholder="At least 6 characters" autocomplete="new-password"></div>
         </div>
         <button class="btn btn-primary btn-block" id="registerBtn">Create account</button>
+        <div id="regGoogle">
+        <div class="auth-or"><span>or</span></div>
+        <button class="btn-google" data-google="1">
+          <svg width="17" height="17" viewBox="0 0 48 48" aria-hidden="true">
+            <path fill="#4285F4" d="M45.1 24.5c0-1.6-.1-3.1-.4-4.5H24v8.5h11.8c-.5 2.7-2 5-4.4 6.6v5.5h7.1c4.2-3.8 6.6-9.5 6.6-16.1z"/>
+            <path fill="#34A853" d="M24 46c6 0 11-2 14.6-5.4l-7.1-5.5c-2 1.3-4.5 2.1-7.5 2.1-5.8 0-10.7-3.9-12.4-9.716H4.3v5.7C7.9 40.9 15.4 46 24 46z"/>
+            <path fill="#FBBC05" d="M11.6 27.5c-.4-1.3-.7-2.7-.7-4.1s.2-2.8.7-4.1v-5.7H4.3C2.8 16.6 2 20.2 2 23.4s.8 6.8 2.3 9.8l7.3-5.7z"/>
+            <path fill="#EA4335" d="M24 10.2c3.3 0 6.2 1.1 8.5 3.3l6.3-6.3C34.9 3.6 30 1.4 24 1.4 15.4 1.4 7.9 6.5 4.3 13.6l7.3 5.7C13.3 14.1 18.2 10.2 24 10.2z"/>
+          </svg>
+          Continue with Google
+        </button>
+        </div>
         <p class="auth-switch" id="regBackRow">Already a member? <button id="toLogin">Sign in</button></p>
       </div>
     </div>
@@ -2199,7 +2233,7 @@ function saveDeal() {
   if (hasFirebase()) {
     persistDeal(d)
       .then(() => toast(`${name} saved to fin_projects.`))
-      .catch(err => { console.error('[OMEGA] fin_projects write failed:', err); toast(explain(err), true); });
+      .catch(err => { console.error('[OMEGA] fin_projects write failed:', err); toast(explain(err)[0], true); });
   }
   setTimeout(() => openDeal(d.id), 400);
 }
@@ -2226,11 +2260,12 @@ function render() {
     ? `${SESSION.org} · ${book.length} deal${book.length === 1 ? '' : 's'} ${SESSION.role === 'originator' ? 'originated' : 'submitted'}. Where they are, how big they are, what came back, and how long it took.`
     : `${SESSION.org} · ${allDeals().length} deals from ${plural(new Set(allDeals().map(d => d.originator)).size, 'originator')} across ${plural(Object.keys(stateAgg(allDeals())).length, 'state')}.`;
 
+  const canSubmit = SESSION.role === 'developer' || SESSION.role === 'originator';
   $('#headActions').innerHTML = isDev
     ? `<button class="btn btn-ghost btn-sm" data-act="export-deals">Export my book</button>
-       <button class="btn btn-primary btn-sm" data-act="new-deal">
+       ${canSubmit ? `<button class="btn btn-primary btn-sm" data-act="new-deal">
          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-         Submit a deal</button>`
+         Submit a deal</button>` : ''}`
     : `<button class="btn btn-ghost btn-sm" data-act="export-deals">Export current view</button>
        <button class="btn btn-primary btn-sm" data-act="go-reports">Run a report</button>`;
 
@@ -2245,8 +2280,11 @@ function render() {
     view.innerHTML = `<div class="empty">
       <div class="e-ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14"/><path d="M9 21v-6h6v6"/></svg></div>
       <h3>No deals filed yet</h3>
-      <p>Submit your first project and this fills in — where it sits, what capital partners came back with, and how long each stage took. Attach 12 months of utility bills and it screens roughly twice as fast.</p>
-      <button class="btn btn-primary" data-act="new-deal">Submit a deal</button></div>`;
+      ${SESSION.role === 'developer' || SESSION.role === 'originator'
+        ? `<p>Submit your first project and this fills in — where it sits, what capital partners came back with, and how long each stage took. Attach 12 months of utility bills and it screens roughly twice as fast.</p>
+           <button class="btn btn-primary" data-act="new-deal">Submit a deal</button>`
+        : `<p>Admin accounts review deals rather than file them. Switch to the capital view to see everything on the marketplace, or sign in with a developer or originator account to submit projects.</p>`}
+      </div>`;
     return;
   }
   if (isDev) {
@@ -2396,7 +2434,7 @@ document.addEventListener('mousemove', e => {
 /* ═══════════════════════════════════════════════════════════════════════════
    16. ACCOUNTS, ROLES AND SIGN-IN
    ═══════════════════════════════════════════════════════════════════════════ */
-const BUILD = '2026-07-31 · build 5';
+const BUILD = '2026-07-31 · build 8';
 
 const ROLE_META = {
   developer:  {side:'dev',     chip:'dev',     label:'Developer'},
@@ -2414,7 +2452,20 @@ const initialsOf = n => (n || '?').trim().split(/\s+/).slice(0, 2).map(x => x[0]
    define — fin_profiles and fin_projects — so no rules change is needed. ── */
 const FB = {ready:false, auth:null, db:null, projectId:null, err:null};
 
+/* One place that decides why sign-in is unavailable, phrased for a person. */
+function offlineReason() {
+  if (FB.err === 'file')   return ['Sign-in isn\'t available when the page is opened from a file.',
+                                   'Open the app from its web address instead.', ''];
+  if (FB.err === 'sdk')    return ['Sign-in is temporarily unavailable.',
+                                   'The authentication service could not be reached.', ''];
+  if (FB.err === 'placeholder' || FB.err === 'config')
+                           return ['Sign-in isn\'t configured yet.',
+                                   'An administrator needs to finish connecting this site.', ''];
+  return ['Sign-in is temporarily unavailable.', 'Please try again shortly.', ''];
+}
+
 function initFirebase() {
+  if (location.protocol === 'file:') { FB.err = 'file'; return false; }
   if (typeof firebase === 'undefined') { FB.err = 'sdk'; return false; }
   const c = window.CLEARSKY_CONFIG;
   if (!c) { FB.err = 'config'; return false; }
@@ -2435,30 +2486,61 @@ function initFirebase() {
 }
 const hasFirebase = () => FB.ready;
 
-/* Turn Firebase error codes into something actionable rather than a code dump. */
-const AUTH_HELP = {
-  'auth/operation-not-allowed': 'Email/password sign-in is switched off for this project. Firebase console → Authentication → Sign-in method → enable Email/Password.',
-  'auth/unauthorized-domain':   'This domain is not on the authorised list. Firebase console → Authentication → Settings → Authorized domains → add ' + location.hostname + '.',
-  'auth/invalid-credential':    'That email and password do not match an account.',
-  'auth/invalid-login-credentials': 'That email and password do not match an account.',
-  'auth/wrong-password':        'That password is not right for this account.',
-  'auth/user-not-found':        'No account exists with that email. Create one instead.',
-  'auth/invalid-email':         'That email address is not formatted correctly.',
-  'auth/email-already-in-use':  'That email already has an account — sign in instead.',
-  'auth/weak-password':         'Firebase needs a password of at least 6 characters.',
-  'auth/network-request-failed':'Could not reach Firebase. Check the connection and that firebase-config.js holds the right project.',
-  'auth/too-many-requests':     'Too many attempts. Wait a minute and try again.',
-  'permission-denied':          'Signed in, but Firestore refused the fin_profiles read or write. Confirm the deployed rules include the fin_profiles block and that the role is developer, originator or partner.',
-  'unavailable':                'Firestore is unreachable. Check that Firestore is enabled on this project and that the browser is online.',
-  'failed-precondition':        'Firestore rejected the query. If the console log names a missing index, follow the link it prints to create it.'
+/* Every failure resolves to a short headline plus, where it helps, one line of
+   guidance. Nothing here mentions consoles, payloads or error objects — the
+   technical detail is carried separately and rendered small. */
+const AUTH_MESSAGES = {
+  'auth/invalid-credential':      ['Incorrect email or password.', 'Check both and try again.'],
+  'auth/invalid-login-credentials':['Incorrect email or password.', 'Check both and try again.'],
+  'auth/wrong-password':          ['Incorrect email or password.', 'Check both and try again.'],
+  'auth/user-not-found':          ['No account found for that email.', 'Create an account to get started.'],
+  'auth/invalid-email':           ['That email address isn\'t valid.', ''],
+  'auth/user-disabled':           ['This account has been disabled.', 'Contact your administrator to restore access.'],
+  'auth/email-already-in-use':    ['An account already exists for that email.', 'Sign in instead.'],
+  'auth/weak-password':           ['Choose a longer password.', 'Passwords must be at least 6 characters.'],
+  'auth/too-many-requests':       ['Too many attempts.', 'Wait a few minutes before trying again.'],
+  'auth/network-request-failed':  ['Can\'t reach the server.', 'Check your connection and try again.'],
+  'auth/popup-blocked':           ['Your browser blocked the sign-in window.', 'Allow pop-ups for this site, then try again.'],
+  'auth/popup-closed-by-user':    ['Sign-in was cancelled.', ''],
+  'auth/cancelled-popup-request': ['', ''],
+  'auth/account-exists-with-different-credential':
+                                  ['This email is registered with a different sign-in method.', 'Use the method you signed up with.'],
+  'auth/operation-not-supported-in-this-environment':
+                                  ['Sign-in isn\'t available on this page.', 'Open the app from its web address rather than a local file.'],
+  /* setup-level problems — worded for whoever administers the site */
+  'auth/operation-not-allowed':   ['Email sign-in isn\'t enabled for this project.', 'An administrator can enable Email/Password in Firebase Authentication.'],
+  'auth/unauthorized-domain':     ['This address isn\'t authorised for sign-in.', 'An administrator can add ' + location.hostname + ' to the authorised domains in Firebase.'],
+  'permission-denied':            ['Your profile couldn\'t be loaded.', 'An administrator may need to review the database rules for this account.'],
+  'unavailable':                  ['The database is unreachable right now.', 'Try again in a moment.'],
+  'failed-precondition':          ['The database rejected that request.', 'An administrator may need to add a missing index.']
 };
-const explain = e => AUTH_HELP[e && e.code] || (e && e.message) || 'Something went wrong.';
 
-function authErr(msg) {
-  const el = $('#authErr');
-  if (!msg) { el.classList.remove('show'); return; }
-  el.textContent = msg; el.classList.add('show');
+/* Resolve any thrown thing into [headline, guidance, code]. Firebase sometimes
+   bubbles the raw REST body up through err.message; that never reaches the UI. */
+function explain(e) {
+  if (!e) return ['Something went wrong.', 'Please try again.', ''];
+  const code = e.code || '';
+  if (AUTH_MESSAGES[code]) return AUTH_MESSAGES[code].concat([code]);
+  const m = String(e.message || '');
+  const byBody = /INVALID_LOGIN_CREDENTIALS|INVALID_PASSWORD|EMAIL_NOT_FOUND/.test(m) ? 'auth/invalid-credential'
+               : /EMAIL_EXISTS/.test(m)          ? 'auth/email-already-in-use'
+               : /OPERATION_NOT_ALLOWED/.test(m) ? 'auth/operation-not-allowed'
+               : /TOO_MANY_ATTEMPTS/.test(m)     ? 'auth/too-many-requests'
+               : /WEAK_PASSWORD/.test(m)         ? 'auth/weak-password'
+               : /INVALID_EMAIL/.test(m)         ? 'auth/invalid-email'
+               : '';
+  if (byBody) return AUTH_MESSAGES[byBody].concat([code || byBody]);
+  return ['Something went wrong.', 'Please try again in a moment.', code];
 }
+
+function authErr(head, hint, code) {
+  const el = $('#authErr');
+  if (!head) { el.classList.remove('show'); el.innerHTML = ''; return; }
+  el.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>
+    <div><strong>${esc(head)}</strong>${hint ? `<span>${esc(hint)}</span>` : ''}${code ? `<em>${esc(code)}</em>` : ''}</div>`;
+  el.classList.add('show');
+}
+const showErr = e => { const [h, t, c] = explain(e); if (h) authErr(h, t, c); };
 function authBusy(btn, on, label) {
   btn.disabled = on;
   btn.textContent = on ? '…' : label;
@@ -2528,7 +2610,7 @@ async function signIn(acct) {
   DEALS = [];
   if (FB.ready) {
     try { await loadDeals(); }
-    catch (e) { console.error('[OMEGA] fin_projects read failed:', e); toast(explain(e), true); }
+    catch (e) { console.error('[OMEGA] fin_projects read failed:', e); toast(explain(e)[0], true); }
   }
   /* Nothing to look at yet? Seed local, clearly-labelled sample records.
      These are never written to Firestore. */
@@ -2565,6 +2647,7 @@ function showLogin() {
   $('#loginForm').style.display = 'block';
   $('#regTitle').textContent = 'Create an account';
   $('#regCreds').style.display = 'block';
+  $('#regGoogle').style.display = 'block';
   $('#registerBtn').textContent = 'Create account';
   $('#regBackRow').style.display = 'block';
 }
@@ -2580,6 +2663,7 @@ function showProfileSetup(user) {
   $('#regTitle').textContent = 'Finish setting up';
   $('#regSub').textContent = 'Your sign-in works. Pick the role this account should have and we\'ll create your marketplace profile.';
   $('#regCreds').style.display = 'none';
+  $('#regGoogle').style.display = 'none';
   $('#regBackRow').style.display = 'none';
   $('#registerBtn').textContent = 'Create my profile';
   $('#regEmail').value = user.email || '';
@@ -2607,6 +2691,41 @@ $('#rolePick').addEventListener('click', e => {
     : 'Financing partners see the whole marketplace, across every sponsor and state.';
 });
 
+/* Google sign-in. Same profile flow afterwards: no fin_profiles doc means
+   the account finishes setup before it reaches a dashboard. */
+async function afterFirebaseUser(user) {
+  const snap = await FB.db.collection('fin_profiles').doc(user.uid).get();
+  if (!snap.exists) return showProfileSetup(user);
+  const p = snap.data();
+  await signIn({
+    name: p.name || user.displayName || (user.email || '').split('@')[0],
+    org:  p.org  || '—',
+    email: user.email,
+    role: p.role || 'developer'
+  });
+}
+
+async function googleSignIn(btn) {
+  if (!FB.ready) return authErr(...offlineReason());
+  const label = btn.innerHTML;
+  btn.disabled = true;
+  try {
+    const provider = new firebase.auth.GoogleAuthProvider();
+    provider.setCustomParameters({prompt: 'select_account'});
+    const cred = await FB.auth.signInWithPopup(provider);
+    await afterFirebaseUser(cred.user);
+  } catch (err) {
+    console.error('[OMEGA] Google sign-in failed:', err);
+    if (err.code !== 'auth/cancelled-popup-request') showErr(err);
+  }
+  btn.disabled = false; btn.innerHTML = label;
+}
+
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-google]');
+  if (b) { e.preventDefault(); googleSignIn(b); }
+});
+
 $('#toRegister').addEventListener('click', showRegister);
 $('#toLogin').addEventListener('click', showLogin);
 $('#signOutBtn').addEventListener('click', signOut);
@@ -2614,22 +2733,32 @@ $('#signOutBtn').addEventListener('click', signOut);
 $('#loginBtn').addEventListener('click', async () => {
   const email = $('#loginEmail').value.trim(), pass = $('#loginPass').value;
   if (!email || !pass) return authErr('Enter your email and password.');
-  if (!FB.ready) {
-    return authErr(FB.err === 'config'
-      ? 'No Firebase config found. Add firebase-config.js next to this page, or create a local account to try the app out.'
-      : 'The Firebase SDK did not load. Check the script tags at the top of this page, or create a local account to try the app out.');
-  }
+  if (!FB.ready) return authErr(...offlineReason());
   const btn = $('#loginBtn');
   authBusy(btn, true, 'Sign in');
   try {
     const cred = await FB.auth.signInWithEmailAndPassword(email, pass);
-    const snap = await FB.db.collection('fin_profiles').doc(cred.user.uid).get();
-    if (!snap.exists) { authBusy(btn, false, 'Sign in'); return showProfileSetup(cred.user); }
-    const p = snap.data();
-    await signIn({name: p.name || email.split('@')[0], org: p.org || '—', email, role: p.role || 'developer'});
+    await afterFirebaseUser(cred.user);
   } catch (err) {
     console.error('[OMEGA] sign-in failed:', err);
-    authErr(explain(err));
+    /* The commonest cause here is an account created with Google that has no
+       password at all. Ask Firebase which methods it actually has. */
+    let handled = false;
+    try {
+      const methods = await FB.auth.fetchSignInMethodsForEmail(email);
+      if (methods.length && methods.indexOf('password') === -1) {
+        handled = true;
+        if (methods.indexOf('google.com') !== -1) {
+          authErr('This account uses Google sign-in.', 'Select Continue with Google below.', '');
+        } else {
+          authErr('This account uses a different sign-in method.', 'Sign in the way you originally registered.', '');
+        }
+      } else if (!methods.length) {
+        handled = true;
+        authErr('No account found for that email.', 'Create an account to get started.', '');
+      }
+    } catch (e2) { /* fall through to the mapped message */ }
+    if (!handled) showErr(err);
   }
   authBusy(btn, false, 'Sign in');
 });
@@ -2651,7 +2780,7 @@ $('#registerBtn').addEventListener('click', async () => {
       await signIn({name, org, email: u.email, role: regRole});
     } catch (err) {
       console.error('[OMEGA] fin_profiles write failed:', err);
-      authErr(explain(err));
+      showErr(err);
     }
     authBusy(btn, false, label);
     return;
@@ -2671,7 +2800,7 @@ $('#registerBtn').addEventListener('click', async () => {
     await signIn({name, org, email, role: regRole});
   } catch (err) {
     console.error('[OMEGA] sign-up failed:', err);
-    authErr(explain(err));
+    showErr(err);
   }
   authBusy(btn, false, label);
 });
@@ -2691,37 +2820,28 @@ $('#registerBtn').addEventListener('click', async () => {
     FB.auth.onAuthStateChanged(async u => {
       if (!u || SESSION || pendingUser) return;
       try {
-        const snap = await FB.db.collection('fin_profiles').doc(u.uid).get();
-        if (!snap.exists) return showProfileSetup(u);
-        const p = snap.data();
-        await signIn({name: p.name || (u.email || '').split('@')[0], org: p.org || '—', email: u.email, role: p.role || 'developer'});
+        await afterFirebaseUser(u);
       } catch (e) {
         console.error('[OMEGA] profile read failed:', e);
-        authErr(explain(e));
+        showErr(e);
       }
     });
   } else {
     badge.className = 'conn off';
     badge.innerHTML = '<i></i>Not connected — running locally';
-    const sdkOk = typeof firebase !== 'undefined';
-    const cfgOk = !!window.CLEARSKY_CONFIG;
-    const reason = FB.err === 'sdk'
-      ? 'The Firebase SDK did not load. Something is blocking gstatic.com — check for a Content-Security-Policy header or a network filter.'
-      : FB.err === 'placeholder'
-      ? 'The config still has PASTE_ placeholders. Fill them in — either in /firebase-config.js, or in the inline block near the top of this file.'
-      : FB.err === 'config'
-      ? 'No config was found. Serve /firebase-config.js from this site\'s root, or paste your values into the inline block near the top of this file.'
-      : 'Firebase failed to start: ' + FB.err;
+    const isFile = FB.err === 'file';
+    const detail = isFile
+      ? 'This page was opened directly from your computer, so it has no web address for the sign-in service to trust. Upload it and open it from <b>https://financing.csebuilders.com</b> instead.'
+      : FB.err === 'sdk'
+      ? 'The authentication service could not be reached from this page. A network policy or content-security header may be blocking it.'
+      : FB.err === 'placeholder' || FB.err === 'config'
+      ? 'The connection details for this site have not been filled in yet.'
+      : 'The authentication service failed to start.';
     $('#setupPanel').innerHTML = `
       <h4><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>
-        Not connected to Firebase</h4>
-      <ul>
-        <li class="${sdkOk ? 'y' : 'n'}">Firebase SDK ${sdkOk ? 'loaded' : 'did not load'}</li>
-        <li class="${cfgOk ? 'y' : 'n'}">Config ${cfgOk ? (FB.err === 'placeholder' ? 'found, but not filled in' : 'found') : 'not found'}</li>
-        <li class="${'n'}">Authentication unavailable</li>
-      </ul>
-      <p>${reason}</p>
-      <p style="margin-top:8px">You can still create a local account below to use the app without a backend.</p>`;
+        ${isFile ? 'Opened as a local file' : 'Sign-in unavailable'}</h4>
+      <p>${detail}</p>
+      <p style="margin-top:8px">You can continue without an account — choose <b>Create an account</b> to explore the app with sample data. Nothing will be saved.</p>`;
     $('#setupPanel').style.display = 'block';
   }
 })();
