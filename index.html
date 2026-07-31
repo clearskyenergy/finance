@@ -85,6 +85,11 @@ input,select,textarea{font-family:inherit;font-size:14px}
 .diag tr.y td:first-child{color:var(--cs-green)}
 .diag tr.n td:first-child{color:var(--cs-red)}
 .diag tr.n td:last-child{color:var(--cs-red)}
+.diag tr.i td:first-child{color:var(--cs-blue);font-style:italic}
+.diag tr.i td:last-child{color:var(--cs-muted)}
+.diag-verdict{border-radius:9px;padding:11px 14px;margin-bottom:16px;font-size:13px;font-weight:600}
+.diag-verdict.good{background:var(--cs-green-dim);color:var(--cs-green)}
+.diag-verdict.bad{background:var(--cs-amber-dim);color:var(--cs-amber)}
 code{font-family:var(--mono);font-size:11.5px;background:var(--cs-card-2);padding:1px 5px;border-radius:4px}
 .auth-or{display:flex;align-items:center;gap:12px;margin:16px 0;color:var(--cs-muted-2);font-size:11.5px}
 .auth-or::before,.auth-or::after{content:'';flex:1;height:1px;background:var(--cs-border)}
@@ -169,6 +174,13 @@ code{font-family:var(--mono);font-size:11.5px;background:var(--cs-card-2);paddin
 .btn-xs{padding:6px 11px;font-size:12px;border-radius:6px}
 .btn:disabled{opacity:.5;cursor:not-allowed}
 .btn-block{width:100%;justify-content:center}
+.btn-danger{background:var(--cs-red);color:#fff}
+.btn-danger:hover{opacity:.9}
+.btn-danger-ghost{background:var(--cs-card);color:var(--cs-red);border:1px solid rgba(180,50,42,.3)}
+.btn-danger-ghost:hover{background:var(--cs-red-dim);border-color:var(--cs-red);color:var(--cs-red)}
+.confirm-card{background:var(--cs-card-2);border:1px solid var(--cs-border);border-radius:10px;padding:14px 16px}
+.confirm-card strong{display:block;font-family:'Syne',sans-serif;font-size:15px;font-weight:700}
+.confirm-card span{display:block;font-size:12px;color:var(--cs-muted-2);font-family:var(--mono);margin-top:4px}
 
 /* ---------- TOPBAR ---------- */
 .topbar{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:0 26px;height:62px;background:var(--cs-navy);position:sticky;top:0;z-index:40}
@@ -430,6 +442,7 @@ code{font-family:var(--mono);font-size:11.5px;background:var(--cs-card-2);paddin
 .extract-bar{height:3px;background:var(--cs-border);border-radius:2px;overflow:hidden;margin-top:9px}
 .extract-bar i{display:block;height:100%;width:0;background:var(--cs-blue);transition:width .4s linear}
 
+.hidden-tag{display:inline-block;font-size:9.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--cs-red);background:var(--cs-red-dim);padding:2px 7px;border-radius:10px;vertical-align:middle;margin-left:6px}
 .sample-tag{display:inline-block;font-size:9.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--cs-amber);background:var(--cs-amber-dim);padding:2px 7px;border-radius:10px;vertical-align:middle;margin-left:6px}
 .sample-banner{display:flex;align-items:flex-start;gap:12px;background:var(--cs-amber-dim);border:1px solid rgba(199,122,0,.3);border-radius:12px;padding:14px 16px;margin-bottom:16px;font-size:12.5px;line-height:1.55;color:var(--cs-ink)}
 .sample-banner svg{color:var(--cs-amber);flex:none;margin-top:1px}
@@ -832,6 +845,13 @@ const BENCH = {
    Four sample records so no workspace opens empty — one live deal per profile.
    Swap this array for a Firestore read when the backend is wired up.
    ═══════════════════════════════════════════════════════════════════════════ */
+/* Short, stable, collision-resistant reference for a deal. */
+function newRef(seed) {
+  const base = (seed || (Date.now().toString(36) + Math.random().toString(36).slice(2)))
+    .replace(/[^a-z0-9]/gi, '').toUpperCase();
+  return 'CS-' + base.slice(-5).padStart(5, '0');
+}
+
 const TODAY = new Date('2026-07-30T12:00:00');
 const iso = d => d.toISOString().slice(0, 10);
 const addDays = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return x; };
@@ -877,13 +897,37 @@ function makeBill(state, mw) {
 
 /* Fills in everything derivable, so a record only has to state what matters. */
 function buildDeal(spec) {
-  const t = TECH_BY_ID[spec.tech];
+  /* fin_projects may hold documents written by an earlier build or another
+     tool. Fill anything missing rather than rendering blanks or throwing. */
+  const t = TECH_BY_ID[spec.tech] || TECH_BY_ID.solar;
+  spec.tech = t.id;
+  if (!STATE_NAME[spec.state]) spec.state = spec.state || 'TX';
+  spec.name       = spec.name       || 'Untitled project';
+  spec.city       = spec.city       || '—';
+  spec.developer  = spec.developer  || '—';
+  spec.originator = spec.originator || spec.developer || '—';
+  spec.stage      = STAGES.indexOf(spec.stage) === -1 ? 'Submitted' : spec.stage;
+  spec.status     = ['active','won','declined','withdrawn'].indexOf(spec.status) === -1 ? 'active' : spec.status;
+  spec.mw         = Number(spec.mw) > 0 ? Number(spec.mw) : 0.1;
+  spec.ask        = Number(spec.ask) >= 0 ? Number(spec.ask) : 0;
+  spec.ppaRate    = Number(spec.ppaRate) || 0;
+  spec.submitted  = /^\d{4}-\d{2}-\d{2}$/.test(spec.submitted || '') ? spec.submitted : iso(TODAY);
+  spec.cod        = /^\d{4}-\d{2}-\d{2}$/.test(spec.cod || '') ? spec.cod : iso(addDays(TODAY, 540));
+  spec.offtake    = spec.offtake || OFFTAKES[0];
+  spec.interconnect = spec.interconnect || '—';
+  spec.permits    = spec.permits    || '—';
+  spec.siteControl= spec.siteControl|| '—';
+  if (!Array.isArray(spec.links)) spec.links = [];
   const d = Object.assign({
     mwh:0, offers:0, bidders:0, wonBy:null, lead:null, declineReason:null,
-    decided:null, links:[], bill:null, irr:11.5, dscr:1.35,
+    decided:null, links:[], bill:null, irr:11.5, dscr:1.35, fsStatus:null,
     cf: (t.id === 'solar' || t.id === 'hybrid') ? .245 : .44
   }, spec);
   d.techName = t.name; d.techColor = t.color;
+  /* `id` must be unique — it is what a row click and a withdraw resolve on.
+     `ref` is only ever displayed. */
+  d.ref = spec.ref || spec.id || newRef();
+  d.id  = spec.id  || d.ref;
   d.ppw = d.ask / (d.mw * 1e6);
   d.ageDays = daysBetween(d.submitted, iso(TODAY));
   d.cycleDays = d.decided ? daysBetween(d.submitted, d.decided) : null;
@@ -1006,7 +1050,7 @@ const S = {
   f: {q:'', state:'', tech:'', status:'', stage:'', dev:'', orig:'', minMw:0},
   group: 'state',
   sort: {key:'ask', dir:-1},
-  openGroups: new Set(),
+  closedGroups: new Set(),   // groups are expanded unless deliberately collapsed
   drawerDeal: null,
   drawerTab: 'overview',
   uploaded: []            // deals added this session
@@ -1331,8 +1375,14 @@ function devOverview() {
   const cycleSpark = all.filter(d => d.cycleDays).sort((a, b) => a.submitted.localeCompare(b.submitted)).slice(-14).map(d => d.cycleDays);
 
   const samples = all.filter(d => d.sample).length;
+  const hidden = all.filter(d => !isPublished(d));
 
   return `
+  ${hidden.length ? `<div class="sample-banner" style="background:var(--cs-red-dim);border-color:rgba(180,50,42,.3)">
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="color:var(--cs-red)"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+    <div><b>${plural(hidden.length, 'deal')} not reaching capital partners.</b>
+      ${hidden.map(d => esc(d.name)).join(', ')} — open ${hidden.length === 1 ? 'it' : 'them'} to see why and put ${hidden.length === 1 ? 'it' : 'them'} back on the marketplace.</div>
+  </div>` : ''}
   ${samples && !S.bannerOff ? `<div class="sample-banner">
     <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
     <div><b>${plural(samples, 'sample project')} to show you around.</b>
@@ -1524,7 +1574,8 @@ const STATUS_PILL = {active:['p-active','In market'], won:['p-won','Funded'], de
 const STAGE_PILL = {'Submitted':'p-active','Screening':'p-screening','Diligence':'p-diligence','Term sheet':'p-term','Closed':'p-won'};
 
 function cellHTML(d, c) {
-  if (c.key === 'name') return `<div>${esc(d.name)}${d.sample ? ' <span class="sample-tag">Sample</span>' : ''}<span>${d.id} · ${esc(d.city)}, ${d.state}</span></div>`;
+  if (c.key === 'name') return `<div>${esc(d.name)}${d.sample ? ' <span class="sample-tag">Sample</span>' : ''}${
+    isPublished(d) ? '' : ' <span class="hidden-tag">Not on marketplace</span>'}<span>${esc(d.ref)} · ${esc(d.city)}, ${d.state}</span></div>`;
   if (c.key === 'status') { const [cls, lab] = STATUS_PILL[d.status]; return `<span class="pill ${cls}">${lab}</span>`; }
   if (c.key === 'stage') return `<span class="pill ${STAGE_PILL[d.stage]}">${d.stage}</span>`;
   if (c.key === 'techName') return `<span class="tag" style="color:${d.techColor};background:${d.techColor}18">${esc(d.techName)}</span>`;
@@ -1568,7 +1619,7 @@ function dealTable(list, opts) {
 
   const body = ordered.map(([name, rows]) => {
     const g = stats(rows);
-    const open = S.openGroups.has(name);
+    const open = !S.closedGroups.has(name);
     const label = opts.group === 'state' ? (STATE_NAME[name] || name) : name;
     return `<tr class="grp-row ${open ? 'open' : ''}" data-act="group" data-val="${esc(name)}">
         <td colspan="${cols.length}">
@@ -1601,7 +1652,9 @@ function filterBar(showGroup) {
       ${devs.map(o => `<option value="${esc(o)}" ${S.f.dev === o ? 'selected' : ''}>${esc(o)}</option>`).join('')}</select>` : ''}
     <select class="fb-sel" data-act="sel" data-val="minMw" aria-label="Minimum size"><option value="0">Any size</option>
       ${[5, 10, 25, 50].map(v => `<option value="${v}" ${Number(S.f.minMw) === v ? 'selected' : ''}>${v}+ MW</option>`).join('')}</select>
-    ${showGroup ? `<div class="fb-spacer"></div><div class="seg">${['state','originator','developer','tech','none'].map(g =>
+    ${showGroup ? `<div class="fb-spacer"></div>
+      ${S.group !== 'none' ? `<button class="link-btn" data-act="toggle-all" style="margin-right:10px">${S.closedGroups.size ? 'Expand all' : 'Collapse all'}</button>` : ''}
+      <div class="seg">${['state','originator','developer','tech','none'].map(g =>
       `<button data-act="group-mode" data-val="${g}" class="${S.group === g ? 'on' : ''}">${GROUP_LABEL[g].replace('By ', '')}</button>`).join('')}</div>` : ''}
   </div>`;
 }
@@ -1826,6 +1879,11 @@ function drawerBody(d) {
       <span class="pill ${STAGE_PILL[d.stage]}">${d.stage}</span>
       <span class="tag" style="color:${d.techColor};background:${d.techColor}18">${esc(d.techName)}</span>
     </div>
+    ${!isPublished(d) ? `<div class="verdict fair" style="margin-bottom:20px">
+      <div class="vd-top"><span class="vd-badge">Not visible</span><h5>Capital partners cannot see this deal</h5></div>
+      <p>Its stored status is <code>${esc(String(d.fsStatus))}</code>. A deal only appears on the marketplace while that reads <code>open</code>.</p>
+      ${canDelete(d) ? `<button class="btn btn-primary btn-sm" style="margin-top:12px" data-act="republish" data-val="${d.id}">Put it back on the marketplace</button>` : ''}
+    </div>` : ''}
     ${d.status === 'declined' ? `<div class="verdict poor" style="margin-bottom:20px">
       <div class="vd-top"><span class="vd-badge">Declined</span><h5>${esc(d.declineReason)}</h5></div>
       <p>Returned after ${d.cycleDays} days in ${d.stage.toLowerCase()}. Resubmission is allowed once the underlying issue is documented.</p></div>` : ''}
@@ -1838,6 +1896,9 @@ function drawerBody(d) {
         <div class="kv"><span class="k">DSCR</span><span class="v mono">${d.dscr.toFixed(2)}x</span></div>
         <div class="kv"><span class="k">Offtake</span><span class="v">${esc(d.offtake)}</span></div>
         <div class="kv"><span class="k">Target COD</span><span class="v">${dt(d.cod)}</span></div>
+        ${d.docId ? `<div class="kv"><span class="k">Marketplace</span><span class="v">${
+          isPublished(d) ? '<span style="color:var(--cs-green)">Visible to capital partners</span>'
+                         : '<span style="color:var(--cs-amber)">Hidden — status is ' + esc(String(d.fsStatus)) + '</span>'}</span></div>` : ''}
       </div>
     </div>
     <div class="sec">
@@ -1990,7 +2051,7 @@ function drawerBody(d) {
 function renderDrawer() {
   const d = S.drawerDeal; if (!d) return;
   $('#drTitle').textContent = d.name;
-  $('#drSub').innerHTML = `${d.id} · ${esc(d.city)}, ${d.state} · ${usd(d.ask)} · ${num(d.mw)} MW`
+  $('#drSub').innerHTML = `${esc(d.ref)} · ${esc(d.city)}, ${d.state} · ${usd(d.ask)} · ${num(d.mw)} MW`
     + (d.sample ? ' <span class="sample-tag">Sample record</span>' : '');
   $('#drTabs').innerHTML = DR_TABS.map(([k, l]) =>
     `<button class="dr-tab ${S.drawerTab === k ? 'on' : ''}" data-act="drtab" data-val="${k}">${l}${k === 'bill' && d.bill ? ' •' : ''}</button>`).join('');
@@ -2001,7 +2062,8 @@ function renderDrawer() {
        <button class="btn btn-ghost btn-sm" data-act="export-onedeal">Export this deal</button>
        <button class="btn btn-ghost btn-sm" data-act="watch">Add to watchlist</button>`
     : `<button class="btn btn-ghost btn-sm" data-act="export-onedeal">Export this deal</button>
-       <button class="btn btn-ghost btn-sm" data-act="upload-bill">${d.bill ? 'Replace utility bills' : 'Upload utility bills'}</button>`;
+       <button class="btn btn-ghost btn-sm" data-act="upload-bill">${d.bill ? 'Replace utility bills' : 'Upload utility bills'}</button>
+       ${canDelete(d) ? `<button class="btn btn-ghost btn-sm btn-danger-ghost" style="margin-left:auto" data-act="ask-delete" data-val="${d.id}">Withdraw</button>` : ''}`;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -2011,7 +2073,7 @@ const stamp = () => iso(TODAY).replace(/-/g, '');
 
 function exportDeals(list) {
   const rows = [['Deal ID','Name','City','State','Technology','MW','MWh','Capital ask (USD)','$/W','Stage','Outcome','Decline reason','Developer','Originator','Bidders','Offers','Sponsor IRR %','DSCR','Offtake','Site control','Permits','Interconnection','Submitted','Decided','Days in process','Target COD','Shared links']];
-  list.forEach(d => rows.push([d.id, d.name, d.city, d.state, d.techName, d.mw, d.mwh || '', d.ask, d.ppw.toFixed(3), d.stage,
+  list.forEach(d => rows.push([d.ref, d.name, d.city, d.state, d.techName, d.mw, d.mwh || '', d.ask, d.ppw.toFixed(3), d.stage,
     STATUS_PILL[d.status][1], d.declineReason || '', d.developer, d.originator, d.bidders, d.offers, d.irr, d.dscr,
     d.offtake, d.siteControl, d.permits, d.interconnect, d.submitted, d.decided || '', d.cycleDays || d.ageDays, d.cod,
     (d.links || []).map(l => l.label + ': ' + l.url).join(' | ')]));
@@ -2022,7 +2084,7 @@ function exportEnergy(list) {
   const rows = [['Deal ID','Name','State','Technology','Nameplate MW','Storage MWh','Duration h','Proposed rate ($/kWh)','Annual kWh (metered)','Peak demand kW','Load factor %','Blended bill rate ($/kWh)','Annual utility spend (USD)','Utility','Rate schedule','Interconnection','Target COD']];
   list.forEach(d => {
     const b = d.bill;
-    rows.push([d.id, d.name, d.state, d.techName, d.mw, d.mwh || '', d.mwh ? (d.mwh / d.mw).toFixed(2) : '',
+    rows.push([d.ref, d.name, d.state, d.techName, d.mw, d.mwh || '', d.mwh ? (d.mwh / d.mw).toFixed(2) : '',
       d.ppaRate.toFixed(4), b ? Math.round(b.totalKwh) : '', b ? b.peakKw : '', b ? (b.loadFactor * 100).toFixed(1) : '',
       b ? b.blended.toFixed(4) : '', b ? Math.round(b.totalCost) : '', b ? b.utility : '', b ? b.schedule : '', d.interconnect, d.cod]);
   });
@@ -2033,7 +2095,7 @@ function exportBills(list) {
   const rows = [['Deal ID','Deal name','State','Utility','Account','Meter','Rate schedule','Statement month','kWh','Peak kW','Energy charge','Demand charge','Other charges','Total charge','Effective $/kWh','Peak month flag','Extraction confidence %']];
   list.filter(d => d.bill).forEach(d => {
     const b = d.bill;
-    b.months.forEach((m, i) => rows.push([d.id, d.name, d.state, b.utility, b.account, b.meter, b.schedule, m.label,
+    b.months.forEach((m, i) => rows.push([d.ref, d.name, d.state, b.utility, b.account, b.meter, b.schedule, m.label,
       Math.round(m.kwh), m.kw, m.energy.toFixed(2), m.demand.toFixed(2), m.other.toFixed(2), m.total.toFixed(2),
       (m.total / m.kwh).toFixed(5), i === b.peakIdx ? 'PEAK' : '', (b.confidence * 100).toFixed(1)]));
   });
@@ -2045,7 +2107,7 @@ function exportEquity(list) {
   const rows = [['Deal ID','Name','State','Technology','Blended bill rate','Proposed offer rate','Saving ($/kWh)','Saving (%)','Year-1 saving (USD)','20-year saving (USD)','Verdict','$/W','Technology median $/W','Variance vs median (%)','Annual kWh','Peak kW']];
   list.filter(d => d.bill).forEach(d => {
     const v = equityVerdict(d);
-    rows.push([d.id, d.name, d.state, d.techName, d.bill.blended.toFixed(4), d.ppaRate.toFixed(4), v.saveRate.toFixed(4),
+    rows.push([d.ref, d.name, d.state, d.techName, d.bill.blended.toFixed(4), d.ppaRate.toFixed(4), v.saveRate.toFixed(4),
       (v.savePct * 100).toFixed(1), Math.round(v.annual), Math.round(v.twenty), v.verdict, d.ppw.toFixed(3),
       v.bench.median.toFixed(3), (v.ppwDelta * 100).toFixed(1), Math.round(d.bill.totalKwh), d.bill.peakKw]);
   });
@@ -2076,7 +2138,7 @@ function exportBy(list, key, filename) {
 
 function exportTimeline(list) {
   const rows = [['Deal ID','Name','State','Outcome','Submitted','Decided','Total days',...STAGES.map(s => s + ' (days)')]];
-  list.forEach(d => rows.push([d.id, d.name, d.state, STATUS_PILL[d.status][1], d.submitted, d.decided || '',
+  list.forEach(d => rows.push([d.ref, d.name, d.state, STATUS_PILL[d.status][1], d.submitted, d.decided || '',
     d.cycleDays || d.ageDays, ...STAGES.map(s => { const x = d.durations.find(y => y.stage === s); return x ? x.days : ''; })]));
   downloadCSV(`omega-deal-timelines-${stamp()}.csv`, rows);
 }
@@ -2248,7 +2310,7 @@ async function saveDeal() {
   if (bad.length) return toast('Links need to start with https:// — check "' + bad[0] + '".', true);
 
   const d = buildDeal({
-    id: 'CS-' + (2405 + S.uploaded.length),
+    ref: newRef(),
     name, state, city: $('#nfCity').value.trim() || MARKETS[state].cities[0],
     developer: SESSION.org, originator: SESSION.name,
     tech: tech.id, mw, mwh: parseFloat($('#nfMwh').value) || 0, ask,
@@ -2306,7 +2368,8 @@ function render() {
   if (!valid.includes(S.tab)) S.tab = valid[0];
 
   const book = myBook();
-  const srcLabel = DATA_SOURCE === 'live'   ? `<span class="src on"><i></i>Live · ${plural(allDeals().length, 'deal')}</span>`
+  const syncedAt = lastSync ? ' · ' + lastSync.toLocaleTimeString('en-US', {hour:'numeric', minute:'2-digit'}) : '';
+  const srcLabel = DATA_SOURCE === 'live'   ? `<span class="src on"><i></i>Live · ${plural(allDeals().length, 'deal')}${syncedAt}</span>`
                  : DATA_SOURCE === 'sample' ? `<span class="src warn"><i></i>Sample data · not saved</span>`
                  : DATA_SOURCE === 'error'  ? `<span class="src bad"><i></i>Couldn't load deals</span>` : '';
   $('#srcBadge').innerHTML = srcLabel + (DATA_SOURCE === 'live'
@@ -2381,8 +2444,8 @@ document.addEventListener('click', e => {
     case 'mapclear':   mapSel = null; S.f.state = ''; render(); break;
     case 'clearall':   clearFilters(); break;
     case 'unfilter':   S.f[val] = (val === 'minMw' ? 0 : ''); render(); break;
-    case 'group-mode': S.group = val; S.openGroups.clear(); render(); break;
-    case 'group':      S.openGroups.has(val) ? S.openGroups.delete(val) : S.openGroups.add(val); render(); break;
+    case 'group-mode': S.group = val; S.closedGroups.clear(); render(); break;
+    case 'group':      S.closedGroups.has(val) ? S.closedGroups.delete(val) : S.closedGroups.add(val); render(); break;
     case 'sort':       S.sort = {key: val, dir: S.sort.key === val ? -S.sort.dir : -1}; render(); break;
     case 'open':       openDeal(val); break;
     case 'drtab':      S.drawerTab = val; renderDrawer(); break;
@@ -2399,6 +2462,17 @@ document.addEventListener('click', e => {
                          .then(() => toast('Diagnostics copied.'), () => toast('Could not copy.', true)); break;
     case 'load-samples': DEALS = DEALS.concat(seedSamples(SESSION)); render();
                          toast('Sample data added to this browser only — it is never saved.'); break;
+    case 'toggle-all': {
+      if (S.closedGroups.size) S.closedGroups.clear();
+      else {
+        const gk = GROUP_KEY[S.group];
+        if (gk) filtered().forEach(d => S.closedGroups.add(String(d[gk])));
+      }
+      render(); break;
+    }
+    case 'republish':  republish(val); break;
+    case 'ask-delete': confirmDelete(val); break;
+    case 'do-delete':  deleteDeal(val); break;
     case 'new-deal':   submitModal(); break;
     case 'add-link':   addLinkRow(); break;
     case 'rm-link':    el.closest('.link-row').remove(); break;
@@ -2499,7 +2573,7 @@ document.addEventListener('mousemove', e => {
 /* ═══════════════════════════════════════════════════════════════════════════
    16. ACCOUNTS, ROLES AND SIGN-IN
    ═══════════════════════════════════════════════════════════════════════════ */
-const BUILD = '2026-07-31 · build 10';
+const BUILD = '2026-07-31 · build 15';
 
 const ROLE_META = {
   developer:  {side:'dev',     chip:'dev',     label:'Developer'},
@@ -2621,7 +2695,7 @@ function dealToDoc(d, uid) {
     status: 'open',
     awardedTo: null,
     outcome: d.status || 'active',
-    dealId: d.id, name: d.name, state: d.state, city: d.city,
+    dealId: d.ref, name: d.name, state: d.state, city: d.city,
     tech: d.tech, mw: d.mw, mwh: d.mwh || 0, ask: d.ask, ppaRate: d.ppaRate,
     stage: d.stage, submitted: d.submitted, decided: d.decided || null,
     offtake: d.offtake, interconnect: d.interconnect, permits: d.permits,
@@ -2633,10 +2707,12 @@ function dealToDoc(d, uid) {
   };
 }
 function docToDeal(doc) {
-  const x = doc.data();
+  const x = doc.data() || {};
   return buildDeal(Object.assign({}, x, {
-    id: x.dealId || ('CS-' + doc.id.slice(0, 4).toUpperCase()),
+    id: doc.id,                                   // the document is the identity
+    ref: x.dealId || newRef(doc.id),
     status: x.outcome || 'active',
+    fsStatus: x.status || null,        // the field partners actually query on
     docId: doc.id,
     sample: false
   }));
@@ -2644,12 +2720,15 @@ function docToDeal(doc) {
 
 let dealsUnsub = null;
 let DATA_SOURCE = 'none';     // 'live' | 'sample' | 'error' | 'none'
+let lastSync = null;
+let seenIds = null;           // null until the first snapshot lands
 
 /* A live listener, not a one-shot read: a deal submitted by an originator
    shows up in every capital partner's marketplace within a second, with no
    refresh. Single-field filters only, so no composite index is required. */
 function watchDeals() {
   if (dealsUnsub) { dealsUnsub(); dealsUnsub = null; }
+  seenIds = null;
   if (!FB.ready || !FB.auth.currentUser) return;
 
   const col = FB.db.collection('fin_projects');
@@ -2662,6 +2741,20 @@ function watchDeals() {
     snap => {
       DEALS = snap.docs.map(docToDeal);
       DATA_SOURCE = 'live';
+      lastSync = new Date();
+
+      /* Tell the person when something lands while they're looking at it —
+         a silently changing table is easy to miss. */
+      const ids = new Set(DEALS.map(d => d.id));
+      if (seenIds) {
+        const added = DEALS.filter(d => !seenIds.has(d.id));
+        const removed = [...seenIds].filter(id => !ids.has(id)).length;
+        if (added.length) toast(added.length === 1
+          ? `New deal on the marketplace: ${added[0].name}`
+          : `${plural(added.length, 'new deal')} on the marketplace.`);
+        else if (removed) toast(`${plural(removed, 'deal')} withdrawn.`);
+      }
+      seenIds = ids;
       if (SESSION) render();
     },
     err => {
@@ -2679,12 +2772,20 @@ async function persistDeal(d) {
   d.docId = ref.id;
 }
 
+/* A laptop that slept, or a dropped connection, can leave a listener stale.
+   Re-attach when the tab comes back or the network returns. */
+window.addEventListener('online', () => { if (SESSION && FB.ready) watchDeals(); });
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden && SESSION && FB.ready && DATA_SOURCE !== 'sample') watchDeals();
+});
+
 /* ── Diagnostics ──────────────────────────────────────────────────────────
    When a marketplace looks empty but shouldn't be, guessing is expensive.
    This runs the same reads the app runs and reports the raw outcome of each,
    including any documents whose fields don't match what the query expects. */
 async function runDiagnostics() {
   const out = [];
+  /* state: true = pass, false = problem, 'info' = expected, not a fault */
   const push = (label, ok, detail) => out.push({label, ok, detail});
   const uid = FB.auth && FB.auth.currentUser ? FB.auth.currentUser.uid : null;
 
@@ -2705,16 +2806,28 @@ async function runDiagnostics() {
     push('Query: status == "open"', snap.size > 0, plural(snap.size, 'document') + ' returned');
   } catch (e) { push('Query: status == "open"', false, (e.code || 'error') + ' — ' + e.message); }
 
-  /* the exact query a sponsor runs */
+  /* the exact query a sponsor runs, plus the stored status of each result —
+     this is what decides whether a capital partner ever sees the deal */
   try {
     const snap = await FB.db.collection('fin_projects').where('developerUid', '==', uid).get();
     push('Query: my own deals', true, plural(snap.size, 'document') + ' returned');
+    snap.docs.forEach(doc => {
+      const x = doc.data();
+      const ok = x.status === 'open';
+      push('  · ' + (x.name || x.dealId || doc.id), ok,
+           'status = ' + JSON.stringify(x.status)
+           + (ok ? '  → visible to capital partners' : '  ← partners cannot see this'));
+    });
   } catch (e) { push('Query: my own deals', false, (e.code || 'error') + ' — ' + e.message); }
 
-  /* unfiltered probe — the one that actually explains a mismatch */
+  /* Unfiltered probe. For a capital partner this is *supposed* to be refused —
+     the rules only expose deals whose status is "open", so an unrestricted read
+     is correctly denied. It is only reported as a problem when the partner's
+     own query also came back empty, because then it would have explained why. */
+  const openQueryFound = (out.find(r => r.label.indexOf('status ==') !== -1) || {}).ok;
   try {
     const snap = await FB.db.collection('fin_projects').limit(20).get();
-    push('Collection contents', true, plural(snap.size, 'document') + ' visible to this account');
+    push('All documents', true, plural(snap.size, 'document') + ' readable by this account');
     snap.docs.forEach(doc => {
       const x = doc.data();
       const ok = x.status === 'open';
@@ -2724,8 +2837,13 @@ async function runDiagnostics() {
            + '   ·   ' + (x.name || '(unnamed)'));
     });
   } catch (e) {
-    push('Collection contents', false, (e.code || 'error') + ' — ' + e.message
-         + (e.code === 'permission-denied' ? '  (expected for non-admin accounts; not a fault on its own)' : ''));
+    if (e.code === 'permission-denied') {
+      push('All documents', openQueryFound ? 'info' : false,
+           'Refused, which is correct — your rules only expose deals with status "open" to a partner.'
+           + (openQueryFound ? '' : ' Because your own query also returned nothing, an administrator may need to check the rules.'));
+    } else {
+      push('All documents', false, (e.code || 'error') + ' — ' + e.message);
+    }
   }
   return out;
 }
@@ -2743,11 +2861,106 @@ function diagnosticsModal() {
     <button class="btn btn-primary" data-act="close-modal">Done</button>
   </div>`);
   runDiagnostics().then(rows => {
-    window.__diag = rows.map(r => (r.ok ? '[ok]   ' : '[FAIL] ') + r.label + ': ' + r.detail).join('\n');
-    $('#diagBody').innerHTML = `<table class="diag">${rows.map(r => `<tr class="${r.ok ? 'y' : 'n'}">
-      <td>${r.ok ? '✓' : '✕'}</td><td>${esc(r.label)}</td><td>${esc(r.detail)}</td></tr>`).join('')}</table>
-      <p class="note" style="margin-top:14px">A deal is only visible to capital partners when its <code>status</code> field is exactly <code>"open"</code>. Anything else is shown above.</p>`;
+    window.__diag = rows.map(r => (r.ok === true ? '[ok]   ' : r.ok === 'info' ? '[info] ' : '[FAIL] ')
+      + r.label + ': ' + r.detail).join('\n');
+    const problems = rows.filter(r => r.ok === false).length;
+    $('#diagBody').innerHTML = `
+      <div class="diag-verdict ${problems ? 'bad' : 'good'}">
+        ${problems ? `${plural(problems, 'check')} need attention.` : 'Everything checks out. Deals are flowing normally.'}
+      </div>
+      <table class="diag">${rows.map(r => `<tr class="${r.ok === true ? 'y' : r.ok === 'info' ? 'i' : 'n'}">
+        <td>${r.ok === true ? '✓' : r.ok === 'info' ? 'i' : '✕'}</td>
+        <td>${esc(r.label)}</td><td>${esc(r.detail)}</td></tr>`).join('')}</table>
+      <p class="note" style="margin-top:14px">A deal reaches capital partners only when its <code>status</code> field is exactly <code>"open"</code>. Rows marked <b>i</b> are expected behaviour, not faults.</p>`;
   }).catch(e => { $('#diagBody').innerHTML = `<p class="note">Diagnostics failed: ${esc(e.message)}</p>`; });
+}
+
+/* ── Withdrawing a deal ───────────────────────────────────────────────────
+   Mirrors the rule `allow delete: if isOwner() && status != 'awarded'`, so the
+   button only appears where Firestore would actually permit the write. */
+/* A deal only reaches capital partners when its stored status is "open".
+   Anything else means the sponsor is looking at a project nobody can see. */
+function isPublished(d) {
+  if (!d || d.sample) return true;
+  if (!d.docId) return true;                 // local-only, nothing to publish to
+  return d.fsStatus === 'open';
+}
+
+async function republish(id) {
+  const d = allDeals().find(x => x.id === id);
+  if (!d || !d.docId || !FB.ready) return;
+  try {
+    await FB.db.collection('fin_projects').doc(d.docId).update({status: 'open'});
+    toast(`${d.name} is back on the marketplace.`);
+  } catch (err) {
+    console.error('[OMEGA] republish failed:', err);
+    const [h, t] = explain(err);
+    toast(h + (t ? ' ' + t : ''), true);
+  }
+}
+
+function canDelete(d) {
+  if (!d || !SESSION) return false;
+  if (d.status === 'won') return false;                 // awarded: rules refuse
+  if (FB.ready && FB.auth.currentUser && d.docId) {
+    return d.developerUid === FB.auth.currentUser.uid;
+  }
+  return d.originator === SESSION.name || d.developer === SESSION.org;
+}
+
+function confirmDelete(id) {
+  const d = allDeals().find(x => x.id === id);
+  if (!d) return;
+  openModal(`
+  <div class="modal-head">
+    <div><h2>Withdraw this deal?</h2>
+      <div class="mh-sub">It will be removed from the marketplace and no capital partner will be able to see it again.</div></div>
+    <button class="dr-x" data-act="close-modal" aria-label="Close">&times;</button>
+  </div>
+  <div class="modal-body">
+    <div class="confirm-card">
+      <strong>${esc(d.name)}</strong>
+      <span>${esc(d.ref)} · ${esc(d.city)}, ${d.state} · ${usd(d.ask)} · ${num(d.mw)} MW</span>
+    </div>
+    <p class="note" style="margin-top:14px">${d.offers
+      ? `This deal has <b>${plural(d.offers, 'offer')}</b> against it. Withdrawing removes it from their pipeline too.`
+      : 'No offers have been made against it yet.'}
+      ${d.docId ? ' This cannot be undone.' : ' It only exists in this browser, so nothing is deleted from the database.'}</p>
+    <div class="auth-err" id="modalErr" style="margin-top:14px"></div>
+  </div>
+  <div class="modal-foot">
+    <button class="btn btn-ghost" data-act="close-modal">Keep it</button>
+    <button class="btn btn-danger" data-act="do-delete" data-val="${d.id}">Withdraw deal</button>
+  </div>`);
+}
+
+async function deleteDeal(id) {
+  const d = allDeals().find(x => x.id === id);
+  if (!d) return;
+  const btn = $('[data-act="do-delete"]');
+  if (btn) { btn.disabled = true; btn.textContent = 'Withdrawing…'; }
+
+  if (d.docId && FB.ready) {
+    try {
+      await FB.db.collection('fin_projects').doc(d.docId).delete();
+    } catch (err) {
+      console.error('[OMEGA] fin_projects delete failed:', err);
+      if (btn) { btn.disabled = false; btn.textContent = 'Withdraw deal'; }
+      const [h, t] = explain(err);
+      modalErr(err.code === 'permission-denied'
+        ? 'This deal can no longer be withdrawn — it may already have been awarded.'
+        : h + (t ? ' ' + t : ''));
+      return;
+    }
+    /* the live listener drops it from every open session */
+  } else {
+    DEALS = DEALS.filter(x => x.id !== id);
+    S.uploaded = S.uploaded.filter(x => x.id !== id);
+  }
+  closeModal();
+  closeDeal();
+  render();
+  toast(`${d.name} withdrawn from the marketplace.`);
 }
 
 /* ── Session ──────────────────────────────────────────────────────────── */
