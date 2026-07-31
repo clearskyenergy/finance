@@ -1,453 +1,1932 @@
 <!DOCTYPE html>
+<!--
+  ═══════════════════════════════════════════════════════════════════════════════
+  ClearSky-OMEGA · Financing Marketplace — Deal Intelligence Dashboard
+  © 2025 ClearSky Energy Solutions LLC. Proprietary and Confidential.
+  Author: Tommy Gilmer.
+  ═══════════════════════════════════════════════════════════════════════════════
+-->
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="icon" type="image/png" href="/favicon.png">
-  <title>Financing Partners Portal · ClearSky-OMEGA</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    :root {
-      --cs-bg: #F4F7FA;
-      --cs-card: #FFFFFF;
-      --cs-card-2: #F7F9FC;
-      --cs-blue: #0089BD;
-      --cs-blue-bright: #00AEEF;
-      --cs-blue-dim: rgba(0,137,189,0.09);
-      --cs-border-blue: rgba(0,137,189,0.28);
-      --cs-amber: #C77A00;
-      --cs-amber-dim: rgba(199,122,0,0.12);
-      --cs-green: #12805C;
-      --cs-green-dim: rgba(18,128,92,0.10);
-      --cs-red: #B4322A;
-      --cs-red-dim: rgba(180,50,42,0.10);
-      --cs-ink: #0E1A24;
-      --cs-muted: #5A6B7B;
-      --cs-muted-2: #8A98A6;
-      --cs-border: rgba(14,26,36,0.10);
-      --cs-navy: #0E1A24;
-    }
-    html { scroll-behavior: smooth; }
-    body { font-family: 'Inter', sans-serif; background: var(--cs-bg); color: var(--cs-ink); min-height: 100vh; -webkit-font-smoothing: antialiased; }
-    a { color: var(--cs-blue); text-decoration: none; }
-    button { font-family: inherit; cursor: pointer; }
-    input, select, textarea { font-family: inherit; font-size: 14px; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Deal Intelligence · ClearSky-OMEGA Financing Marketplace</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --cs-bg:#F4F7FA; --cs-card:#FFFFFF; --cs-card-2:#F7F9FC;
+  --cs-blue:#0089BD; --cs-blue-bright:#00AEEF; --cs-blue-dim:rgba(0,137,189,.09);
+  --cs-border-blue:rgba(0,137,189,.28);
+  --cs-amber:#C77A00; --cs-amber-dim:rgba(199,122,0,.12);
+  --cs-green:#12805C; --cs-green-dim:rgba(18,128,92,.10);
+  --cs-red:#B4322A; --cs-red-dim:rgba(180,50,42,.10);
+  --cs-violet:#5B4BC4; --cs-violet-dim:rgba(91,75,196,.10);
+  --cs-ink:#0E1A24; --cs-muted:#5A6B7B; --cs-muted-2:#8A98A6;
+  --cs-border:rgba(14,26,36,.10); --cs-navy:#0E1A24;
+  --mono:'IBM Plex Mono',ui-monospace,monospace;
+}
+html{scroll-behavior:smooth}
+body{font-family:'Inter',sans-serif;background:var(--cs-bg);color:var(--cs-ink);min-height:100vh;-webkit-font-smoothing:antialiased}
+a{color:var(--cs-blue);text-decoration:none}
+button{font-family:inherit;cursor:pointer}
+input,select,textarea{font-family:inherit;font-size:14px}
+:focus-visible{outline:2px solid var(--cs-blue-bright);outline-offset:2px;border-radius:4px}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.001ms!important;transition-duration:.001ms!important}}
 
-    /* ---------- BUTTONS ---------- */
-    .btn { border: none; padding: 11px 22px; border-radius: 7px; font-weight: 600; font-size: 14px; transition: opacity .18s, border-color .18s, color .18s; display: inline-flex; align-items: center; gap: 8px; }
-    .btn-primary { background: var(--cs-blue); color: #fff; }
-    .btn-primary:hover { opacity: .9; }
-    .btn-ghost { background: transparent; color: var(--cs-ink); border: 1px solid var(--cs-border); }
-    .btn-ghost:hover { border-color: var(--cs-blue); color: var(--cs-blue); }
-    .btn-green { background: var(--cs-green); color: #fff; }
-    .btn-green:hover { opacity: .9; }
-    .btn-amber { background: var(--cs-amber); color: #fff; }
-    .btn-amber:hover { opacity: .9; }
-    .btn-danger { background: transparent; color: var(--cs-red); border: 1px solid var(--cs-red-dim); }
-    .btn-danger:hover { border-color: var(--cs-red); }
-    .btn-sm { padding: 8px 15px; font-size: 13px; border-radius: 6px; }
-    .btn:disabled { opacity: .5; cursor: not-allowed; }
-    .btn-block { width: 100%; justify-content: center; }
+/* ---------- BUTTONS ---------- */
+.btn{border:none;padding:11px 22px;border-radius:7px;font-weight:600;font-size:14px;transition:opacity .18s,border-color .18s,color .18s,background .18s;display:inline-flex;align-items:center;gap:8px;white-space:nowrap}
+.btn-primary{background:var(--cs-blue);color:#fff}
+.btn-primary:hover{opacity:.9}
+.btn-ghost{background:var(--cs-card);color:var(--cs-ink);border:1px solid var(--cs-border)}
+.btn-ghost:hover{border-color:var(--cs-blue);color:var(--cs-blue)}
+.btn-green{background:var(--cs-green);color:#fff}
+.btn-green:hover{opacity:.9}
+.btn-sm{padding:8px 15px;font-size:13px;border-radius:6px}
+.btn-xs{padding:6px 11px;font-size:12px;border-radius:6px}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn-block{width:100%;justify-content:center}
 
-    /* ---------- AUTH SCREEN ---------- */
-    #authView { min-height: 100vh; display: flex; align-items: stretch; }
-    .auth-left { flex: 1; background:
-      radial-gradient(900px 500px at 75% -10%, rgba(0,174,239,0.22), transparent 60%),
-      radial-gradient(600px 400px at 10% 115%, rgba(0,137,189,0.14), transparent 55%), var(--cs-navy);
-      color: #fff; padding: 64px 56px; display: flex; flex-direction: column; justify-content: space-between; position: relative; overflow: hidden; }
-    .auth-left .grid-bg { position: absolute; inset: 0; opacity: .4;
-      background-image: linear-gradient(rgba(255,255,255,.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.05) 1px, transparent 1px);
-      background-size: 44px 44px; mask-image: linear-gradient(180deg, black, transparent 85%); }
-    .auth-brand { position: relative; display: flex; align-items: center; gap: 11px; font-family: 'Syne', sans-serif; font-weight: 800; font-size: 20px; }
-    .auth-brand .omega { width: 30px; height: 30px; border-radius: 8px; background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.2); display: flex; align-items: center; justify-content: center; font-size: 17px; }
-    .auth-brand small { display: block; font-family: 'Inter', sans-serif; font-weight: 400; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: rgba(255,255,255,.55); margin-top: 2px; }
-    .auth-hero { position: relative; }
-    .auth-hero .eyebrow { font-size: 11px; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; color: var(--cs-blue-bright); margin-bottom: 20px; }
-    .auth-hero h1 { font-family: 'Syne', sans-serif; font-size: 40px; font-weight: 800; line-height: 1.08; letter-spacing: -1.4px; margin-bottom: 18px; max-width: 15ch; }
-    .auth-hero h1 .accent { color: var(--cs-blue-bright); }
-    .auth-hero p { font-size: 15px; line-height: 1.65; color: rgba(255,255,255,.72); max-width: 46ch; }
-    .auth-foot { position: relative; font-size: 12px; color: rgba(255,255,255,.5); }
+/* ---------- TOPBAR ---------- */
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:0 26px;height:62px;background:var(--cs-navy);position:sticky;top:0;z-index:40}
+.topbar-brand{display:flex;align-items:center;gap:11px;color:#fff;font-family:'Syne',sans-serif;font-weight:800;font-size:17px;white-space:nowrap}
+.topbar-brand .omega{width:27px;height:27px;border-radius:7px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:15px}
+.topbar-brand .tag{font-family:'Inter',sans-serif;font-weight:500;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.5);border-left:1px solid rgba(255,255,255,.15);padding-left:11px;margin-left:3px}
+.topbar-right{display:flex;align-items:center;gap:14px}
+.user-mini{display:flex;align-items:center;gap:9px;color:rgba(255,255,255,.85);font-size:13px}
+.user-mini .avatar{width:30px;height:30px;border-radius:50%;background:var(--cs-blue);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px}
 
-    .auth-right { width: 480px; max-width: 44%; background: var(--cs-card); padding: 64px 52px; display: flex; flex-direction: column; justify-content: center; }
-    .auth-card h2 { font-family: 'Syne', sans-serif; font-size: 26px; font-weight: 700; letter-spacing: -.5px; margin-bottom: 6px; }
-    .auth-card .sub { font-size: 14px; color: var(--cs-muted); margin-bottom: 28px; }
-    .field { margin-bottom: 16px; }
-    .field label { display: block; font-size: 12px; font-weight: 600; color: var(--cs-muted); margin-bottom: 7px; letter-spacing: .02em; }
-    .field input, .field select, .field textarea {
-      width: 100%; padding: 12px 14px; border: 1px solid var(--cs-border); border-radius: 8px; background: var(--cs-card-2); color: var(--cs-ink); transition: border-color .18s, background .18s; }
-    .field input:focus, .field select:focus, .field textarea:focus { outline: none; border-color: var(--cs-blue); background: #fff; }
-    .field textarea { resize: vertical; min-height: 84px; line-height: 1.5; }
+/* role switch */
+.role-switch{display:flex;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);border-radius:8px;padding:3px;gap:2px}
+.role-switch button{background:none;border:none;color:rgba(255,255,255,.6);font-size:12.5px;font-weight:600;padding:6px 14px;border-radius:6px;transition:background .18s,color .18s;white-space:nowrap}
+.role-switch button:hover{color:#fff}
+.role-switch button.on{background:var(--cs-blue);color:#fff}
 
-    .role-pick { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
-    .role-opt { display: flex; align-items: flex-start; gap: 13px; border: 1px solid var(--cs-border); border-radius: 10px; padding: 13px 15px; text-align: left; background: var(--cs-card-2); transition: border-color .18s, background .18s; }
-    .role-opt:hover { border-color: var(--cs-border-blue); }
-    .role-opt.sel { border-color: var(--cs-blue); background: var(--cs-blue-dim); }
-    .role-opt .r-ic { color: var(--cs-blue); flex: none; margin-top: 1px; }
-    .role-opt h4 { font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700; margin-bottom: 3px; }
-    .role-opt p { font-size: 11.5px; color: var(--cs-muted); line-height: 1.45; }
-    .role-hint { font-size: 11.5px; color: var(--cs-muted-2); line-height: 1.5; margin-bottom: 18px; padding-left: 2px; }
+/* ---------- LAYOUT ---------- */
+.app-body{max-width:1320px;margin:0 auto;padding:30px 26px 90px}
+.page-head{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;margin-bottom:20px;flex-wrap:wrap}
+.page-head h1{font-family:'Syne',sans-serif;font-size:27px;font-weight:700;letter-spacing:-.6px}
+.page-head .ph-sub{font-size:13.5px;color:var(--cs-muted);margin-top:5px;max-width:70ch;line-height:1.5}
+.head-actions{display:flex;gap:9px;flex-wrap:wrap}
 
-    .auth-switch { font-size: 13px; color: var(--cs-muted); margin-top: 20px; text-align: center; }
-    .auth-switch button { background: none; border: none; color: var(--cs-blue); font-weight: 600; font-size: 13px; }
-    .auth-err { background: var(--cs-red-dim); color: var(--cs-red); font-size: 13px; padding: 11px 14px; border-radius: 8px; margin-bottom: 16px; line-height: 1.45; display: none; }
-    .auth-err.show { display: block; }
-    .divider { display: flex; align-items: center; gap: 12px; margin: 20px 0; color: var(--cs-muted-2); font-size: 12px; }
-    .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--cs-border); }
-    .btn-google { width: 100%; justify-content: center; background: #fff; color: var(--cs-ink); border: 1px solid var(--cs-border); }
-    .btn-google:hover { border-color: var(--cs-blue); }
+.tabs{display:flex;gap:4px;margin-bottom:20px;border-bottom:1px solid var(--cs-border);overflow-x:auto}
+.tab{background:none;border:none;padding:11px 16px;font-size:13.5px;font-weight:500;color:var(--cs-muted);border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap}
+.tab:hover{color:var(--cs-ink)}
+.tab.active{color:var(--cs-blue);border-bottom-color:var(--cs-blue);font-weight:600}
+.tab .cnt{font-size:11px;background:var(--cs-blue-dim);color:var(--cs-blue);border-radius:10px;padding:1px 7px;margin-left:6px}
 
-    /* ---------- APP SHELL ---------- */
-    #appView { display: none; min-height: 100vh; }
-    .topbar { display: flex; align-items: center; justify-content: space-between; padding: 0 28px; height: 62px; background: var(--cs-navy); position: sticky; top: 0; z-index: 40; }
-    .topbar-brand { display: flex; align-items: center; gap: 11px; color: #fff; font-family: 'Syne', sans-serif; font-weight: 800; font-size: 17px; }
-    .topbar-brand .omega { width: 27px; height: 27px; border-radius: 7px; background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.2); display: flex; align-items: center; justify-content: center; font-size: 15px; }
-    .topbar-brand .tag { font-family: 'Inter', sans-serif; font-weight: 500; font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: rgba(255,255,255,.5); border-left: 1px solid rgba(255,255,255,.15); padding-left: 11px; margin-left: 3px; }
-    .topbar-right { display: flex; align-items: center; gap: 16px; }
-    .role-chip { font-size: 11px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; padding: 5px 12px; border-radius: 20px; }
-    .role-chip.dev { background: rgba(0,174,239,.18); color: var(--cs-blue-bright); }
-    .role-chip.orig { background: rgba(199,122,0,.22); color: #F0B45C; }
-    .role-chip.admin { background: rgba(255,255,255,.16); color: #fff; }
-    .role-chip.partner { background: rgba(18,128,92,.22); color: #4FD1A5; }
-    .user-mini { display: flex; align-items: center; gap: 9px; color: rgba(255,255,255,.85); font-size: 13px; }
-    .user-mini .avatar { width: 30px; height: 30px; border-radius: 50%; background: var(--cs-blue); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px; }
-    .topbar-right .btn-signout { background: rgba(255,255,255,.08); color: #fff; border: 1px solid rgba(255,255,255,.15); padding: 7px 15px; font-size: 12.5px; border-radius: 6px; }
-    .topbar-right .btn-signout:hover { background: rgba(255,255,255,.16); }
+/* ---------- KPI STRIP ---------- */
+.kpi-strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(178px,1fr));gap:12px;margin-bottom:18px}
+.kpi{background:var(--cs-card);border:1px solid var(--cs-border);border-radius:13px;padding:16px 18px;position:relative;overflow:hidden}
+.kpi .k{font-size:10.5px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--cs-muted-2);display:flex;align-items:center;gap:6px}
+.kpi .v{font-family:'Syne',sans-serif;font-size:26px;font-weight:700;letter-spacing:-.8px;margin-top:6px;line-height:1.05}
+.kpi .v small{font-size:14px;font-weight:600;color:var(--cs-muted);letter-spacing:0;margin-left:3px}
+.kpi .d{font-size:11.5px;margin-top:6px;color:var(--cs-muted);display:flex;align-items:center;gap:5px}
+.kpi .d.up{color:var(--cs-green)}
+.kpi .d.down{color:var(--cs-red)}
+.kpi .spark{position:absolute;right:0;bottom:0;opacity:.5;pointer-events:none}
 
-    .app-body { max-width: 1200px; margin: 0 auto; padding: 34px 28px 80px; }
-    .page-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; margin-bottom: 26px; flex-wrap: wrap; }
-    .page-head h1 { font-family: 'Syne', sans-serif; font-size: 27px; font-weight: 700; letter-spacing: -.6px; }
-    .page-head .ph-sub { font-size: 13.5px; color: var(--cs-muted); margin-top: 5px; }
+/* ---------- CARDS ---------- */
+.grid{display:grid;gap:14px}
+.card{background:var(--cs-card);border:1px solid var(--cs-border);border-radius:14px;padding:20px 22px}
+.card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:16px}
+.card-head h3{font-family:'Syne',sans-serif;font-size:15.5px;font-weight:700;letter-spacing:-.2px}
+.card-head .ch-sub{font-size:12px;color:var(--cs-muted-2);margin-top:3px;line-height:1.45}
+.card-head .ch-act{display:flex;gap:7px;flex:none}
+.link-btn{background:none;border:none;color:var(--cs-blue);font-size:12.5px;font-weight:600;padding:2px 0}
+.link-btn:hover{color:var(--cs-blue-bright);text-decoration:underline}
 
-    /* filter tabs */
-    .tabs { display: flex; gap: 4px; margin-bottom: 22px; border-bottom: 1px solid var(--cs-border); }
-    .tab { background: none; border: none; padding: 11px 16px; font-size: 13.5px; font-weight: 500; color: var(--cs-muted); border-bottom: 2px solid transparent; margin-bottom: -1px; }
-    .tab:hover { color: var(--cs-ink); }
-    .tab.active { color: var(--cs-blue); border-bottom-color: var(--cs-blue); font-weight: 600; }
-    .tab .cnt { font-size: 11px; background: var(--cs-blue-dim); color: var(--cs-blue); border-radius: 10px; padding: 1px 7px; margin-left: 6px; }
+/* ---------- STATE TILE GRID (signature) ---------- */
+.tilewrap{overflow-x:auto;padding-bottom:4px}
+.tilegrid{display:grid;grid-template-columns:repeat(11,minmax(46px,1fr));gap:5px;min-width:560px}
+.tile{aspect-ratio:1/1;border-radius:8px;border:1px solid var(--cs-border);background:var(--cs-card-2);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;position:relative;transition:transform .14s,box-shadow .14s,border-color .14s;padding:2px}
+.tile.has{cursor:pointer;border-color:transparent}
+.tile.has:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(0,137,189,.24);z-index:2}
+.tile.sel{outline:2.5px solid var(--cs-navy);outline-offset:1px;z-index:3}
+.tile .ab{font-family:'Syne',sans-serif;font-size:11.5px;font-weight:700;letter-spacing:.02em;line-height:1}
+.tile .n{font-size:9.5px;font-weight:600;line-height:1;opacity:.85}
+.tile.empty{opacity:.45}
+.tile.empty .ab{color:var(--cs-muted-2);font-weight:500}
+.tile-legend{display:flex;align-items:center;gap:9px;margin-top:14px;font-size:11.5px;color:var(--cs-muted)}
+.tile-legend .ramp{display:flex;gap:2px}
+.tile-legend .ramp i{width:22px;height:9px;border-radius:2px;display:block}
 
-    /* ---------- PROJECT CARDS ---------- */
-    .proj-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 15px; }
-    .proj-card { background: var(--cs-card); border: 1px solid var(--cs-border); border-radius: 14px; padding: 22px 22px 18px; transition: border-color .18s, box-shadow .18s; cursor: pointer; }
-    .proj-card:hover { border-color: var(--cs-border-blue); box-shadow: 0 6px 22px rgba(14,26,36,.06); }
-    .proj-card.locked { cursor: default; opacity: .82; background: var(--cs-card-2); }
-    .proj-card.locked:hover { border-color: var(--cs-border); box-shadow: none; }
-    .pc-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
-    .pc-name { font-family: 'Syne', sans-serif; font-size: 17px; font-weight: 700; letter-spacing: -.3px; line-height: 1.25; }
-    .pc-meta { font-size: 12px; color: var(--cs-muted-2); margin-top: 3px; }
-    .status-pill { font-size: 10.5px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; padding: 4px 10px; border-radius: 20px; white-space: nowrap; }
-    .st-open { background: var(--cs-blue-dim); color: var(--cs-blue); }
-    .st-offered { background: var(--cs-amber-dim); color: var(--cs-amber); }
-    .st-awarded { background: var(--cs-green-dim); color: var(--cs-green); }
-    .st-locked { background: rgba(14,26,36,.07); color: var(--cs-muted); }
-    .st-withdrawn { background: var(--cs-red-dim); color: var(--cs-red); }
-    .pc-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 14px 0; }
-    .pc-stat { background: var(--cs-card-2); border-radius: 9px; padding: 10px 12px; }
-    .pc-stat .k { font-size: 10.5px; color: var(--cs-muted-2); text-transform: uppercase; letter-spacing: .05em; }
-    .pc-stat .v { font-family: 'Syne', sans-serif; font-size: 16px; font-weight: 700; margin-top: 2px; }
-    .pc-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--cs-border); }
-    .pc-offers { font-size: 12.5px; color: var(--cs-muted); }
-    .pc-offers b { color: var(--cs-ink); }
-    .pc-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
-    .pc-tag { font-size: 11px; font-weight: 500; color: var(--cs-blue); background: var(--cs-blue-dim); padding: 3px 9px; border-radius: 14px; }
+/* ---------- CHART PRIMITIVES ---------- */
+.chartrow{display:flex;align-items:center;gap:10px;margin-bottom:9px;font-size:12.5px}
+.chartrow .cr-lab{width:112px;flex:none;color:var(--cs-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chartrow .cr-bar{flex:1;height:20px;background:var(--cs-card-2);border-radius:5px;overflow:hidden;position:relative}
+.chartrow .cr-fill{height:100%;border-radius:5px;transition:width .5s cubic-bezier(.2,.8,.2,1)}
+.chartrow .cr-val{width:76px;flex:none;text-align:right;font-family:var(--mono);font-size:12px;font-weight:500}
+.chartrow.click{cursor:pointer;border-radius:6px}
+.chartrow.click:hover .cr-lab{color:var(--cs-ink)}
+.chartrow.click:hover .cr-bar{background:var(--cs-blue-dim)}
 
-    /* ---------- EMPTY STATE ---------- */
-    .empty { text-align: center; padding: 72px 24px; color: var(--cs-muted); }
-    .empty .e-ic { width: 56px; height: 56px; border-radius: 14px; background: var(--cs-blue-dim); color: var(--cs-blue); display: flex; align-items: center; justify-content: center; margin: 0 auto 18px; }
-    .empty h3 { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 700; color: var(--cs-ink); margin-bottom: 7px; }
-    .empty p { font-size: 14px; max-width: 40ch; margin: 0 auto 22px; line-height: 1.6; }
+.donut-wrap{display:flex;align-items:center;gap:22px;flex-wrap:wrap}
+.donut-legend{flex:1;min-width:150px;display:flex;flex-direction:column;gap:9px}
+.dl-item{display:flex;align-items:center;gap:9px;font-size:12.5px;cursor:pointer;border-radius:6px;padding:2px 4px;margin-left:-4px}
+.dl-item:hover{background:var(--cs-card-2)}
+.dl-item .sw{width:9px;height:9px;border-radius:3px;flex:none}
+.dl-item .lab{flex:1;color:var(--cs-muted)}
+.dl-item .val{font-weight:700;font-family:var(--mono);font-size:12px}
 
-    /* ---------- MODAL ---------- */
-    .modal-backdrop { position: fixed; inset: 0; background: rgba(14,26,36,.55); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); z-index: 60; display: none; align-items: flex-start; justify-content: center; padding: 40px 20px; overflow-y: auto; }
-    .modal-backdrop.show { display: flex; }
-    .modal { background: var(--cs-card); border-radius: 16px; width: 100%; max-width: 640px; box-shadow: 0 24px 70px rgba(14,26,36,.28); animation: pop .18s ease; }
-    .modal.wide { max-width: 820px; }
-    @keyframes pop { from { transform: translateY(12px) scale(.99); opacity: 0; } to { transform: none; opacity: 1; } }
-    .modal-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 24px 28px 18px; border-bottom: 1px solid var(--cs-border); }
-    .modal-head h2 { font-family: 'Syne', sans-serif; font-size: 21px; font-weight: 700; letter-spacing: -.4px; }
-    .modal-head .mh-sub { font-size: 13px; color: var(--cs-muted); margin-top: 4px; }
-    .modal-close { background: none; border: none; color: var(--cs-muted-2); font-size: 22px; line-height: 1; padding: 2px 6px; border-radius: 6px; }
-    .modal-close:hover { background: var(--cs-card-2); color: var(--cs-ink); }
-    .modal-body { padding: 24px 28px; }
-    .modal-foot { padding: 18px 28px 24px; display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid var(--cs-border); }
+/* ---------- STAGE FUNNEL / TIMELINE ---------- */
+.funnel{display:flex;gap:6px;align-items:stretch}
+.fstage{flex:1;min-width:0;background:var(--cs-card-2);border:1px solid var(--cs-border);border-radius:10px;padding:13px 12px;position:relative;transition:border-color .16s,background .16s;cursor:pointer}
+.fstage:hover{border-color:var(--cs-border-blue);background:var(--cs-blue-dim)}
+.fstage.sel{border-color:var(--cs-blue);background:var(--cs-blue-dim)}
+.fstage .fs-n{font-family:'Syne',sans-serif;font-size:21px;font-weight:700;line-height:1}
+.fstage .fs-lab{font-size:11px;font-weight:600;color:var(--cs-muted);margin-top:5px;letter-spacing:.02em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fstage .fs-days{font-size:10.5px;color:var(--cs-muted-2);margin-top:7px;padding-top:7px;border-top:1px solid var(--cs-border);font-family:var(--mono)}
+.fstage .fs-bar{height:3px;border-radius:2px;margin-top:9px}
 
-    .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-    .file-drop { border: 1.5px dashed var(--cs-border-blue); border-radius: 10px; padding: 18px; text-align: center; background: var(--cs-blue-dim); transition: background .18s; }
-    .file-drop:hover { background: rgba(0,137,189,.14); }
-    .file-drop label { cursor: pointer; display: block; }
-    .file-drop .fd-ic { color: var(--cs-blue); margin-bottom: 8px; }
-    .file-drop .fd-main { font-size: 13.5px; font-weight: 600; color: var(--cs-ink); }
-    .file-drop .fd-sub { font-size: 11.5px; color: var(--cs-muted); margin-top: 3px; }
-    .file-chip { display: flex; align-items: center; gap: 9px; background: var(--cs-card-2); border: 1px solid var(--cs-border); border-radius: 8px; padding: 9px 12px; margin-top: 9px; font-size: 13px; }
-    .file-chip .fc-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .file-chip .fc-x { background: none; border: none; color: var(--cs-muted-2); font-size: 17px; padding: 0 4px; }
-    .file-chip .fc-x:hover { color: var(--cs-red); }
-    .field-note { font-size: 11.5px; color: var(--cs-muted-2); margin-top: 6px; line-height: 1.45; }
+/* deal spine timeline */
+.spine{display:flex;flex-direction:column;gap:2px}
+.spine-head{display:grid;grid-template-columns:200px 1fr 92px;gap:12px;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--cs-muted-2);padding:0 0 9px;border-bottom:1px solid var(--cs-border);margin-bottom:7px}
+.spine-row{display:grid;grid-template-columns:200px 1fr 92px;gap:12px;align-items:center;padding:6px 6px;border-radius:8px;cursor:pointer;transition:background .14s}
+.spine-row:hover{background:var(--cs-card-2)}
+.spine-name{font-size:12.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.spine-name span{display:block;font-weight:400;font-size:11px;color:var(--cs-muted-2)}
+.spine-track{position:relative;height:22px;background:linear-gradient(90deg,var(--cs-card-2) 0,var(--cs-card-2) 100%);border-radius:5px;overflow:hidden}
+.spine-seg{position:absolute;top:0;bottom:0;display:flex;align-items:center;justify-content:center;font-size:9.5px;font-weight:700;color:#fff;overflow:hidden;white-space:nowrap}
+.spine-days{text-align:right;font-family:var(--mono);font-size:12px;font-weight:500}
+.spine-days small{display:block;font-size:10px;color:var(--cs-muted-2);font-family:'Inter',sans-serif}
+.spine-axis{display:flex;justify-content:space-between;font-size:10px;color:var(--cs-muted-2);font-family:var(--mono);margin-top:6px;padding-left:212px}
 
-    /* ---------- CLOUD LINK ROWS ---------- */
-    .form-rule { height: 1px; background: var(--cs-border); margin: 22px 0 18px; }
-    .link-row { display: grid; grid-template-columns: 150px 1fr 30px; gap: 8px; align-items: center; margin-bottom: 8px; }
-    .link-row input { padding: 10px 12px; border: 1px solid var(--cs-border); border-radius: 8px; background: var(--cs-card-2); color: var(--cs-ink); width: 100%; font-size: 13px; transition: border-color .18s, background .18s; }
-    .link-row input:focus { outline: none; border-color: var(--cs-blue); background: #fff; }
-    .link-row .lr-label { font-weight: 500; }
-    .link-row .lr-x { background: none; border: none; color: var(--cs-muted-2); font-size: 19px; line-height: 1; border-radius: 6px; padding: 4px 6px; }
-    .link-row .lr-x:hover { color: var(--cs-red); background: var(--cs-red-dim); }
+/* ---------- FILTER BAR ---------- */
+.filterbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;background:var(--cs-card);border:1px solid var(--cs-border);border-radius:12px;padding:11px 13px;margin-bottom:14px}
+.fb-search{flex:1 1 240px;min-width:180px;padding:9px 13px 9px 34px;border:1px solid var(--cs-border);border-radius:8px;background:var(--cs-card-2) url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='15' height='15' viewBox='0 0 24 24' fill='none' stroke='%238A98A6' stroke-width='2.2' stroke-linecap='round'><circle cx='11' cy='11' r='7'/><line x1='21' y1='21' x2='16.5' y2='16.5'/></svg>") no-repeat 11px center;font-size:13.5px;color:var(--cs-ink)}
+.fb-search:focus{outline:none;border-color:var(--cs-blue);background-color:#fff}
+.fb-sel{padding:9px 11px;border:1px solid var(--cs-border);border-radius:8px;background:var(--cs-card-2);color:var(--cs-ink);font-size:13px}
+.fb-sel:focus{outline:none;border-color:var(--cs-blue)}
+.fb-spacer{flex:1}
+.seg{display:flex;background:var(--cs-card-2);border:1px solid var(--cs-border);border-radius:8px;padding:3px;gap:2px}
+.seg button{background:none;border:none;font-size:12.5px;font-weight:600;color:var(--cs-muted);padding:6px 12px;border-radius:6px;transition:background .16s,color .16s;white-space:nowrap}
+.seg button:hover{color:var(--cs-ink)}
+.seg button.on{background:var(--cs-blue);color:#fff}
 
-    /* ---------- DISCLOSURE ---------- */
-    .disclosure { display: flex; align-items: center; gap: 8px; width: 100%; background: none; border: none; padding: 4px 0; font-size: 13px; font-weight: 600; color: var(--cs-blue); text-align: left; }
-    .disclosure::before { content: '+'; display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; border-radius: 5px; background: var(--cs-blue-dim); font-size: 14px; line-height: 1; flex: none; }
-    .disclosure.open::before { content: '\2212'; }
-    .disclosure:hover { color: var(--cs-blue-bright); }
-    .disclosure-body { margin-top: 14px; }
+.chips{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:14px;align-items:center;min-height:0}
+.chip{display:inline-flex;align-items:center;gap:7px;background:var(--cs-blue-dim);color:var(--cs-blue);border:1px solid var(--cs-border-blue);border-radius:16px;padding:5px 8px 5px 12px;font-size:12px;font-weight:600}
+.chip button{background:none;border:none;color:inherit;font-size:15px;line-height:1;padding:0 2px;opacity:.7}
+.chip button:hover{opacity:1}
+.chips .clear-all{background:none;border:none;color:var(--cs-muted);font-size:12px;font-weight:600;text-decoration:underline}
+.chips .clear-all:hover{color:var(--cs-red)}
 
-    /* link rows inside the detail drawer */
-    .doc-link .dl-host { display: block; font-size: 11px; font-weight: 400; color: var(--cs-muted-2); margin-top: 2px; }
-    .doc-link.link-ext .dl-ic { color: var(--cs-amber); }
-    .kv .kv-role { display: inline-block; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; padding: 2px 7px; border-radius: 10px; background: var(--cs-card-2); color: var(--cs-muted); margin-left: 6px; vertical-align: middle; }
+/* ---------- TABLE ---------- */
+.sheet-wrap{background:var(--cs-card);border:1px solid var(--cs-border);border-radius:12px;overflow:auto;max-height:70vh}
+.sheet{border-collapse:separate;border-spacing:0;width:100%;font-size:12.5px;white-space:nowrap}
+.sheet thead th{position:sticky;top:0;z-index:2;background:var(--cs-card-2);text-align:left;font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--cs-muted);padding:11px 13px;border-bottom:1px solid var(--cs-border);cursor:pointer;user-select:none}
+.sheet thead th:hover{color:var(--cs-blue)}
+.sheet thead th.sorted{color:var(--cs-blue)}
+.sheet tbody td{padding:10px 13px;border-bottom:1px solid var(--cs-border);vertical-align:middle}
+.sheet tbody tr{cursor:pointer;transition:background .12s}
+.sheet tbody tr:hover td{background:var(--cs-blue-dim)}
+.sheet .num{text-align:right;font-variant-numeric:tabular-nums;font-family:var(--mono);font-size:12px}
+.sheet .c-name{font-weight:600;white-space:normal;min-width:180px;max-width:250px}
+.sheet .c-name span{display:block;font-weight:400;font-size:11px;color:var(--cs-muted-2);margin-top:2px}
+.sheet-empty{padding:54px 20px!important;text-align:center;color:var(--cs-muted-2);font-style:italic;white-space:normal}
 
-    /* ---------- DETAIL DRAWER ---------- */
-    .detail-grid { display: grid; grid-template-columns: 1.4fr 1fr; gap: 22px; }
-    .detail-sec { margin-bottom: 24px; }
-    .detail-sec h4 { font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--cs-muted-2); margin-bottom: 12px; }
-    .kv-list { display: flex; flex-direction: column; gap: 10px; }
-    .kv { display: flex; justify-content: space-between; gap: 14px; font-size: 13.5px; padding-bottom: 10px; border-bottom: 1px solid var(--cs-border); }
-    .kv:last-child { border-bottom: none; }
-    .kv .k { color: var(--cs-muted); }
-    .kv .v { font-weight: 600; text-align: right; }
-    .doc-link { display: flex; align-items: center; gap: 10px; padding: 11px 14px; border: 1px solid var(--cs-border); border-radius: 9px; margin-bottom: 8px; font-size: 13.5px; transition: border-color .18s; }
-    .doc-link:hover { border-color: var(--cs-blue); }
-    .doc-link .dl-ic { color: var(--cs-blue); }
-    .doc-link .dl-name { flex: 1; font-weight: 500; color: var(--cs-ink); }
-    .doc-link .dl-go { color: var(--cs-muted-2); font-size: 12px; }
-    .doc-missing { font-size: 13px; color: var(--cs-muted-2); font-style: italic; padding: 8px 0; }
+/* group rows */
+.grp-row td{background:var(--cs-card-2)!important;font-weight:700;border-top:1px solid var(--cs-border)}
+.grp-row:hover td{background:var(--cs-blue-dim)!important}
+.grp-tog{display:inline-flex;align-items:center;gap:9px;font-family:'Syne',sans-serif;font-size:13px;font-weight:700}
+.grp-tog .caret{transition:transform .18s;color:var(--cs-blue)}
+.grp-row.open .caret{transform:rotate(90deg)}
+.grp-meta{font-family:'Inter',sans-serif;font-weight:500;font-size:11px;color:var(--cs-muted-2);margin-left:8px}
 
-    /* offer / thread items */
-    .offer-item { border: 1px solid var(--cs-border); border-radius: 11px; padding: 15px 16px; margin-bottom: 11px; background: var(--cs-card); }
-    .offer-item.mine { border-color: var(--cs-border-blue); background: var(--cs-blue-dim); }
-    .oi-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
-    .oi-who { font-weight: 700; font-size: 13.5px; }
-    .oi-when { font-size: 11.5px; color: var(--cs-muted-2); }
-    .oi-terms { font-size: 13px; line-height: 1.55; color: var(--cs-ink); }
-    .oi-amount { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 15px; color: var(--cs-green); }
-    .oi-structure { display: inline-block; font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; padding: 2px 8px; border-radius: 12px; background: var(--cs-amber-dim); color: var(--cs-amber); margin-left: 8px; }
-    .oi-actions { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
-    .oi-status { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; padding: 3px 9px; border-radius: 12px; }
-    .ois-pending { background: var(--cs-amber-dim); color: var(--cs-amber); }
-    .ois-accepted { background: var(--cs-green-dim); color: var(--cs-green); }
-    .ois-rejected { background: var(--cs-red-dim); color: var(--cs-red); }
-    .ois-recalled { background: rgba(14,26,36,.07); color: var(--cs-muted); }
+/* pills */
+.pill{font-size:10.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:4px 10px;border-radius:20px;white-space:nowrap;display:inline-block}
+.p-active{background:var(--cs-blue-dim);color:var(--cs-blue)}
+.p-screening{background:var(--cs-violet-dim);color:var(--cs-violet)}
+.p-diligence{background:var(--cs-amber-dim);color:var(--cs-amber)}
+.p-term{background:var(--cs-amber-dim);color:var(--cs-amber)}
+.p-won{background:var(--cs-green-dim);color:var(--cs-green)}
+.p-declined{background:var(--cs-red-dim);color:var(--cs-red)}
+.p-withdrawn{background:rgba(14,26,36,.07);color:var(--cs-muted)}
+.tag{font-size:11px;font-weight:500;color:var(--cs-blue);background:var(--cs-blue-dim);padding:3px 9px;border-radius:14px;display:inline-block}
 
-    .thread { display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; max-height: 260px; overflow-y: auto; padding-right: 4px; }
-    .msg { font-size: 13px; line-height: 1.5; padding: 10px 13px; border-radius: 10px; max-width: 85%; }
-    .msg.them { background: var(--cs-card-2); align-self: flex-start; }
-    .msg.me { background: var(--cs-blue-dim); align-self: flex-end; }
-    .msg .m-who { font-size: 10.5px; font-weight: 700; color: var(--cs-muted); margin-bottom: 3px; }
-    .msg-compose { display: flex; gap: 8px; }
-    .msg-compose input { flex: 1; padding: 10px 13px; border: 1px solid var(--cs-border); border-radius: 8px; background: var(--cs-card-2); }
-    .msg-compose input:focus { outline: none; border-color: var(--cs-blue); background: #fff; }
+/* ---------- DRAWER ---------- */
+.drawer-back{position:fixed;inset:0;background:rgba(14,26,36,.45);backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px);z-index:60;opacity:0;pointer-events:none;transition:opacity .22s}
+.drawer-back.show{opacity:1;pointer-events:auto}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(640px,100%);background:var(--cs-card);z-index:61;transform:translateX(100%);transition:transform .26s cubic-bezier(.3,.8,.3,1);display:flex;flex-direction:column;box-shadow:-18px 0 60px rgba(14,26,36,.22)}
+.drawer.show{transform:none}
+.dr-head{padding:22px 26px 0;border-bottom:1px solid var(--cs-border);flex:none}
+.dr-top{display:flex;align-items:flex-start;justify-content:space-between;gap:14px}
+.dr-top h2{font-family:'Syne',sans-serif;font-size:20px;font-weight:700;letter-spacing:-.4px;line-height:1.2}
+.dr-top .dr-sub{font-size:12.5px;color:var(--cs-muted);margin-top:5px}
+.dr-x{background:none;border:none;color:var(--cs-muted-2);font-size:24px;line-height:1;padding:0 6px;border-radius:6px}
+.dr-x:hover{background:var(--cs-card-2);color:var(--cs-ink)}
+.dr-tabs{display:flex;gap:2px;margin-top:16px;overflow-x:auto}
+.dr-tab{background:none;border:none;padding:10px 13px;font-size:12.5px;font-weight:500;color:var(--cs-muted);border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap}
+.dr-tab:hover{color:var(--cs-ink)}
+.dr-tab.on{color:var(--cs-blue);border-bottom-color:var(--cs-blue);font-weight:600}
+.dr-body{flex:1;overflow-y:auto;padding:22px 26px 34px}
+.dr-foot{flex:none;padding:14px 26px;border-top:1px solid var(--cs-border);display:flex;gap:9px;flex-wrap:wrap;background:var(--cs-card-2)}
 
-    .locked-banner { background: var(--cs-navy); color: #fff; border-radius: 12px; padding: 22px 24px; text-align: center; }
-    .locked-banner .lb-ic { color: var(--cs-blue-bright); margin-bottom: 10px; }
-    .locked-banner h3 { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 700; margin-bottom: 6px; }
-    .locked-banner p { font-size: 13.5px; color: rgba(255,255,255,.7); line-height: 1.6; max-width: 44ch; margin: 0 auto; }
+.kv-list{display:flex;flex-direction:column}
+.kv{display:flex;justify-content:space-between;gap:16px;font-size:13px;padding:10px 0;border-bottom:1px solid var(--cs-border)}
+.kv:last-child{border-bottom:none}
+.kv .k{color:var(--cs-muted);flex:none}
+.kv .v{font-weight:600;text-align:right}
+.kv .v.mono{font-family:var(--mono);font-weight:500}
+.sec{margin-bottom:26px}
+.sec h4{font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--cs-muted-2);margin-bottom:11px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.doc-link{display:flex;align-items:center;gap:11px;padding:11px 14px;border:1px solid var(--cs-border);border-radius:9px;margin-bottom:8px;font-size:13px;transition:border-color .18s,background .18s;color:var(--cs-ink)}
+.doc-link:hover{border-color:var(--cs-blue);background:var(--cs-blue-dim)}
+.doc-link .dl-ic{color:var(--cs-blue);flex:none}
+.doc-link .dl-name{flex:1;font-weight:500}
+.doc-link .dl-name span{display:block;font-size:11px;color:var(--cs-muted-2);font-weight:400;margin-top:1px}
+.doc-link .dl-go{color:var(--cs-muted-2);font-size:12px;flex:none}
 
-    /* ---------- ADMIN SPREADSHEET ---------- */
-    .admin-toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 14px; }
-    .admin-search { flex: 1 1 260px; min-width: 200px; padding: 10px 14px; border: 1px solid var(--cs-border); border-radius: 8px; background: var(--cs-card); color: var(--cs-ink); font-size: 13.5px; }
-    .admin-search:focus { outline: none; border-color: var(--cs-blue); }
-    .admin-select { padding: 10px 12px; border: 1px solid var(--cs-border); border-radius: 8px; background: var(--cs-card); color: var(--cs-ink); font-size: 13px; max-width: 200px; }
-    .admin-select:focus { outline: none; border-color: var(--cs-blue); }
-    .admin-toolbar .btn { flex: none; }
+/* utility bill table */
+.bill{width:100%;border-collapse:separate;border-spacing:0;font-size:12px}
+.bill th{text-align:right;font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--cs-muted-2);padding:8px 9px;border-bottom:1px solid var(--cs-border)}
+.bill th:first-child{text-align:left}
+.bill td{text-align:right;padding:7px 9px;border-bottom:1px solid var(--cs-border);font-family:var(--mono);font-size:11.5px}
+.bill td:first-child{text-align:left;font-family:'Inter',sans-serif;font-weight:500}
+.bill tfoot td{font-weight:700;border-bottom:none;border-top:1.5px solid var(--cs-ink);background:var(--cs-card-2)}
+.bill tr.peak td{background:var(--cs-amber-dim)}
 
-    .admin-stats { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
-    .astat { background: var(--cs-card); border: 1px solid var(--cs-border); border-radius: 9px; padding: 9px 14px; min-width: 118px; }
-    .astat .k { font-size: 10px; color: var(--cs-muted-2); text-transform: uppercase; letter-spacing: .06em; }
-    .astat .v { font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700; margin-top: 2px; }
+/* equity verdict */
+.verdict{border-radius:12px;padding:17px 19px;margin-bottom:16px;border:1px solid}
+.verdict.good{background:var(--cs-green-dim);border-color:rgba(18,128,92,.3)}
+.verdict.fair{background:var(--cs-amber-dim);border-color:rgba(199,122,0,.3)}
+.verdict.poor{background:var(--cs-red-dim);border-color:rgba(180,50,42,.3)}
+.verdict .vd-top{display:flex;align-items:center;gap:10px;margin-bottom:7px}
+.verdict .vd-badge{font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:4px 10px;border-radius:14px;color:#fff}
+.verdict.good .vd-badge{background:var(--cs-green)}
+.verdict.fair .vd-badge{background:var(--cs-amber)}
+.verdict.poor .vd-badge{background:var(--cs-red)}
+.verdict h5{font-family:'Syne',sans-serif;font-size:16px;font-weight:700}
+.verdict p{font-size:12.5px;line-height:1.6;color:var(--cs-ink);opacity:.85}
+.vd-nums{display:grid;grid-template-columns:repeat(auto-fit,minmax(104px,1fr));gap:11px;margin-top:14px}
+.vd-num{background:rgba(255,255,255,.65);border-radius:9px;padding:10px 12px}
+.vd-num .k{font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--cs-muted)}
+.vd-num .v{font-family:'Syne',sans-serif;font-size:17px;font-weight:700;margin-top:3px}
 
-    .sheet-wrap { background: var(--cs-card); border: 1px solid var(--cs-border); border-radius: 12px; overflow: auto; max-height: 68vh; }
-    .sheet { border-collapse: separate; border-spacing: 0; width: 100%; font-size: 12.5px; white-space: nowrap; }
-    .sheet thead th { position: sticky; top: 0; z-index: 2; background: var(--cs-card-2); text-align: left; font-size: 10.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--cs-muted); padding: 11px 13px; border-bottom: 1px solid var(--cs-border); cursor: pointer; user-select: none; }
-    .sheet thead th:hover { color: var(--cs-blue); }
-    .sheet thead th.sorted { color: var(--cs-blue); }
-    .sheet .sort-ind { font-size: 11px; }
-    .sheet tbody td { padding: 10px 13px; border-bottom: 1px solid var(--cs-border); color: var(--cs-ink); vertical-align: middle; }
-    .sheet tbody tr { cursor: pointer; transition: background .12s; }
-    .sheet tbody tr:hover td { background: var(--cs-blue-dim); }
-    .sheet tbody tr:last-child td { border-bottom: none; }
-    .sheet .num { text-align: right; font-variant-numeric: tabular-nums; }
-    .sheet .c-num { width: 46px; color: var(--cs-muted-2); text-align: right; font-variant-numeric: tabular-nums; }
-    .sheet .c-name { font-weight: 600; white-space: normal; min-width: 190px; max-width: 280px; }
-    .sheet-empty { padding: 48px 20px !important; text-align: center; color: var(--cs-muted-2); font-style: italic; white-space: normal; }
-    .sheet-dash { color: var(--cs-muted-2); }
-    .sheet-chip { display: inline-block; font-size: 11px; font-weight: 500; color: var(--cs-blue); background: var(--cs-blue-dim); padding: 3px 8px; border-radius: 12px; margin: 1px 3px 1px 0; max-width: 130px; overflow: hidden; text-overflow: ellipsis; vertical-align: middle; }
-    .sheet-chip:hover { background: var(--cs-blue); color: #fff; }
-    .sheet-role { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; padding: 3px 8px; border-radius: 11px; }
-    .sheet-role.r-developer { background: var(--cs-blue-dim); color: var(--cs-blue); }
-    .sheet-role.r-originator { background: var(--cs-amber-dim); color: var(--cs-amber); }
-    .sheet-role.r-partner { background: var(--cs-green-dim); color: var(--cs-green); }
-    .sheet-role.r-admin { background: rgba(14,26,36,.08); color: var(--cs-muted); }
+/* rate ladder */
+.ladder{position:relative;height:52px;margin:20px 0 8px}
+.ladder-track{position:absolute;left:0;right:0;top:20px;height:8px;border-radius:4px;background:linear-gradient(90deg,var(--cs-green) 0%,#8CBF3F 38%,var(--cs-amber) 62%,var(--cs-red) 100%)}
+.ladder-mark{position:absolute;top:8px;transform:translateX(-50%);text-align:center}
+.ladder-mark i{display:block;width:2px;height:32px;background:var(--cs-ink);margin:0 auto;border-radius:1px}
+.ladder-mark span{display:block;font-size:10px;font-weight:700;white-space:nowrap;margin-top:3px;font-family:var(--mono)}
+.ladder-mark.ghost i{background:var(--cs-muted-2);opacity:.6}
+.ladder-mark.ghost span{color:var(--cs-muted-2);font-weight:500}
+.ladder-scale{display:flex;justify-content:space-between;font-size:10px;color:var(--cs-muted-2);font-family:var(--mono)}
 
-    /* toast */
-    #toast { position: fixed; bottom: 26px; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--cs-navy); color: #fff; padding: 13px 22px; border-radius: 10px; font-size: 13.5px; font-weight: 500; box-shadow: 0 12px 40px rgba(14,26,36,.3); opacity: 0; transition: opacity .25s, transform .25s; z-index: 80; pointer-events: none; }
-    #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-    #toast.err { background: var(--cs-red); }
+/* ---------- MODAL ---------- */
+.modal-back{position:fixed;inset:0;background:rgba(14,26,36,.55);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);z-index:70;display:none;align-items:flex-start;justify-content:center;padding:40px 20px;overflow-y:auto}
+.modal-back.show{display:flex}
+.modal{background:var(--cs-card);border-radius:16px;width:100%;max-width:660px;box-shadow:0 24px 70px rgba(14,26,36,.28);animation:pop .18s ease}
+.modal.wide{max-width:880px}
+@keyframes pop{from{transform:translateY(12px) scale(.99);opacity:0}to{transform:none;opacity:1}}
+.modal-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:23px 27px 17px;border-bottom:1px solid var(--cs-border)}
+.modal-head h2{font-family:'Syne',sans-serif;font-size:20px;font-weight:700;letter-spacing:-.4px}
+.modal-head .mh-sub{font-size:12.5px;color:var(--cs-muted);margin-top:4px;line-height:1.5}
+.modal-body{padding:23px 27px}
+.modal-foot{padding:17px 27px 23px;display:flex;justify-content:flex-end;gap:10px;border-top:1px solid var(--cs-border);flex-wrap:wrap}
+.field{margin-bottom:15px}
+.field label{display:block;font-size:12px;font-weight:600;color:var(--cs-muted);margin-bottom:7px}
+.field input,.field select,.field textarea{width:100%;padding:11px 13px;border:1px solid var(--cs-border);border-radius:8px;background:var(--cs-card-2);color:var(--cs-ink);transition:border-color .18s,background .18s}
+.field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--cs-blue);background:#fff}
+.field textarea{resize:vertical;min-height:70px;line-height:1.5}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:13px}
+.field-row.three{grid-template-columns:1fr 1fr 1fr}
+.field-note{font-size:11.5px;color:var(--cs-muted-2);margin-top:6px;line-height:1.5}
+.form-rule{height:1px;background:var(--cs-border);margin:21px 0 17px}
+.file-drop{border:1.5px dashed var(--cs-border-blue);border-radius:10px;padding:20px;text-align:center;background:var(--cs-blue-dim);transition:background .18s,border-color .18s}
+.file-drop:hover,.file-drop.over{background:rgba(0,137,189,.15);border-color:var(--cs-blue)}
+.file-drop label{cursor:pointer;display:block}
+.file-drop .fd-ic{color:var(--cs-blue);margin-bottom:8px}
+.file-drop .fd-main{font-size:13.5px;font-weight:600}
+.file-drop .fd-sub{font-size:11.5px;color:var(--cs-muted);margin-top:3px}
+.file-chip{display:flex;align-items:center;gap:9px;background:var(--cs-card-2);border:1px solid var(--cs-border);border-radius:8px;padding:9px 12px;margin-top:9px;font-size:13px}
+.file-chip .fc-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.file-chip .fc-state{font-size:11px;color:var(--cs-muted);font-family:var(--mono)}
+.file-chip .fc-x{background:none;border:none;color:var(--cs-muted-2);font-size:17px;padding:0 4px}
+.file-chip .fc-x:hover{color:var(--cs-red)}
+.extract-bar{height:3px;background:var(--cs-border);border-radius:2px;overflow:hidden;margin-top:9px}
+.extract-bar i{display:block;height:100%;width:0;background:var(--cs-blue);transition:width .4s linear}
 
-    /* loading */
-    .loading { display: flex; align-items: center; justify-content: center; padding: 90px; }
-    .spinner { width: 34px; height: 34px; border: 3px solid var(--cs-border); border-top-color: var(--cs-blue); border-radius: 50%; animation: spin .7s linear infinite; }
-    @keyframes spin { to { transform: rotate(360deg); } }
+/* report */
+.report-sec{margin-bottom:22px}
+.report-sec h4{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--cs-border)}
+.rpt-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
+.rpt-stat{background:var(--cs-card-2);border-radius:9px;padding:12px 14px}
+.rpt-stat .k{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--cs-muted-2)}
+.rpt-stat .v{font-family:'Syne',sans-serif;font-size:18px;font-weight:700;margin-top:3px}
 
-    @media (max-width: 900px) {
-      .auth-left { display: none; }
-      .auth-right { width: 100%; max-width: 100%; padding: 40px 24px; }
-      .detail-grid { grid-template-columns: 1fr; }
-    }
-    @media (max-width: 620px) {
-      .app-body { padding: 24px 16px 70px; }
-      .topbar { padding: 0 16px; }
-      .topbar-brand .tag { display: none; }
-      .user-mini span { display: none; }
-      .field-row { grid-template-columns: 1fr; }
-      .proj-grid { grid-template-columns: 1fr; }
-      .link-row { grid-template-columns: 1fr 30px; grid-template-areas: "label x" "url url"; }
-      .link-row .lr-label { grid-area: label; }
-      .link-row .lr-x { grid-area: x; }
-      .link-row .lr-url { grid-area: url; }
-      .admin-select { max-width: none; flex: 1 1 140px; }
-      .sheet-wrap { max-height: none; }
-    }
-  </style>
+/* misc */
+.empty{text-align:center;padding:60px 24px;color:var(--cs-muted)}
+.empty .e-ic{width:54px;height:54px;border-radius:14px;background:var(--cs-blue-dim);color:var(--cs-blue);display:flex;align-items:center;justify-content:center;margin:0 auto 16px}
+.empty h3{font-family:'Syne',sans-serif;font-size:17px;font-weight:700;color:var(--cs-ink);margin-bottom:7px}
+.empty p{font-size:13.5px;max-width:42ch;margin:0 auto 20px;line-height:1.6}
+#toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--cs-navy);color:#fff;padding:13px 22px;border-radius:10px;font-size:13.5px;font-weight:500;box-shadow:0 12px 40px rgba(14,26,36,.3);opacity:0;transition:opacity .25s,transform .25s;z-index:90;pointer-events:none;max-width:min(460px,92vw)}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+#toast.err{background:var(--cs-red)}
+.note{font-size:11.5px;color:var(--cs-muted-2);line-height:1.55}
+.demo-badge{display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--cs-amber);background:var(--cs-amber-dim);padding:3px 8px;border-radius:11px}
+
+/* print — the Reports tab is meant to be saved as a PDF */
+@media print{
+  .topbar,.tabs,.head-actions,.filterbar,.chips,.drawer,.drawer-back,.modal-back,#toast,[data-act="print"]{display:none!important}
+  body{background:#fff}
+  .app-body{padding:0;max-width:none}
+  .card{border:none;padding:0}
+  .rpt-stat{border:1px solid var(--cs-border)}
+  .report-sec{break-inside:avoid}
+}
+
+/* responsive */
+@media (max-width:1080px){
+  .tg-layout{grid-template-columns:minmax(0,1fr)!important}
+  .spine-head,.spine-row{grid-template-columns:150px 1fr 78px}
+  .spine-axis{padding-left:162px}
+}
+@media (max-width:900px){
+  .grid{grid-template-columns:minmax(0,1fr)!important}
+}
+@media (max-width:760px){
+  .app-body{padding:22px 14px 80px}
+  .topbar{padding:0 14px;gap:10px}
+  .topbar-brand .tag,.user-mini span:not(.avatar){display:none}
+  .role-switch button{padding:6px 10px;font-size:12px}
+  .field-row,.field-row.three{grid-template-columns:1fr}
+  .funnel{flex-wrap:wrap}
+  .fstage{flex:1 1 44%}
+  .spine-head,.spine-row{grid-template-columns:1fr}
+  .spine-head span:not(:first-child),.spine-days{display:none}
+  .spine-axis{padding-left:0}
+  .drawer{width:100%}
+  .sheet-wrap{max-height:none}
+}
+</style>
 </head>
 <body>
 
-  <!-- ==================== AUTH ==================== -->
-  <div id="authView">
-    <div class="auth-left">
-      <div class="grid-bg"></div>
-      <div class="auth-brand">
-        <span class="omega">&#937;</span>
-        <div>ClearSky OMEGA<small>Financing Partners Portal</small></div>
-      </div>
-      <div class="auth-hero">
-        <p class="eyebrow">Capital Deal Room</p>
-        <h1>Where financeable projects meet <span class="accent">the capital to build them</span></h1>
-        <p>Developers and originators bring permit-ready storage, EV, microgrid, and compute deals &mdash; with the numbers, the documents, and links to utility bills and site details attached. Capital partners review the open pipeline, then offer, finance, or acquire.</p>
-      </div>
-      <div class="auth-foot">&copy; 2025 ClearSky Builders LLC &middot; ClearSky Energy Solutions LLC</div>
+<div class="topbar">
+  <div class="topbar-brand">
+    <span class="omega">&#937;</span>
+    ClearSky OMEGA
+    <span class="tag">Financing Marketplace</span>
+  </div>
+  <div class="role-switch" id="roleSwitch">
+    <button data-role="dev" class="on">Developer &amp; originator</button>
+    <button data-role="partner">Financing partner</button>
+  </div>
+  <div class="topbar-right">
+    <div class="user-mini">
+      <span class="avatar" id="userAvatar">MQ</span>
+      <span id="userName">Marta Quintero</span>
     </div>
+  </div>
+</div>
 
-    <div class="auth-right">
-      <div class="auth-card">
-        <div class="auth-err" id="authErr"></div>
+<div class="app-body">
+  <div class="page-head">
+    <div>
+      <h1 id="pageTitle">Deal intelligence</h1>
+      <p class="ph-sub" id="pageSub"></p>
+    </div>
+    <div class="head-actions" id="headActions"></div>
+  </div>
 
-        <!-- LOGIN -->
-        <div id="loginForm">
-          <h2>Welcome back</h2>
-          <p class="sub">Log in to the Financing Partners deal room.</p>
-          <div class="field"><label>Work email</label><input type="email" id="loginEmail" placeholder="you@company.com" autocomplete="email"></div>
-          <div class="field"><label>Password</label><input type="password" id="loginPass" placeholder="Your password" autocomplete="current-password"></div>
-          <button class="btn btn-primary btn-block" id="loginBtn">Log in</button>
-          <div class="divider">or</div>
-          <button class="btn btn-google" id="googleLoginBtn">
-            <svg width="17" height="17" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84A11 11 0 0 0 12 23z"/><path fill="#FBBC05" d="M5.84 14.1a6.6 6.6 0 0 1 0-4.2V7.06H2.18a11 11 0 0 0 0 9.88l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1A11 11 0 0 0 2.18 7.06l3.66 2.84C6.71 7.3 9.14 5.38 12 5.38z"/></svg>
-            Continue with Google
-          </button>
-          <p class="auth-switch">New here? <button id="toRegister">Create a partner account</button></p>
+  <div class="tabs" id="tabs"></div>
+  <div id="view"></div>
+</div>
+
+<!-- deal drawer -->
+<div class="drawer-back" id="drawerBack"></div>
+<aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-labelledby="drTitle">
+  <div class="dr-head">
+    <div class="dr-top">
+      <div>
+        <h2 id="drTitle">—</h2>
+        <div class="dr-sub" id="drSub"></div>
+      </div>
+      <button class="dr-x" id="drClose" aria-label="Close deal">&times;</button>
+    </div>
+    <div class="dr-tabs" id="drTabs"></div>
+  </div>
+  <div class="dr-body" id="drBody"></div>
+  <div class="dr-foot" id="drFoot"></div>
+</aside>
+
+<!-- modal -->
+<div class="modal-back" id="modalBack">
+  <div class="modal" id="modalEl"></div>
+</div>
+
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════════════════
+   1. UTILITIES
+   ═══════════════════════════════════════════════════════════════════════════ */
+const $  = (s, r) => (r || document).querySelector(s);
+const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+const usd = n => '$' + Math.round(n).toLocaleString('en-US');
+const usdC = n => n >= 1e9 ? '$' + (n/1e9).toFixed(2) + 'B'
+               : n >= 1e6 ? '$' + (n/1e6).toFixed(1) + 'M'
+               : n >= 1e3 ? '$' + Math.round(n/1e3) + 'K' : '$' + Math.round(n);
+const num = (n, d = 1) => Number(n).toLocaleString('en-US', {minimumFractionDigits:d, maximumFractionDigits:d});
+const pct = (n, d = 0) => n.toFixed(d) + '%';
+const dt = s => new Date(s + 'T12:00:00').toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'});
+const daysBetween = (a, b) => Math.round((new Date(b) - new Date(a)) / 86400000);
+const avg = a => a.length ? a.reduce((x,y)=>x+y,0) / a.length : 0;
+const sum = a => a.reduce((x,y)=>x+y,0);
+const median = a => { if(!a.length) return 0; const s=[...a].sort((x,y)=>x-y); const m=s.length>>1;
+  return s.length % 2 ? s[m] : (s[m-1]+s[m])/2; };
+
+let toastTimer;
+function toast(msg, isErr) {
+  const t = $('#toast');
+  t.textContent = msg;
+  t.className = 'show' + (isErr ? ' err' : '');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { t.className = ''; }, 3400);
+}
+
+/* deterministic PRNG so the demo dataset is stable across reloads */
+function mulberry32(a) {
+  return function() {
+    a |= 0; a = a + 0x6D2B79F5 | 0;
+    let t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+const rng = mulberry32(20260730);
+const pick = arr => arr[Math.floor(rng() * arr.length)];
+const between = (lo, hi) => lo + rng() * (hi - lo);
+const intBetween = (lo, hi) => Math.floor(between(lo, hi + 1));
+
+/* CSV export — real download */
+function toCSV(rows) {
+  return rows.map(r => r.map(c => {
+    const s = c == null ? '' : String(c);
+    return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+  }).join(',')).join('\r\n');
+}
+function downloadCSV(filename, rows) {
+  const blob = new Blob(['\uFEFF' + toCSV(rows)], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1500);
+  toast('Exported ' + filename + ' — ' + (rows.length - 1) + ' rows');
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   2. REFERENCE DATA
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Schematic state grid — each state is one tile, arranged roughly geographically.
+   Every state reads at the same visual weight, so a 4 MW deal in Rhode Island
+   is as findable as a 400 MW deal in Texas. */
+const TILE_GRID = [
+  ['AK','','','','','','','','','','ME'],
+  ['','','','','','','','','VT','NH','MA'],
+  ['WA','ID','MT','ND','MN','IL','WI','MI','NY','CT','RI'],
+  ['OR','NV','WY','SD','IA','IN','OH','PA','NJ','',''],
+  ['CA','UT','CO','NE','MO','KY','WV','VA','MD','DE',''],
+  ['','AZ','NM','KS','AR','TN','NC','SC','DC','',''],
+  ['','','','OK','LA','MS','AL','GA','','',''],
+  ['HI','','','TX','','','','','FL','','']
+];
+const STATE_NAME = {AL:'Alabama',AK:'Alaska',AZ:'Arizona',AR:'Arkansas',CA:'California',CO:'Colorado',CT:'Connecticut',DE:'Delaware',DC:'District of Columbia',FL:'Florida',GA:'Georgia',HI:'Hawaii',ID:'Idaho',IL:'Illinois',IN:'Indiana',IA:'Iowa',KS:'Kansas',KY:'Kentucky',LA:'Louisiana',ME:'Maine',MD:'Maryland',MA:'Massachusetts',MI:'Michigan',MN:'Minnesota',MS:'Mississippi',MO:'Missouri',MT:'Montana',NE:'Nebraska',NV:'Nevada',NH:'New Hampshire',NJ:'New Jersey',NM:'New Mexico',NY:'New York',NC:'North Carolina',ND:'North Dakota',OH:'Ohio',OK:'Oklahoma',OR:'Oregon',PA:'Pennsylvania',RI:'Rhode Island',SC:'South Carolina',SD:'South Dakota',TN:'Tennessee',TX:'Texas',UT:'Utah',VT:'Vermont',VA:'Virginia',WA:'Washington',WV:'West Virginia',WI:'Wisconsin',WY:'Wyoming'};
+
+/* states we actually originate in, with the utility + retail rate context that
+   drives whether a deal pencils */
+const MARKETS = {
+  TX:{util:'Oncor / ERCOT North',   rate:0.1150, summer:1, cities:['Abilene','San Marcos','Odessa','Killeen','Laredo']},
+  CA:{util:'PG&E B-19',             rate:0.2640, summer:1, cities:['Bakersfield','Fresno','Riverside','Stockton']},
+  AZ:{util:'APS E-32 Large',        rate:0.1210, summer:1, cities:['Casa Grande','Yuma','Buckeye']},
+  NM:{util:'PNM 4B',                rate:0.1090, summer:1, cities:['Deming','Las Cruces']},
+  NV:{util:'NV Energy OLGS',        rate:0.1040, summer:1, cities:['Fernley','Pahrump']},
+  CO:{util:'Xcel SG',               rate:0.1080, summer:1, cities:['Pueblo','Greeley']},
+  GA:{util:'Georgia Power TOU-GSD',  rate:0.1180, summer:1, cities:['Valdosta','Macon','Albany']},
+  FL:{util:'FPL GSLD-1',            rate:0.1230, summer:1, cities:['Ocala','Lakeland','Fort Pierce']},
+  NC:{util:'Duke Energy OPT-V',     rate:0.1070, summer:1, cities:['Rocky Mount','Fayetteville']},
+  SC:{util:'Dominion SC GS',        rate:0.1160, summer:1, cities:['Florence','Sumter']},
+  TN:{util:'TVA / Local Power Co',  rate:0.1090, summer:1, cities:['Jackson','Cleveland']},
+  OH:{util:'AEP Ohio GS-3',         rate:0.1090, summer:0, cities:['Lima','Zanesville']},
+  IL:{util:'ComEd Rate 6',          rate:0.1240, summer:0, cities:['Rockford','Decatur']},
+  MI:{util:'DTE D11',               rate:0.1420, summer:0, cities:['Saginaw','Battle Creek']},
+  NY:{util:'National Grid SC-3',    rate:0.1980, summer:0, cities:['Syracuse','Binghamton','Newburgh']},
+  NJ:{util:'PSE&G LPL',             rate:0.1720, summer:1, cities:['Vineland','Toms River']},
+  MA:{util:'Eversource G-3',        rate:0.2310, summer:0, cities:['Fall River','Pittsfield']},
+  PA:{util:'PPL GS-3',              rate:0.1310, summer:0, cities:['Hazleton','Altoona']},
+  VA:{util:'Dominion GS-2',         rate:0.1010, summer:1, cities:['Danville','Petersburg']},
+  MD:{util:'BGE Schedule GL',       rate:0.1450, summer:1, cities:['Hagerstown','Salisbury']},
+  IN:{util:'AES Indiana RS',        rate:0.1160, summer:0, cities:['Muncie','Kokomo']},
+  MO:{util:'Ameren Missouri 3M',    rate:0.0980, summer:1, cities:['Joplin','Cape Girardeau']},
+  UT:{util:'Rocky Mountain Sch. 8', rate:0.0930, summer:1, cities:['Cedar City','Vernal']},
+  WI:{util:'We Energies Cg-4',      rate:0.1250, summer:0, cities:['Janesville','Wausau']}
+};
+
+const TECHS = [
+  {id:'solar',   name:'Solar PV',          color:'#0089BD', ppw:[1.05,1.55], irr:[9.5,13.5]},
+  {id:'hybrid',  name:'Solar + Storage',   color:'#00AEEF', ppw:[1.55,2.35], irr:[10.5,15.0]},
+  {id:'bess',    name:'Standalone BESS',   color:'#5B4BC4', ppw:[1.85,2.80], irr:[11.0,16.5]},
+  {id:'ev',      name:'EV Charging Hub',   color:'#12805C', ppw:[2.40,4.10], irr:[8.5,14.0]},
+  {id:'micro',   name:'Microgrid',         color:'#C77A00', ppw:[2.10,3.30], irr:[10.0,14.5]},
+  {id:'chp',     name:'Fuel Cell / CHP',   color:'#8A98A6', ppw:[2.60,3.90], irr:[9.0,12.5]}
+];
+const TECH_BY_ID = Object.fromEntries(TECHS.map(t => [t.id, t]));
+
+const STAGES = ['Submitted','Screening','Diligence','Term sheet','Closed'];
+const STAGE_COLOR = {'Submitted':'#8A98A6','Screening':'#5B4BC4','Diligence':'#00AEEF','Term sheet':'#C77A00','Closed':'#12805C'};
+
+const DEVELOPERS = ['Ridgeline Renewables','Callaway Power Partners','Kestrel Grid Development','Bluestem Energy Group','Marrow Creek Solar','Ironwood Distributed Power','Halcyon Site Works','Verdant Ridge Development','Palo Duro Energy','Northgate Clean Assets','Sixth Street Solar','Tallgrass Microgrid Co.'];
+const ORIGINATORS = ['Marta Quintero','Dev Raghunathan','Cora Whitfield','Julian Mbeki','Priya Anand','Ben Okafor','Sasha Ferrell','Tom Ridgway'];
+const PARTNERS = ['Coastline Infrastructure Capital','Meridian Tax Equity','Blackwater Yield Fund','Sunbelt Credit Partners','Anvil Green Debt','Harbor Point Capital','Cardinal Bridge Lending'];
+const DECLINE_REASONS = ['Interconnection queue risk','Offtaker credit below floor','Site control incomplete','Below minimum check size','Permitting timeline','Return threshold not met','Sponsor equity gap','Rate structure erodes savings'];
+const OFFTAKES = ['Investment-grade PPA · 20 yr','Municipal PPA · 25 yr','Merchant + hedge · 10 yr','Corporate PPA (BBB+) · 15 yr','Utility PPA · 20 yr','Behind-the-meter savings share · 15 yr'];
+const SITE_NOUNS = ['Hollow','Crossing','Ridge','Flats','Bend','Junction','Landing','Prairie','Basin','Gate','Fork','Mesa','Hollow','Reach','Bluff'];
+const SITE_ADJ = ['Cedar','Copper','Willow','Granite','Amber','Salt','Juniper','Elk','Sable','Hickory','Blue Rock','Prospect','Meridian','Foxglove','Windmere','Harlow','Quail','Sandstone'];
+
+const ME = {name:'Marta Quintero', org:'Ridgeline Renewables', initials:'MQ'};
+const ME_PARTNER = {name:'Alan Petrossian', org:'Coastline Infrastructure Capital', initials:'AP'};
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   3. DEAL GENERATION
+   ═══════════════════════════════════════════════════════════════════════════ */
+const TODAY = new Date('2026-07-30T12:00:00');
+const iso = d => d.toISOString().slice(0, 10);
+const addDays = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return x; };
+
+function makeBill(state, mw, tech) {
+  const m = MARKETS[state];
+  const annualKwh = Math.round(mw * 1000 * between(2400, 3600));
+  const summerPeaking = m.summer === 1;
+  // monthly load shape
+  const shape = summerPeaking
+    ? [.070,.066,.070,.074,.086,.100,.113,.112,.098,.081,.068,.062]
+    : [.098,.092,.086,.076,.070,.068,.072,.071,.070,.076,.088,.093];
+  const labels = ['Aug 2025','Sep 2025','Oct 2025','Nov 2025','Dec 2025','Jan 2026','Feb 2026','Mar 2026','Apr 2026','May 2026','Jun 2026','Jul 2026'];
+  const order = summerPeaking ? [7,8,9,10,11,0,1,2,3,4,5,6] : [7,8,9,10,11,0,1,2,3,4,5,6];
+  const demandRate = between(11, 22);
+  const energyRate = m.rate * between(0.58, 0.72);
+  const months = labels.map((lab, i) => {
+    const kwh = Math.round(annualKwh * shape[order[i]] * between(.96, 1.04));
+    const lf = between(.42, .62);
+    const kw = Math.round(kwh / (30.4 * 24 * lf));
+    const energy = kwh * energyRate;
+    const demand = kw * demandRate;
+    const other = kwh * m.rate * between(.05, .11) + between(180, 620);
+    return {label:lab, kwh, kw, energy, demand, other, total:energy + demand + other};
+  });
+  const totalKwh = sum(months.map(x => x.kwh));
+  const totalCost = sum(months.map(x => x.total));
+  const peakIdx = months.reduce((best, x, i) => x.kw > months[best].kw ? i : best, 0);
+  return {
+    utility: m.util,
+    account: 'ACCT-' + intBetween(100000, 999999),
+    schedule: m.util.split(' ').slice(-1)[0],
+    meter: 'MTR-' + state + intBetween(1000, 9999),
+    period: 'Aug 2025 – Jul 2026',
+    months, peakIdx, totalKwh, totalCost,
+    blended: totalCost / totalKwh,
+    demandRate, energyRate,
+    peakKw: Math.max(...months.map(x => x.kw)),
+    loadFactor: totalKwh / (Math.max(...months.map(x => x.kw)) * 8760),
+    source: 'PDF · 12 statements',
+    confidence: between(.93, .995),
+    extractedOn: iso(addDays(TODAY, -intBetween(3, 60)))
+  };
+}
+
+function makeDeal(i) {
+  const state = pick(Object.keys(MARKETS));
+  const m = MARKETS[state];
+  const tech = pick(TECHS);
+  const mw = Number(between(...(tech.id === 'ev'    ? [0.6, 6]
+                              : tech.id === 'bess'  ? [4, 55]
+                              : tech.id === 'micro' ? [1, 14]
+                              : tech.id === 'chp'   ? [1.5, 18]
+                              : [1.5, 42])).toFixed(1));
+  const ppw = between(...tech.ppw);
+  const ask = Math.round(mw * 1e6 * ppw / 1e5) * 1e5;
+  const mwh = tech.id === 'bess' ? Number((mw * between(2, 4)).toFixed(1))
+            : tech.id === 'hybrid' ? Number((mw * between(.5, 2)).toFixed(1)) : 0;
+
+  const submitted = addDays(TODAY, -intBetween(12, 520));
+  const roll = rng();
+  let status, stage, decided = null, declineReason = null;
+  if (roll < .28)      { status = 'won';       stage = 'Closed'; }
+  else if (roll < .47) { status = 'declined';  stage = 'Screening'; declineReason = pick(DECLINE_REASONS); }
+  else if (roll < .53) { status = 'withdrawn'; stage = 'Diligence'; }
+  else                 { status = 'active';    stage = pick(['Submitted','Screening','Diligence','Term sheet']); }
+
+  const cycle = status === 'won' ? intBetween(74, 210)
+              : status === 'declined' ? intBetween(9, 48)
+              : status === 'withdrawn' ? intBetween(30, 120) : null;
+  if (cycle) decided = addDays(submitted, cycle);
+  if (decided && decided > TODAY) decided = addDays(TODAY, -intBetween(1, 10));
+
+  const bill = rng() < .72 ? makeBill(state, mw, tech) : null;
+  const ppaRate = bill ? bill.blended * between(.68, 1.02) : m.rate * between(.66, .95);
+
+  const stageIdx = STAGES.indexOf(stage);
+  const durations = [];
+  let acc = 0;
+  const totalElapsed = cycle || daysBetween(submitted, TODAY);
+  const weights = [.12, .22, .38, .18, .10];
+  for (let s = 0; s <= Math.max(stageIdx, 0); s++) {
+    const d = Math.max(2, Math.round(totalElapsed * weights[s] / sum(weights.slice(0, stageIdx + 1))));
+    durations.push({stage: STAGES[s], days: d, start: acc}); acc += d;
+  }
+
+  return {
+    id: 'CS-' + (2400 + i),
+    name: pick(SITE_ADJ) + ' ' + pick(SITE_NOUNS) + ' ' + (tech.id === 'ev' ? 'Charging Hub' : tech.id === 'bess' ? 'Storage' : tech.id === 'chp' ? 'Energy Center' : tech.id === 'micro' ? 'Microgrid' : 'Solar'),
+    state, city: pick(m.cities),
+    developer: pick(DEVELOPERS),
+    originator: pick(ORIGINATORS),
+    tech: tech.id, techName: tech.name, techColor: tech.color,
+    mw, mwh, ask, ppw,
+    stage, status, declineReason,
+    submitted: iso(submitted),
+    decided: decided ? iso(decided) : null,
+    cycleDays: cycle,
+    ageDays: daysBetween(submitted, TODAY),
+    durations,
+    offers: status === 'declined' ? 0 : intBetween(0, 5),
+    bidders: status === 'declined' ? intBetween(1, 3) : intBetween(1, 6),
+    wonBy: status === 'won' ? pick(PARTNERS) : null,
+    lead: status === 'active' ? pick(PARTNERS) : null,
+    irr: Number(between(...tech.irr).toFixed(1)),
+    dscr: Number(between(1.15, 1.72).toFixed(2)),
+    offtake: pick(OFFTAKES),
+    interconnect: pick(['Study complete','In cluster study','Energization agreement signed','Feasibility only','Queue position held']),
+    permits: pick(['Fully permitted','CUP pending','Zoning approved','Pre-application']),
+    siteControl: pick(['Option to lease','Executed lease','Purchase option','Letter of intent']),
+    cod: iso(addDays(submitted, intBetween(400, 900))),
+    cf: Number(between(tech.id === 'solar' || tech.id === 'hybrid' ? .21 : .38,
+                       tech.id === 'solar' || tech.id === 'hybrid' ? .28 : .52).toFixed(3)),
+    ppaRate,
+    bill,
+    docs: [
+      {label:'Utility bills (12 mo)', kind:'bills', have: !!bill},
+      {label:'Site details & survey', kind:'site', have: rng() < .9},
+      {label:'Interconnection study', kind:'intc', have: rng() < .75},
+      {label:'Offtake / PPA draft', kind:'ppa', have: rng() < .68},
+      {label:'Permits & zoning', kind:'permit', have: rng() < .6},
+      {label:'Full diligence folder', kind:'folder', have: true}
+    ]
+  };
+}
+
+const DEALS = Array.from({length: 96}, (_, i) => makeDeal(i));
+/* make sure "my" originator has a solid book to look at */
+DEALS.slice(0, 34).forEach(d => { d.originator = ME.name; d.developer = ME.org; });
+DEALS.forEach(d => { d.savings = d.bill ? (d.bill.blended - d.ppaRate) / d.bill.blended : null; });
+
+/* market benchmarks — median $/W by technology, used for fairness scoring */
+const BENCH = Object.fromEntries(TECHS.map(t => {
+  const rows = DEALS.filter(d => d.tech === t.id).map(d => d.ppw);
+  return [t.id, {median: median(rows), p25: median(rows.filter(x => x < median(rows))), p75: median(rows.filter(x => x > median(rows)))}];
+}));
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   4. APP STATE + FILTERING
+   ═══════════════════════════════════════════════════════════════════════════ */
+const S = {
+  role: 'dev',
+  tab: 'overview',
+  f: {q:'', state:'', tech:'', status:'', stage:'', dev:'', orig:'', minMw:0},
+  group: 'state',
+  sort: {key:'ask', dir:-1},
+  openGroups: new Set(),
+  drawerDeal: null,
+  drawerTab: 'overview',
+  uploaded: []            // deals added this session
+};
+
+const allDeals = () => DEALS.concat(S.uploaded);
+const myBook  = () => allDeals().filter(d => d.originator === ME.name);
+
+function scopeDeals() { return S.role === 'dev' ? myBook() : allDeals(); }
+
+function filtered() {
+  const f = S.f, q = f.q.trim().toLowerCase();
+  return scopeDeals().filter(d => {
+    if (f.state  && d.state !== f.state) return false;
+    if (f.tech   && d.tech !== f.tech) return false;
+    if (f.status && d.status !== f.status) return false;
+    if (f.stage  && d.stage !== f.stage) return false;
+    if (f.dev    && d.developer !== f.dev) return false;
+    if (f.orig   && d.originator !== f.orig) return false;
+    if (f.minMw  && d.mw < f.minMw) return false;
+    if (q) {
+      const hay = (d.name + ' ' + d.id + ' ' + d.city + ' ' + d.state + ' ' + d.developer + ' ' + d.originator + ' ' + d.techName).toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    return true;
+  });
+}
+
+function setFilter(key, val) {
+  S.f[key] = (S.f[key] === val && key !== 'q' && key !== 'minMw') ? '' : val;
+  render();
+}
+function clearFilters() { S.f = {q:'', state:'', tech:'', status:'', stage:'', dev:'', orig:'', minMw:0}; render(); }
+function activeFilterCount() { return Object.entries(S.f).filter(([k, v]) => v !== '' && v !== 0).length; }
+
+/* rollup stats for any list of deals */
+function stats(list) {
+  const closed  = list.filter(d => d.status === 'won' || d.status === 'declined');
+  const won     = list.filter(d => d.status === 'won');
+  const declined= list.filter(d => d.status === 'declined');
+  const active  = list.filter(d => d.status === 'active');
+  return {
+    n: list.length,
+    mw: sum(list.map(d => d.mw)),
+    ask: sum(list.map(d => d.ask)),
+    avgAsk: avg(list.map(d => d.ask)),
+    medAsk: median(list.map(d => d.ask)),
+    avgMw: avg(list.map(d => d.mw)),
+    ppw: avg(list.map(d => d.ppw)),
+    won: won.length, declined: declined.length, active: active.length,
+    withdrawn: list.filter(d => d.status === 'withdrawn').length,
+    wonAsk: sum(won.map(d => d.ask)),
+    activeAsk: sum(active.map(d => d.ask)),
+    approvalRate: closed.length ? won.length / closed.length * 100 : 0,
+    winRate: list.length ? won.length / list.length * 100 : 0,
+    avgCycle: avg(won.map(d => d.cycleDays).filter(Boolean)),
+    avgScreen: avg(declined.map(d => d.cycleDays).filter(Boolean)),
+    avgIrr: avg(list.map(d => d.irr))
+  };
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   5. CHART PRIMITIVES (hand-rolled SVG — no chart library)
+   ═══════════════════════════════════════════════════════════════════════════ */
+function donut(segments, size, thickness) {
+  size = size || 148; thickness = thickness || 22;
+  const total = sum(segments.map(s => s.v)) || 1;
+  const r = (size - thickness) / 2, c = size / 2, circ = 2 * Math.PI * r;
+  let offset = 0;
+  const arcs = segments.filter(s => s.v > 0).map(s => {
+    const len = s.v / total * circ;
+    const el = `<circle cx="${c}" cy="${c}" r="${r}" fill="none" stroke="${s.color}" stroke-width="${thickness}"
+      stroke-dasharray="${len.toFixed(2)} ${(circ - len).toFixed(2)}" stroke-dashoffset="${(-offset).toFixed(2)}"
+      transform="rotate(-90 ${c} ${c})"><title>${esc(s.label)}: ${s.v}</title></circle>`;
+    offset += len;
+    return el;
+  }).join('');
+  return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" role="img">
+    <circle cx="${c}" cy="${c}" r="${r}" fill="none" stroke="var(--cs-card-2)" stroke-width="${thickness}"/>
+    ${arcs}
+    <text x="${c}" y="${c - 2}" text-anchor="middle" font-family="Syne,sans-serif" font-size="25" font-weight="700" fill="var(--cs-ink)">${segments.center || total}</text>
+    <text x="${c}" y="${c + 16}" text-anchor="middle" font-size="10" font-weight="600" fill="var(--cs-muted-2)" letter-spacing="1">${esc(segments.centerLabel || 'DEALS')}</text>
+  </svg>`;
+}
+
+function sparkline(vals, w, h, color) {
+  w = w || 120; h = h || 34; color = color || 'var(--cs-blue)';
+  if (!vals.length) return '';
+  const max = Math.max(...vals), min = Math.min(...vals), rangeV = (max - min) || 1;
+  const pts = vals.map((v, i) => [i / (vals.length - 1 || 1) * w, h - 3 - (v - min) / rangeV * (h - 8)]);
+  const d = pts.map((p, i) => (i ? 'L' : 'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' ');
+  const area = d + ` L${w} ${h} L0 ${h} Z`;
+  return `<svg class="spark" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" aria-hidden="true">
+    <path d="${area}" fill="${color}" opacity=".10"/>
+    <path d="${d}" fill="none" stroke="${color}" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/>
+  </svg>`;
+}
+
+/* grouped column chart with a benchmark line — used for win rate by quarter */
+function columns(series, benchmark, label) {
+  const w = 100 / series.length;
+  const bars = series.map((s, i) => {
+    const hh = Math.max(2, s.v);
+    const col = s.v >= benchmark ? 'var(--cs-green)' : 'var(--cs-blue)';
+    return `<div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:6px" title="${esc(s.label)}: ${pct(s.v)}">
+      <div style="font-size:10.5px;font-weight:700;font-family:var(--mono)">${Math.round(s.v)}%</div>
+      <div style="width:70%;height:${hh}%;background:${col};border-radius:4px 4px 0 0;min-height:3px;transition:height .5s cubic-bezier(.2,.8,.2,1)"></div>
+      <div style="font-size:10px;color:var(--cs-muted-2)">${esc(s.label)}</div>
+    </div>`;
+  }).join('');
+  return `<div style="position:relative;height:190px;display:flex;align-items:stretch;gap:5px;padding-top:6px">
+    ${bars}
+    <div style="position:absolute;left:0;right:0;bottom:${19 + benchmark * 1.84}px;border-top:1.5px dashed var(--cs-amber);pointer-events:none">
+      <span style="position:absolute;right:0;top:-16px;font-size:10px;font-weight:700;color:var(--cs-amber);background:var(--cs-card);padding:0 4px">${esc(label)} ${pct(benchmark)}</span>
+    </div>
+  </div>`;
+}
+
+function barRows(rows, colorFn, valFmt, onClick) {
+  const max = Math.max(...rows.map(r => r.v), 1);
+  return rows.map(r => `<div class="chartrow ${onClick ? 'click' : ''}" ${onClick ? `data-click="${esc(r.key)}"` : ''}>
+    <div class="cr-lab" title="${esc(r.label)}">${esc(r.label)}</div>
+    <div class="cr-bar"><div class="cr-fill" style="width:${(r.v / max * 100).toFixed(1)}%;background:${colorFn(r)}"></div></div>
+    <div class="cr-val">${valFmt(r)}</div>
+  </div>`).join('');
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   6. SHARED BLOCKS
+   ═══════════════════════════════════════════════════════════════════════════ */
+function kpi(k, v, unit, d, dClass, spark) {
+  return `<div class="kpi">
+    <div class="k">${esc(k)}</div>
+    <div class="v">${v}${unit ? `<small>${esc(unit)}</small>` : ''}</div>
+    ${d ? `<div class="d ${dClass || ''}">${d}</div>` : ''}
+    ${spark || ''}
+  </div>`;
+}
+
+function stateAgg(list) {
+  const map = {};
+  list.forEach(d => {
+    const s = map[d.state] || (map[d.state] = {state:d.state, n:0, mw:0, ask:0, won:0, declined:0, active:0});
+    s.n++; s.mw += d.mw; s.ask += d.ask;
+    if (d.status === 'won') s.won++;
+    if (d.status === 'declined') s.declined++;
+    if (d.status === 'active') s.active++;
+  });
+  return map;
+}
+
+/* the signature block: schematic state grid, shaded by capital in play */
+function tileGrid(list, caption) {
+  const agg = stateAgg(list);
+  const maxAsk = Math.max(...Object.values(agg).map(s => s.ask), 1);
+  const shade = v => {
+    const t = Math.pow(v / maxAsk, 0.55);
+    return `rgba(0,137,189,${(0.16 + t * 0.82).toFixed(3)})`;
+  };
+  const rows = TILE_GRID.map(row => row.map(ab => {
+    if (!ab) return `<div></div>`;
+    const s = agg[ab];
+    if (!s) return `<div class="tile empty" title="${esc(STATE_NAME[ab] || ab)} — no deals"><span class="ab">${ab}</span></div>`;
+    const t = Math.pow(s.ask / maxAsk, 0.55);
+    const ink = t > 0.45 ? '#fff' : 'var(--cs-ink)';
+    return `<div class="tile has ${S.f.state === ab ? 'sel' : ''}" data-act="state" data-val="${ab}" role="button" tabindex="0"
+      style="background:${shade(s.ask)};color:${ink}"
+      title="${esc(STATE_NAME[ab])} — ${s.n} deals · ${usdC(s.ask)} sought · ${num(s.mw)} MW">
+      <span class="ab">${ab}</span><span class="n">${s.n}</span></div>`;
+  }).join('')).join('');
+  const top = Object.values(agg).sort((a, b) => b.ask - a.ask).slice(0, 6);
+  return `<div class="card">
+    <div class="card-head">
+      <div><h3>Where the deals are</h3>
+        <div class="ch-sub">${esc(caption)} Tile shade is capital sought; the number is the deal count. Click a state to filter everything below it.</div></div>
+      <div class="ch-act">${S.f.state ? `<button class="link-btn" data-act="clearstate">Clear ${S.f.state}</button>` : ''}
+        <button class="link-btn" data-act="export-states">Export CSV</button></div>
+    </div>
+    <div style="display:grid;grid-template-columns:minmax(0,1fr) 216px;gap:24px;align-items:start" class="tg-layout">
+      <div>
+        <div class="tilewrap"><div class="tilegrid">${rows}</div></div>
+        <div class="tile-legend">
+          <span>Less capital</span>
+          <span class="ramp"><i style="background:rgba(0,137,189,.18)"></i><i style="background:rgba(0,137,189,.4)"></i><i style="background:rgba(0,137,189,.62)"></i><i style="background:rgba(0,137,189,.82)"></i><i style="background:rgba(0,137,189,1)"></i></span>
+          <span>More</span>
+          <span style="margin-left:auto">${Object.keys(agg).length} states active</span>
         </div>
+      </div>
+      <div>
+        <h4 style="font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--cs-muted-2);margin-bottom:11px">Top markets</h4>
+        ${top.map(s => `<div class="chartrow click" data-act="state" data-val="${s.state}" style="gap:8px">
+          <div class="cr-lab" style="width:34px;font-weight:700;color:var(--cs-ink)">${s.state}</div>
+          <div class="cr-bar" style="height:16px"><div class="cr-fill" style="width:${(s.ask / top[0].ask * 100).toFixed(0)}%;background:var(--cs-blue)"></div></div>
+          <div class="cr-val" style="width:52px">${usdC(s.ask)}</div>
+        </div>`).join('')}
+      </div>
+    </div>
+  </div>`;
+}
 
-        <!-- REGISTER -->
-        <div id="registerForm" style="display:none;">
-          <h2>Create your account</h2>
-          <p class="sub">Join the deal room as a developer, an originator, or a capital partner.</p>
-          <div class="role-pick">
-            <button type="button" class="role-opt sel" data-role="developer" id="roleDev">
-              <div class="r-ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg></div>
-              <div><h4>Developer</h4><p>You build the projects you submit</p></div>
-            </button>
-            <button type="button" class="role-opt" data-role="originator" id="roleOrig">
-              <div class="r-ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></div>
-              <div><h4>Originator</h4><p>You bring the deal flow, not the build</p></div>
-            </button>
-            <button type="button" class="role-opt" data-role="partner" id="rolePartner">
-              <div class="r-ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
-              <div><h4>Capital partner</h4><p>You underwrite and make offers</p></div>
-            </button>
+function filterChips() {
+  const labels = {state:'State', tech:'Technology', status:'Outcome', stage:'Stage', dev:'Developer', orig:'Originator', q:'Search', minMw:'Min MW'};
+  const names = {tech: v => TECH_BY_ID[v] ? TECH_BY_ID[v].name : v, state: v => STATE_NAME[v] || v,
+                 status: v => ({active:'In market', won:'Funded', declined:'Declined', withdrawn:'Withdrawn'}[v] || v)};
+  const chips = Object.entries(S.f).filter(([k, v]) => v !== '' && v !== 0)
+    .map(([k, v]) => `<span class="chip">${labels[k]}: ${esc(names[k] ? names[k](v) : v)}<button data-act="unfilter" data-val="${k}" aria-label="Remove filter">&times;</button></span>`).join('');
+  if (!chips) return '';
+  return `<div class="chips">${chips}<button class="clear-all" data-act="clearall">Clear all</button></div>`;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   7. DEVELOPER / ORIGINATOR DASHBOARD
+   ═══════════════════════════════════════════════════════════════════════════ */
+function devOverview() {
+  const list = filtered(), st = stats(list);
+  const all = myBook(), stAll = stats(all);
+  const market = stats(allDeals());
+
+  /* quarterly win rate for me vs the whole marketplace */
+  const quarters = ['2025 Q3','2025 Q4','2026 Q1','2026 Q2'];
+  const qOf = d => { const x = new Date(d.decided || d.submitted); return x.getFullYear() + ' Q' + (Math.floor(x.getMonth() / 3) + 1); };
+  const qSeries = quarters.map(q => {
+    const inQ = all.filter(d => qOf(d) === q && (d.status === 'won' || d.status === 'declined'));
+    return {label: q.slice(2), v: inQ.length ? inQ.filter(d => d.status === 'won').length / inQ.length * 100 : 0};
+  });
+
+  const declineRows = Object.entries(all.filter(d => d.status === 'declined')
+    .reduce((a, d) => (a[d.declineReason] = (a[d.declineReason] || 0) + 1, a), {}))
+    .map(([k, v]) => ({key:k, label:k, v})).sort((a, b) => b.v - a.v);
+
+  const techRows = TECHS.map(t => {
+    const rows = list.filter(d => d.tech === t.id);
+    return {key:t.id, label:t.name, v: rows.length ? avg(rows.map(d => d.ask)) : 0, n: rows.length,
+            mw: rows.length ? avg(rows.map(d => d.mw)) : 0, color:t.color};
+  }).filter(r => r.n).sort((a, b) => b.v - a.v);
+
+  const outcome = [
+    {label:'Funded',    v: st.won,       color:'var(--cs-green)',  key:'won'},
+    {label:'Declined',  v: st.declined,  color:'var(--cs-red)',    key:'declined'},
+    {label:'In market', v: st.active,    color:'var(--cs-blue)',   key:'active'},
+    {label:'Withdrawn', v: st.withdrawn, color:'var(--cs-muted-2)',key:'withdrawn'}
+  ];
+  outcome.center = st.n; outcome.centerLabel = 'DEALS';
+
+  const cycleSpark = all.filter(d => d.cycleDays).sort((a, b) => a.submitted.localeCompare(b.submitted)).slice(-14).map(d => d.cycleDays);
+
+  return `
+  ${filterChips()}
+  <div class="kpi-strip">
+    ${kpi('Deals submitted', st.n, '', `${st.active} still in market`, '')}
+    ${kpi('Capital requested', usdC(st.ask), '', `${num(st.mw, 0)} MW across ${Object.keys(stateAgg(list)).length} states`, '')}
+    ${kpi('Approval rate', pct(st.approvalRate), '', `${st.won} funded / ${st.won + st.declined} decided`, st.approvalRate >= market.approvalRate ? 'up' : 'down')}
+    ${kpi('Win rate vs market', pct(stAll.winRate), '', `marketplace runs ${pct(market.winRate)}`, stAll.winRate >= market.winRate ? 'up' : 'down')}
+    ${kpi('Average deal size', usdC(st.avgAsk), '', `median ${usdC(st.medAsk)} · ${num(st.avgMw)} MW avg`, '')}
+    ${kpi('Days to close', Math.round(stAll.avgCycle || 0), 'days', `declines land in ${Math.round(stAll.avgScreen || 0)}`, '', sparkline(cycleSpark, 118, 34, 'var(--cs-blue)'))}
+  </div>
+
+  ${tileGrid(list, 'Your book of business.')}
+
+  <div class="grid" style="grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);margin-top:14px">
+    <div class="card">
+      <div class="card-head">
+        <div><h3>Approved vs declined</h3>
+          <div class="ch-sub">Click a slice to filter. Reasons come from the partner's written decline note.</div></div>
+      </div>
+      <div class="donut-wrap">
+        ${donut(outcome)}
+        <div class="donut-legend">
+          ${outcome.map(o => `<div class="dl-item" data-act="status" data-val="${o.key}">
+            <span class="sw" style="background:${o.color}"></span>
+            <span class="lab">${o.label}</span>
+            <span class="val">${o.v}</span></div>`).join('')}
+          <div style="border-top:1px solid var(--cs-border);padding-top:10px;margin-top:4px;font-size:12px;color:var(--cs-muted);line-height:1.55">
+            Of the ${st.won + st.declined} decisions returned, <b style="color:var(--cs-ink)">${pct(st.approvalRate)}</b> came back approved.
           </div>
-          <p class="role-hint" id="regRoleHint">Developers submit projects they're building and take offers on them.</p>
-          <div class="field"><label>Full name</label><input type="text" id="regName" placeholder="Jane Sponsor" autocomplete="name"></div>
-          <div class="field"><label>Organization</label><input type="text" id="regOrg" placeholder="Company or fund name" autocomplete="organization"></div>
-          <div class="field"><label>Work email</label><input type="email" id="regEmail" placeholder="you@company.com" autocomplete="email"></div>
-          <div class="field"><label>Password</label><input type="password" id="regPass" placeholder="At least 6 characters" autocomplete="new-password"></div>
-          <button class="btn btn-primary btn-block" id="registerBtn">Create account</button>
-          <p class="auth-switch">Already a member? <button id="toLogin">Log in</button></p>
         </div>
+      </div>
+      ${declineRows.length ? `<div style="margin-top:20px;padding-top:18px;border-top:1px solid var(--cs-border)">
+        <h4 style="font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--cs-muted-2);margin-bottom:12px">Why deals get declined</h4>
+        ${barRows(declineRows, () => 'var(--cs-red)', r => r.v + ' deal' + (r.v > 1 ? 's' : ''))}
+      </div>` : ''}
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <div><h3>Win rate by quarter</h3>
+          <div class="ch-sub">Share of your decided deals that got funded. The dashed line is the whole marketplace.</div></div>
+      </div>
+      ${columns(qSeries, market.winRate, 'Market')}
+      <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--cs-border);display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+        <div><div class="k" style="font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--cs-muted-2)">Bidders per deal</div>
+          <div style="font-family:Syne;font-size:19px;font-weight:700;margin-top:3px">${num(avg(all.map(d => d.bidders)))}</div></div>
+        <div><div class="k" style="font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--cs-muted-2)">Offers received</div>
+          <div style="font-family:Syne;font-size:19px;font-weight:700;margin-top:3px">${sum(all.map(d => d.offers))}</div></div>
+        <div><div class="k" style="font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--cs-muted-2)">Capital funded</div>
+          <div style="font-family:Syne;font-size:19px;font-weight:700;margin-top:3px">${usdC(stAll.wonAsk)}</div></div>
       </div>
     </div>
   </div>
 
-  <!-- ==================== APP ==================== -->
-  <div id="appView">
-    <div class="topbar">
-      <div class="topbar-brand">
-        <span class="omega">&#937;</span>
-        ClearSky OMEGA
-        <span class="tag">Financing Partners</span>
-      </div>
-      <div class="topbar-right">
-        <span class="role-chip" id="roleChip"></span>
-        <div class="user-mini">
-          <span class="avatar" id="userAvatar">?</span>
-          <span id="userName"></span>
-        </div>
-        <button class="btn-signout" id="signOutBtn">Sign out</button>
-      </div>
+  <div class="card" style="margin-top:14px">
+    <div class="card-head">
+      <div><h3>Average project size by technology</h3>
+        <div class="ch-sub">Bar length is the average capital ask. Click a row to filter the book to that technology.</div></div>
+      <div class="ch-act"><button class="link-btn" data-act="export-tech">Export CSV</button></div>
     </div>
+    ${techRows.length ? barRows(techRows, r => r.color, r => usdC(r.v), true).replace(/data-click="/g, 'data-act="tech" data-val="')
+      : '<div class="note">No deals match the current filters.</div>'}
+    <div style="display:flex;gap:22px;flex-wrap:wrap;margin-top:16px;padding-top:14px;border-top:1px solid var(--cs-border)">
+      ${techRows.map(r => `<div style="font-size:11.5px;color:var(--cs-muted)">
+        <span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:${r.color};margin-right:6px"></span>
+        ${esc(r.label)} — <b style="color:var(--cs-ink)">${num(r.mw)} MW</b> avg, ${r.n} deal${r.n > 1 ? 's' : ''}</div>`).join('')}
+    </div>
+  </div>`;
+}
 
-    <div class="app-body">
-      <div class="page-head">
-        <div>
-          <h1 id="pageTitle">Pipeline</h1>
-          <p class="ph-sub" id="pageSub"></p>
-        </div>
-        <button class="btn btn-primary" id="newProjectBtn" style="display:none;">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          Submit a project
-        </button>
-      </div>
+function devTimelines() {
+  const list = filtered().slice().sort((a, b) => (b.cycleDays || b.ageDays) - (a.cycleDays || a.ageDays));
+  const all = filtered();
+  const stageStats = STAGES.map(s => {
+    const inStage = all.filter(d => d.stage === s);
+    const durs = all.flatMap(d => d.durations.filter(x => x.stage === s).map(x => x.days));
+    return {stage:s, n: inStage.length, days: avg(durs)};
+  });
+  const maxSpan = Math.max(...list.map(d => d.cycleDays || d.ageDays), 1);
+  const won = all.filter(d => d.status === 'won');
+  const wonDays = won.map(d => d.cycleDays).filter(Boolean);
 
-      <div class="tabs" id="tabs"></div>
+  return `
+  ${filterChips()}
+  <div class="kpi-strip">
+    ${kpi('Median time to close', Math.round(median(won.map(d => d.cycleDays).filter(Boolean))), 'days', `${won.length} funded deals`, '')}
+    ${kpi('Fastest close', wonDays.length ? Math.min(...wonDays) : '—', wonDays.length ? 'days' : '', 'best case on record', 'up')}
+    ${kpi('Slowest close', wonDays.length ? Math.max(...wonDays) : '—', wonDays.length ? 'days' : '', 'usually interconnection', 'down')}
+    ${kpi('Still open', all.filter(d => d.status === 'active').length, '', `oldest is ${Math.max(...all.filter(d => d.status === 'active').map(d => d.ageDays).concat([0]))} days in`, '')}
+  </div>
 
-      <div id="listArea">
-        <div class="loading"><div class="spinner"></div></div>
-      </div>
+  <div class="card">
+    <div class="card-head">
+      <div><h3>Where time actually goes</h3>
+        <div class="ch-sub">Deal count sitting in each stage now, with the average days a deal spends there. Click a stage to filter.</div></div>
+    </div>
+    <div class="funnel">
+      ${stageStats.map(s => `<div class="fstage ${S.f.stage === s.stage ? 'sel' : ''}" data-act="stage" data-val="${s.stage}" role="button" tabindex="0">
+        <div class="fs-n">${s.n}</div>
+        <div class="fs-lab">${s.stage}</div>
+        <div class="fs-days">${Math.round(s.days)}d average</div>
+        <div class="fs-bar" style="background:${STAGE_COLOR[s.stage]};width:${Math.max(14, s.days / Math.max(...stageStats.map(x => x.days), 1) * 100)}%"></div>
+      </div>`).join('')}
     </div>
   </div>
 
-  <!-- ==================== MODALS ==================== -->
-  <div class="modal-backdrop" id="modalBackdrop">
-    <div class="modal" id="modalEl"></div>
+  <div class="card" style="margin-top:14px">
+    <div class="card-head">
+      <div><h3>Deal timelines</h3>
+        <div class="ch-sub">Each bar is one deal from submission to today or to decision, split by the stage it was in. Click any row to open it.</div></div>
+      <div class="ch-act"><button class="link-btn" data-act="export-timeline">Export CSV</button></div>
+    </div>
+    ${list.length ? `<div class="spine">
+      <div class="spine-head"><span>Deal</span><span>Submission → decision</span><span style="text-align:right">Elapsed</span></div>
+      ${list.slice(0, 26).map(d => {
+        const span = d.cycleDays || d.ageDays;
+        const total = sum(d.durations.map(x => x.days)) || 1;
+        let x = 0;
+        const segs = d.durations.map(seg => {
+          const wpc = seg.days / total * (span / maxSpan) * 100;
+          const el = `<div class="spine-seg" style="left:${x}%;width:${wpc}%;background:${STAGE_COLOR[seg.stage]}" title="${seg.stage}: ${seg.days} days">${wpc > 9 ? seg.days + 'd' : ''}</div>`;
+          x += wpc; return el;
+        }).join('');
+        return `<div class="spine-row" data-act="open" data-val="${d.id}" role="button" tabindex="0">
+          <div class="spine-name">${esc(d.name)}<span>${d.state} · ${esc(d.techName)} · ${usdC(d.ask)}</span></div>
+          <div class="spine-track">${segs}</div>
+          <div class="spine-days">${span}d<small>${d.status === 'won' ? 'funded' : d.status === 'declined' ? 'declined' : d.status === 'withdrawn' ? 'pulled' : 'open'}</small></div>
+        </div>`;
+      }).join('')}
+      <div class="spine-axis"><span>day 0</span><span>day ${Math.round(maxSpan / 2)}</span><span>day ${maxSpan}</span></div>
+    </div>
+    <div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:16px;padding-top:14px;border-top:1px solid var(--cs-border)">
+      ${STAGES.map(s => `<span style="font-size:11.5px;color:var(--cs-muted)"><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:${STAGE_COLOR[s]};margin-right:6px"></span>${s}</span>`).join('')}
+    </div>` : '<div class="note">No deals match the current filters.</div>'}
+  </div>`;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   8. DEAL TABLE (shared) + GROUPING
+   ═══════════════════════════════════════════════════════════════════════════ */
+const COLS = [
+  {key:'name',      lab:'Deal',        cls:'c-name'},
+  {key:'state',     lab:'State'},
+  {key:'techName',  lab:'Technology'},
+  {key:'mw',        lab:'Size',        cls:'num', fmt:d => num(d.mw) + ' MW'},
+  {key:'ask',       lab:'Capital ask', cls:'num', fmt:d => usd(d.ask)},
+  {key:'ppw',       lab:'$/W',         cls:'num', fmt:d => '$' + d.ppw.toFixed(2)},
+  {key:'stage',     lab:'Stage'},
+  {key:'status',    lab:'Outcome'},
+  {key:'savings',   lab:'Bill savings', cls:'num', fmt:d => d.savings == null ? '—' : pct(d.savings * 100)},
+  {key:'irr',       lab:'IRR',         cls:'num', fmt:d => d.irr.toFixed(1) + '%'},
+  {key:'originator',lab:'Originator'},
+  {key:'developer', lab:'Developer'},
+  {key:'submitted', lab:'Submitted',   cls:'num', fmt:d => dt(d.submitted)}
+];
+const STATUS_PILL = {active:['p-active','In market'], won:['p-won','Funded'], declined:['p-declined','Declined'], withdrawn:['p-withdrawn','Withdrawn']};
+const STAGE_PILL = {'Submitted':'p-active','Screening':'p-screening','Diligence':'p-diligence','Term sheet':'p-term','Closed':'p-won'};
+
+function cellHTML(d, c) {
+  if (c.key === 'name') return `<div>${esc(d.name)}<span>${d.id} · ${esc(d.city)}, ${d.state}</span></div>`;
+  if (c.key === 'status') { const [cls, lab] = STATUS_PILL[d.status]; return `<span class="pill ${cls}">${lab}</span>`; }
+  if (c.key === 'stage') return `<span class="pill ${STAGE_PILL[d.stage]}">${d.stage}</span>`;
+  if (c.key === 'techName') return `<span class="tag" style="color:${d.techColor};background:${d.techColor}18">${esc(d.techName)}</span>`;
+  if (c.key === 'savings' && d.savings != null) {
+    const col = d.savings >= .12 ? 'var(--cs-green)' : d.savings >= .04 ? 'var(--cs-amber)' : 'var(--cs-red)';
+    return `<span style="color:${col};font-weight:700">${pct(d.savings * 100)}</span>`;
+  }
+  return c.fmt ? c.fmt(d) : esc(d[c.key]);
+}
+
+function sortDeals(list) {
+  const {key, dir} = S.sort;
+  return list.slice().sort((a, b) => {
+    let x = a[key], y = b[key];
+    if (x == null) x = -Infinity; if (y == null) y = -Infinity;
+    if (typeof x === 'string') return dir * x.localeCompare(y);
+    return dir * (x - y);
+  });
+}
+
+const GROUP_KEY = {state:'state', originator:'originator', developer:'developer', tech:'techName'};
+const GROUP_LABEL = {state:'By state', originator:'By deal originator', developer:'By developer', tech:'By technology', none:'Flat list'};
+
+function dealTable(list, opts) {
+  opts = opts || {};
+  const cols = COLS.filter(c => !(opts.hide || []).includes(c.key));
+  const head = `<thead><tr>${cols.map(c => `<th data-act="sort" data-val="${c.key}" class="${S.sort.key === c.key ? 'sorted' : ''}">${c.lab}${S.sort.key === c.key ? (S.sort.dir > 0 ? ' ▲' : ' ▼') : ''}</th>`).join('')}</tr></thead>`;
+
+  if (!list.length) return `<div class="sheet-wrap"><table class="sheet">${head}<tbody><tr><td class="sheet-empty" colspan="${cols.length}">Nothing matches these filters. Try clearing the state or technology filter.</td></tr></tbody></table></div>`;
+
+  const row = d => `<tr data-act="open" data-val="${d.id}">${cols.map(c => `<td class="${c.cls || ''}">${cellHTML(d, c)}</td>`).join('')}</tr>`;
+
+  if (!opts.group || opts.group === 'none') {
+    return `<div class="sheet-wrap"><table class="sheet">${head}<tbody>${sortDeals(list).map(row).join('')}</tbody></table></div>`;
+  }
+
+  const gk = GROUP_KEY[opts.group];
+  const groups = {};
+  list.forEach(d => (groups[d[gk]] = groups[d[gk]] || []).push(d));
+  const ordered = Object.entries(groups).sort((a, b) => sum(b[1].map(d => d.ask)) - sum(a[1].map(d => d.ask)));
+
+  const body = ordered.map(([name, rows]) => {
+    const g = stats(rows);
+    const open = S.openGroups.has(name);
+    const label = opts.group === 'state' ? (STATE_NAME[name] || name) : name;
+    return `<tr class="grp-row ${open ? 'open' : ''}" data-act="group" data-val="${esc(name)}">
+        <td colspan="${cols.length}">
+          <span class="grp-tog"><svg class="caret" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>${esc(label)}</span>
+          <span class="grp-meta">${g.n} deals · ${num(g.mw, 0)} MW · ${usdC(g.ask)} sought · ${pct(g.approvalRate)} approved · avg ${usdC(g.avgAsk)}</span>
+        </td></tr>` + (open ? sortDeals(rows).map(row).join('') : '');
+  }).join('');
+
+  return `<div class="sheet-wrap"><table class="sheet">${head}<tbody>${body}</tbody></table></div>`;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   9. FINANCING PARTNER DASHBOARD
+   ═══════════════════════════════════════════════════════════════════════════ */
+function filterBar(showGroup) {
+  const states = Object.keys(stateAgg(scopeDeals())).sort();
+  const origs = [...new Set(scopeDeals().map(d => d.originator))].sort();
+  const devs  = [...new Set(scopeDeals().map(d => d.developer))].sort();
+  return `<div class="filterbar">
+    <input class="fb-search" id="fbq" placeholder="Search deals, cities, sponsors…" value="${esc(S.f.q)}" aria-label="Search deals">
+    <select class="fb-sel" data-act="sel" data-val="state" aria-label="State"><option value="">All states</option>
+      ${states.map(s => `<option value="${s}" ${S.f.state === s ? 'selected' : ''}>${STATE_NAME[s]}</option>`).join('')}</select>
+    <select class="fb-sel" data-act="sel" data-val="tech" aria-label="Technology"><option value="">All technologies</option>
+      ${TECHS.map(t => `<option value="${t.id}" ${S.f.tech === t.id ? 'selected' : ''}>${t.name}</option>`).join('')}</select>
+    <select class="fb-sel" data-act="sel" data-val="status" aria-label="Outcome"><option value="">Any outcome</option>
+      ${Object.entries(STATUS_PILL).map(([k, v]) => `<option value="${k}" ${S.f.status === k ? 'selected' : ''}>${v[1]}</option>`).join('')}</select>
+    ${S.role === 'partner' ? `<select class="fb-sel" data-act="sel" data-val="orig" aria-label="Originator"><option value="">Any originator</option>
+      ${origs.map(o => `<option value="${esc(o)}" ${S.f.orig === o ? 'selected' : ''}>${esc(o)}</option>`).join('')}</select>
+    <select class="fb-sel" data-act="sel" data-val="dev" aria-label="Developer"><option value="">Any developer</option>
+      ${devs.map(o => `<option value="${esc(o)}" ${S.f.dev === o ? 'selected' : ''}>${esc(o)}</option>`).join('')}</select>` : ''}
+    <select class="fb-sel" data-act="sel" data-val="minMw" aria-label="Minimum size"><option value="0">Any size</option>
+      ${[5, 10, 25, 50].map(v => `<option value="${v}" ${Number(S.f.minMw) === v ? 'selected' : ''}>${v}+ MW</option>`).join('')}</select>
+    ${showGroup ? `<div class="fb-spacer"></div><div class="seg">${['state','originator','developer','tech','none'].map(g =>
+      `<button data-act="group-mode" data-val="${g}" class="${S.group === g ? 'on' : ''}">${GROUP_LABEL[g].replace('By ', '')}</button>`).join('')}</div>` : ''}
+  </div>`;
+}
+
+function partnerMarketplace() {
+  const list = filtered(), st = stats(list);
+  const inMarket = list.filter(d => d.status === 'active');
+  const withBills = list.filter(d => d.bill);
+  const equitable = withBills.filter(d => d.savings >= .12);
+
+  return `
+  <div class="kpi-strip">
+    ${kpi('Deals in market', inMarket.length, '', `${usdC(sum(inMarket.map(d => d.ask)))} seeking capital`, '')}
+    ${kpi('Total pipeline', usdC(st.ask), '', `${st.n} deals · ${num(st.mw, 0)} MW`, '')}
+    ${kpi('Median check', usdC(st.medAsk), '', `avg ${usdC(st.avgAsk)}`, '')}
+    ${kpi('Blended $/W', '$' + st.ppw.toFixed(2), '', `across ${Object.keys(stateAgg(list)).length} states`, '')}
+    ${kpi('Bills on file', withBills.length, '', `${equitable.length} clear the 12% savings bar`, equitable.length ? 'up' : '')}
+    ${kpi('Avg sponsor IRR', pct(st.avgIrr, 1), '', `DSCR ${num(avg(list.map(d => d.dscr)), 2)} avg`, '')}
   </div>
+  ${filterBar(true)}
+  ${filterChips()}
+  <div class="card" style="padding:0;overflow:hidden;border:none;background:none">
+    ${dealTable(list, {group: S.group})}
+  </div>
+  <p class="note" style="margin-top:12px">Showing ${list.length} of ${scopeDeals().length} deals. Click any row to open the deal, read its documents, and pull the extracted utility data.</p>`;
+}
 
-  <div id="toast"></div>
+function partnerCoverage() {
+  const list = filtered();
+  const agg = stateAgg(list);
+  const byOrig = Object.entries(list.reduce((a, d) => ((a[d.originator] = a[d.originator] || []).push(d), a), {}))
+    .map(([k, v]) => ({key:k, label:k, v: sum(v.map(d => d.ask)), n: v.length, wr: stats(v).approvalRate}))
+    .sort((a, b) => b.v - a.v);
+  const byDev = Object.entries(list.reduce((a, d) => ((a[d.developer] = a[d.developer] || []).push(d), a), {}))
+    .map(([k, v]) => ({key:k, label:k, v: sum(v.map(d => d.ask)), n: v.length, mw: sum(v.map(d => d.mw))}))
+    .sort((a, b) => b.v - a.v);
 
-  <!-- label suggestions for the shared-link editor -->
-  <datalist id="linkPresets">
-    <option value="Utility bills"></option>
-    <option value="Site details"></option>
-    <option value="Interconnection"></option>
-    <option value="Offtake / PPA"></option>
-    <option value="Permits"></option>
-    <option value="Diligence folder"></option>
-  </datalist>
+  return `
+  ${filterBar(false)}
+  ${filterChips()}
+  ${tileGrid(list, 'Everything currently on the marketplace.')}
+  <div class="grid" style="grid-template-columns:minmax(0,1fr) minmax(0,1fr);margin-top:14px">
+    <div class="card">
+      <div class="card-head">
+        <div><h3>By deal originator</h3><div class="ch-sub">Capital sought, and how often their deals clear credit. Click to filter.</div></div>
+        <div class="ch-act"><button class="link-btn" data-act="export-orig">Export CSV</button></div>
+      </div>
+      ${byOrig.map(r => `<div class="chartrow click" data-act="orig" data-val="${esc(r.key)}">
+        <div class="cr-lab" title="${esc(r.label)}">${esc(r.label)}</div>
+        <div class="cr-bar"><div class="cr-fill" style="width:${(r.v / byOrig[0].v * 100).toFixed(1)}%;background:var(--cs-blue)"></div></div>
+        <div class="cr-val">${usdC(r.v)}</div>
+      </div><div style="font-size:11px;color:var(--cs-muted-2);margin:-4px 0 10px 122px">${r.n} deals · ${pct(r.wr)} approved</div>`).join('')}
+    </div>
+    <div class="card">
+      <div class="card-head">
+        <div><h3>By developer</h3><div class="ch-sub">Who is building it. Click to filter the marketplace to one sponsor.</div></div>
+        <div class="ch-act"><button class="link-btn" data-act="export-dev">Export CSV</button></div>
+      </div>
+      ${byDev.slice(0, 10).map(r => `<div class="chartrow click" data-act="dev" data-val="${esc(r.key)}">
+        <div class="cr-lab" title="${esc(r.label)}">${esc(r.label)}</div>
+        <div class="cr-bar"><div class="cr-fill" style="width:${(r.v / byDev[0].v * 100).toFixed(1)}%;background:var(--cs-violet)"></div></div>
+        <div class="cr-val">${usdC(r.v)}</div>
+      </div><div style="font-size:11px;color:var(--cs-muted-2);margin:-4px 0 10px 122px">${r.n} deals · ${num(r.mw, 0)} MW</div>`).join('')}
+    </div>
+  </div>`;
+}
 
-  <!-- Firebase compat SDK (v8-style) -->
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
-  <script src="/firebase-config.js"></script>
-  <script src="/app.js"></script>
+function partnerReports() {
+  const list = filtered(), st = stats(list);
+  const withBills = list.filter(d => d.bill);
+  const byState = Object.values(stateAgg(list)).sort((a, b) => b.ask - a.ask);
+  const scope = [S.f.state && STATE_NAME[S.f.state], S.f.tech && TECH_BY_ID[S.f.tech].name,
+                 S.f.orig && S.f.orig, S.f.dev && S.f.dev, S.f.status && STATUS_PILL[S.f.status][1]].filter(Boolean).join(' · ') || 'Entire marketplace';
+
+  const equity = withBills.map(d => ({d, s: d.savings}));
+  const good = equity.filter(x => x.s >= .12).length, fair = equity.filter(x => x.s >= .04 && x.s < .12).length, poor = equity.filter(x => x.s < .04).length;
+
+  return `
+  ${filterBar(false)}
+  ${filterChips()}
+  <div class="card">
+    <div class="card-head">
+      <div><h3>Report — ${esc(scope)}</h3>
+        <div class="ch-sub">Built from the ${list.length} deals matching your filters, as of ${dt(iso(TODAY))}. Every export below respects the same filters.</div></div>
+      <div class="ch-act"><button class="btn btn-primary btn-sm" data-act="print">Print / save PDF</button></div>
+    </div>
+
+    <div class="report-sec">
+      <h4>Pipeline at a glance</h4>
+      <div class="rpt-grid">
+        <div class="rpt-stat"><div class="k">Deals</div><div class="v">${st.n}</div></div>
+        <div class="rpt-stat"><div class="k">Capital sought</div><div class="v">${usdC(st.ask)}</div></div>
+        <div class="rpt-stat"><div class="k">Capacity</div><div class="v">${num(st.mw, 0)} MW</div></div>
+        <div class="rpt-stat"><div class="k">Median check</div><div class="v">${usdC(st.medAsk)}</div></div>
+        <div class="rpt-stat"><div class="k">Approval rate</div><div class="v">${pct(st.approvalRate)}</div></div>
+        <div class="rpt-stat"><div class="k">Avg days to close</div><div class="v">${Math.round(st.avgCycle || 0)}</div></div>
+      </div>
+    </div>
+
+    <div class="report-sec">
+      <h4>Concentration by state</h4>
+      ${barRows(byState.slice(0, 12).map(s => ({key:s.state, label: STATE_NAME[s.state], v: s.ask, n: s.n})),
+        () => 'var(--cs-blue)', r => usdC(r.v))}
+    </div>
+
+    <div class="report-sec">
+      <h4>Rate equity screen</h4>
+      <p class="note" style="margin-bottom:12px">Compares each deal's proposed offtake rate against the blended rate extracted from the host's own utility bills. A deal is equitable when the host keeps a real share of the savings.</p>
+      <div class="rpt-grid">
+        <div class="rpt-stat"><div class="k">Bills on file</div><div class="v">${withBills.length}</div></div>
+        <div class="rpt-stat" style="border-left:3px solid var(--cs-green)"><div class="k">Equitable (12%+)</div><div class="v">${good}</div></div>
+        <div class="rpt-stat" style="border-left:3px solid var(--cs-amber)"><div class="k">Thin (4–12%)</div><div class="v">${fair}</div></div>
+        <div class="rpt-stat" style="border-left:3px solid var(--cs-red)"><div class="k">Not equitable</div><div class="v">${poor}</div></div>
+      </div>
+    </div>
+
+    <div class="report-sec">
+      <h4>Exports</h4>
+      <p class="note" style="margin-bottom:12px">Each export is a flat CSV that opens straight in Excel or your data warehouse.</p>
+      <div style="display:flex;gap:9px;flex-wrap:wrap">
+        <button class="btn btn-ghost btn-sm" data-act="export-deals">Deal details (${list.length} rows)</button>
+        <button class="btn btn-ghost btn-sm" data-act="export-energy">Energy details (${list.length} rows)</button>
+        <button class="btn btn-ghost btn-sm" data-act="export-bills">Utility bill data (${withBills.length * 12} rows)</button>
+        <button class="btn btn-ghost btn-sm" data-act="export-equity">Rate equity screen (${withBills.length} rows)</button>
+        <button class="btn btn-ghost btn-sm" data-act="export-states">State rollup (${byState.length} rows)</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   10. DEAL DRAWER
+   ═══════════════════════════════════════════════════════════════════════════ */
+const DR_TABS = [['overview','Overview'],['energy','Energy'],['docs','Documents'],['bill','Utility bill'],['activity','Activity']];
+
+function openDeal(id) {
+  const d = allDeals().find(x => x.id === id);
+  if (!d) return;
+  S.drawerDeal = d; S.drawerTab = 'overview';
+  renderDrawer();
+  $('#drawerBack').classList.add('show');
+  $('#drawer').classList.add('show');
+  $('#drClose').focus();
+}
+function closeDeal() {
+  $('#drawerBack').classList.remove('show');
+  $('#drawer').classList.remove('show');
+  S.drawerDeal = null;
+}
+
+function equityVerdict(d) {
+  if (!d.bill) return null;
+  const b = d.bill;
+  const saveRate = b.blended - d.ppaRate;
+  const savePct = saveRate / b.blended;
+  const annual = saveRate * b.totalKwh;
+  const bench = BENCH[d.tech];
+  const ppwDelta = (d.ppw - bench.median) / bench.median;
+  const band = savePct >= .12 ? 'good' : savePct >= .04 ? 'fair' : 'poor';
+  const verdict = band === 'good' ? 'Equitable' : band === 'fair' ? 'Thin for the host' : 'Not equitable';
+  const line = band === 'good'
+    ? `The host keeps ${pct(savePct * 100)} off their current blended rate — a real saving that survives rate volatility. Capital ask sits ${ppwDelta >= 0 ? pct(ppwDelta * 100) + ' above' : pct(-ppwDelta * 100) + ' below'} the ${esc(d.techName)} median of $${bench.median.toFixed(2)}/W.`
+    : band === 'fair'
+    ? `At ${pct(savePct * 100)} the host's saving is inside the noise of a single rate case. Worth renegotiating the escalator before this goes to committee.`
+    : `The proposed rate of $${d.ppaRate.toFixed(4)}/kWh sits within ${pct(Math.abs(savePct) * 100)} of what the host already pays. There is no durable benefit to the offtaker here.`;
+  return {band, verdict, savePct, annual, saveRate, ppwDelta, bench, line, twenty: annual * 20 * 1.02};
+}
+
+function ladder(d) {
+  const lo = 0.04, hi = 0.30;
+  const posOf = r => Math.max(2, Math.min(98, (r - lo) / (hi - lo) * 100));
+  return `<div class="ladder">
+    <div class="ladder-track"></div>
+    <div class="ladder-mark ghost" style="left:${posOf(d.bill.blended)}%"><i></i><span>Bill $${d.bill.blended.toFixed(3)}</span></div>
+    <div class="ladder-mark" style="left:${posOf(d.ppaRate)}%"><i></i><span>Offer $${d.ppaRate.toFixed(3)}</span></div>
+  </div>
+  <div class="ladder-scale"><span>$0.04</span><span>$0.11</span><span>$0.17</span><span>$0.24</span><span>$0.30/kWh</span></div>`;
+}
+
+function drawerBody(d) {
+  if (S.drawerTab === 'overview') {
+    const [cls, lab] = STATUS_PILL[d.status];
+    return `
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px">
+      <span class="pill ${cls}">${lab}</span>
+      <span class="pill ${STAGE_PILL[d.stage]}">${d.stage}</span>
+      <span class="tag" style="color:${d.techColor};background:${d.techColor}18">${esc(d.techName)}</span>
+    </div>
+    ${d.status === 'declined' ? `<div class="verdict poor" style="margin-bottom:20px">
+      <div class="vd-top"><span class="vd-badge">Declined</span><h5>${esc(d.declineReason)}</h5></div>
+      <p>Returned after ${d.cycleDays} days in ${d.stage.toLowerCase()}. Resubmission is allowed once the underlying issue is documented.</p></div>` : ''}
+    <div class="sec">
+      <h4>Deal terms</h4>
+      <div class="kv-list">
+        <div class="kv"><span class="k">Capital ask</span><span class="v mono">${usd(d.ask)}</span></div>
+        <div class="kv"><span class="k">All-in cost</span><span class="v mono">$${d.ppw.toFixed(2)}/W <span style="font-weight:400;color:var(--cs-muted-2)">· median $${BENCH[d.tech].median.toFixed(2)}</span></span></div>
+        <div class="kv"><span class="k">Sponsor IRR</span><span class="v mono">${d.irr.toFixed(1)}%</span></div>
+        <div class="kv"><span class="k">DSCR</span><span class="v mono">${d.dscr.toFixed(2)}x</span></div>
+        <div class="kv"><span class="k">Offtake</span><span class="v">${esc(d.offtake)}</span></div>
+        <div class="kv"><span class="k">Target COD</span><span class="v">${dt(d.cod)}</span></div>
+      </div>
+    </div>
+    <div class="sec">
+      <h4>Sponsor &amp; site</h4>
+      <div class="kv-list">
+        <div class="kv"><span class="k">Developer</span><span class="v"><button class="link-btn" data-act="dev" data-val="${esc(d.developer)}">${esc(d.developer)}</button></span></div>
+        <div class="kv"><span class="k">Originator</span><span class="v"><button class="link-btn" data-act="orig" data-val="${esc(d.originator)}">${esc(d.originator)}</button></span></div>
+        <div class="kv"><span class="k">Location</span><span class="v"><button class="link-btn" data-act="state" data-val="${d.state}">${esc(d.city)}, ${d.state}</button></span></div>
+        <div class="kv"><span class="k">Site control</span><span class="v">${esc(d.siteControl)}</span></div>
+        <div class="kv"><span class="k">Permits</span><span class="v">${esc(d.permits)}</span></div>
+        <div class="kv"><span class="k">Interconnection</span><span class="v">${esc(d.interconnect)}</span></div>
+      </div>
+    </div>
+    <div class="sec">
+      <h4>Timeline</h4>
+      <div class="kv-list">
+        <div class="kv"><span class="k">Submitted</span><span class="v">${dt(d.submitted)}</span></div>
+        ${d.decided ? `<div class="kv"><span class="k">Decision</span><span class="v">${dt(d.decided)} · ${d.cycleDays} days</span></div>`
+                    : `<div class="kv"><span class="k">Open for</span><span class="v">${d.ageDays} days</span></div>`}
+        <div class="kv"><span class="k">Bidders</span><span class="v mono">${d.bidders}</span></div>
+        <div class="kv"><span class="k">Offers received</span><span class="v mono">${d.offers}</span></div>
+        ${d.wonBy ? `<div class="kv"><span class="k">Funded by</span><span class="v">${esc(d.wonBy)}</span></div>` : ''}
+        ${d.lead ? `<div class="kv"><span class="k">Lead in diligence</span><span class="v">${esc(d.lead)}</span></div>` : ''}
+      </div>
+    </div>`;
+  }
+
+  if (S.drawerTab === 'energy') {
+    const annualMwh = d.bill ? d.bill.totalKwh / 1000 : d.mw * 1900;
+    const cf = d.cf || .24;
+    return `
+    <div class="sec">
+      <h4>Generation &amp; storage</h4>
+      <div class="kv-list">
+        <div class="kv"><span class="k">Nameplate</span><span class="v mono">${num(d.mw)} MW</span></div>
+        ${d.mwh ? `<div class="kv"><span class="k">Storage</span><span class="v mono">${num(d.mwh)} MWh · ${num(d.mwh / d.mw, 1)}h duration</span></div>` : ''}
+        <div class="kv"><span class="k">Technology</span><span class="v">${esc(d.techName)}</span></div>
+        <div class="kv"><span class="k">Proposed offtake rate</span><span class="v mono">$${d.ppaRate.toFixed(4)}/kWh</span></div>
+        <div class="kv"><span class="k">Interconnection</span><span class="v">${esc(d.interconnect)}</span></div>
+      </div>
+    </div>
+    ${d.bill ? `<div class="sec">
+      <h4>Host load profile <span class="demo-badge">from uploaded bills</span></h4>
+      <div class="kv-list">
+        <div class="kv"><span class="k">Annual consumption</span><span class="v mono">${Math.round(d.bill.totalKwh).toLocaleString()} kWh</span></div>
+        <div class="kv"><span class="k">Peak demand</span><span class="v mono">${d.bill.peakKw.toLocaleString()} kW</span></div>
+        <div class="kv"><span class="k">Load factor</span><span class="v mono">${pct(d.bill.loadFactor * 100, 1)}</span></div>
+        <div class="kv"><span class="k">Peak month</span><span class="v">${d.bill.months[d.bill.peakIdx].label}</span></div>
+        <div class="kv"><span class="k">Blended rate</span><span class="v mono">$${d.bill.blended.toFixed(4)}/kWh</span></div>
+        <div class="kv"><span class="k">Annual spend</span><span class="v mono">${usd(d.bill.totalCost)}</span></div>
+      </div>
+      <h4 style="margin-top:22px">Monthly consumption</h4>
+      ${barRows(d.bill.months.map(m => ({key:m.label, label:m.label, v:m.kwh})), (r, i) => 'var(--cs-blue)', r => Math.round(r.v / 1000) + ' MWh')}
+    </div>` : `<p class="note">No utility bills on file for this site, so the load profile is modeled from nameplate rather than metered. Ask the originator to upload 12 months of statements.</p>`}
+    <div class="sec">
+      <h4>Production estimate</h4>
+      <div class="kv-list">
+        <div class="kv"><span class="k">Expected annual output</span><span class="v mono">${num(annualMwh, 0)} MWh</span></div>
+        <div class="kv"><span class="k">Capacity factor</span><span class="v mono">${pct(cf * 100, 1)}</span></div>
+        <div class="kv"><span class="k">First-year revenue</span><span class="v mono">${usd(annualMwh * 1000 * d.ppaRate)}</span></div>
+      </div>
+    </div>`;
+  }
+
+  if (S.drawerTab === 'docs') {
+    const icons = {bills:'M9 2h6l5 5v15H4V2h5z', site:'M12 2l9 5v10l-9 5-9-5V7z', intc:'M13 2L3 14h8l-1 8 10-12h-8z', ppa:'M4 4h16v16H4z', permit:'M12 2l7 4v6c0 5-3 8-7 10-4-2-7-5-7-10V6z', folder:'M3 6h6l2 3h10v11H3z'};
+    return `
+    <p class="note" style="margin-bottom:16px">Documents live in the sponsor's own storage. Opening one records an access entry on the deal's audit trail.</p>
+    ${d.docs.map(doc => doc.have
+      ? `<a class="doc-link" href="#" data-act="doc" data-val="${doc.kind}">
+          <svg class="dl-ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"><path d="${icons[doc.kind]}"/></svg>
+          <span class="dl-name">${esc(doc.label)}<span>${doc.kind === 'bills' && d.bill ? d.bill.period + ' · ' + d.bill.utility : 'Shared by ' + esc(d.originator)}</span></span>
+          <span class="dl-go">Open ›</span></a>`
+      : `<div class="doc-link" style="opacity:.5;border-style:dashed;cursor:default">
+          <svg class="dl-ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="${icons[doc.kind]}"/></svg>
+          <span class="dl-name">${esc(doc.label)}<span>Not provided yet</span></span>
+          <span class="dl-go">—</span></div>`).join('')}
+    <div class="sec" style="margin-top:24px">
+      <h4>Request a document</h4>
+      <p class="note" style="margin-bottom:11px">Sends a note to ${esc(d.originator)} listing exactly what's missing.</p>
+      <button class="btn btn-ghost btn-sm" data-act="request-docs">Request the ${d.docs.filter(x => !x.have).length} missing items</button>
+    </div>`;
+  }
+
+  if (S.drawerTab === 'bill') {
+    if (!d.bill) return `<div class="empty">
+      <div class="e-ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 2h6l5 5v15H4V2h5z"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="14" y2="17"/></svg></div>
+      <h3>No bills extracted yet</h3>
+      <p>Upload 12 months of statements and the extractor will pull consumption, demand and cost into a structured table you can export.</p>
+      <button class="btn btn-primary" data-act="upload-bill">Upload utility bills</button></div>`;
+    const b = d.bill, v = equityVerdict(d);
+    return `
+    <div class="verdict ${v.band}">
+      <div class="vd-top"><span class="vd-badge">${v.verdict}</span><h5>Host keeps ${pct(v.savePct * 100)} against their own bill</h5></div>
+      <p>${v.line}</p>
+      <div class="vd-nums">
+        <div class="vd-num"><div class="k">Bill rate</div><div class="v">$${b.blended.toFixed(3)}</div></div>
+        <div class="vd-num"><div class="k">Offer rate</div><div class="v">$${d.ppaRate.toFixed(3)}</div></div>
+        <div class="vd-num"><div class="k">Year 1 saving</div><div class="v">${usdC(v.annual)}</div></div>
+        <div class="vd-num"><div class="k">20-year saving</div><div class="v">${usdC(v.twenty)}</div></div>
+      </div>
+    </div>
+    ${ladder(d)}
+    <div class="sec" style="margin-top:22px">
+      <h4>Extraction source
+        <span style="font-weight:500;letter-spacing:0;text-transform:none;font-size:11px;color:var(--cs-muted-2)">${pct(b.confidence * 100, 1)} field confidence</span></h4>
+      <div class="kv-list">
+        <div class="kv"><span class="k">Utility</span><span class="v">${esc(b.utility)}</span></div>
+        <div class="kv"><span class="k">Account / meter</span><span class="v mono">${b.account} · ${b.meter}</span></div>
+        <div class="kv"><span class="k">Billing period</span><span class="v">${b.period}</span></div>
+        <div class="kv"><span class="k">Source files</span><span class="v">${b.source}</span></div>
+        <div class="kv"><span class="k">Extracted</span><span class="v">${dt(b.extractedOn)}</span></div>
+      </div>
+    </div>
+    <div class="sec">
+      <h4>Extracted statement data
+        <button class="link-btn" data-act="export-onebill">Export CSV</button></h4>
+      <div style="overflow-x:auto">
+      <table class="bill">
+        <thead><tr><th>Month</th><th>kWh</th><th>Peak kW</th><th>Energy</th><th>Demand</th><th>Other</th><th>Total</th><th>$/kWh</th></tr></thead>
+        <tbody>${b.months.map((m, i) => `<tr class="${i === b.peakIdx ? 'peak' : ''}">
+          <td>${m.label}</td><td>${Math.round(m.kwh).toLocaleString()}</td><td>${m.kw.toLocaleString()}</td>
+          <td>${usd(m.energy)}</td><td>${usd(m.demand)}</td><td>${usd(m.other)}</td>
+          <td>${usd(m.total)}</td><td>${(m.total / m.kwh).toFixed(4)}</td></tr>`).join('')}</tbody>
+        <tfoot><tr><td>12-month total</td><td>${Math.round(b.totalKwh).toLocaleString()}</td><td>${b.peakKw.toLocaleString()}</td>
+          <td>${usd(sum(b.months.map(m => m.energy)))}</td><td>${usd(sum(b.months.map(m => m.demand)))}</td>
+          <td>${usd(sum(b.months.map(m => m.other)))}</td><td>${usd(b.totalCost)}</td><td>${b.blended.toFixed(4)}</td></tr></tfoot>
+      </table></div>
+      <p class="note" style="margin-top:10px">Highlighted row is the demand peak — the month that sets the ratchet on ${esc(b.schedule)}.</p>
+    </div>`;
+  }
+
+  /* activity */
+  const events = [
+    {t: d.submitted, w: d.originator, m: `Submitted ${d.name} to the marketplace — ${usdC(d.ask)} sought.`},
+    d.bill ? {t: d.bill.extractedOn, w: 'OMEGA extractor', m: `Pulled 12 statements from ${d.bill.utility}. Blended rate $${d.bill.blended.toFixed(4)}/kWh.`} : null,
+    {t: iso(addDays(new Date(d.submitted), 6)), w: 'Marketplace', m: `Released to ${d.bidders} matching capital partners.`},
+    d.offers ? {t: iso(addDays(new Date(d.submitted), 18)), w: d.lead || d.wonBy || 'Coastline Infrastructure Capital', m: `${d.offers} indicative offer${d.offers > 1 ? 's' : ''} logged.`} : null,
+    d.status === 'won' ? {t: d.decided, w: d.wonBy, m: `Awarded and funded at $${d.ppw.toFixed(2)}/W.`} : null,
+    d.status === 'declined' ? {t: d.decided, w: 'Credit committee', m: `Declined — ${d.declineReason}.`} : null,
+    d.status === 'withdrawn' ? {t: d.decided, w: d.originator, m: 'Withdrawn by the sponsor.'} : null
+  ].filter(Boolean).sort((a, b) => b.t.localeCompare(a.t));
+  return `<div class="sec"><h4>Audit trail</h4>
+    ${events.map(e => `<div style="display:flex;gap:13px;padding:12px 0;border-bottom:1px solid var(--cs-border)">
+      <div style="width:6px;height:6px;border-radius:50%;background:var(--cs-blue);margin-top:6px;flex:none"></div>
+      <div style="flex:1"><div style="font-size:13px;line-height:1.5">${esc(e.m)}</div>
+        <div style="font-size:11px;color:var(--cs-muted-2);margin-top:3px">${esc(e.w)} · ${dt(e.t)}</div></div>
+    </div>`).join('')}</div>`;
+}
+
+function renderDrawer() {
+  const d = S.drawerDeal; if (!d) return;
+  $('#drTitle').textContent = d.name;
+  $('#drSub').innerHTML = `${d.id} · ${esc(d.city)}, ${d.state} · ${usd(d.ask)} · ${num(d.mw)} MW`;
+  $('#drTabs').innerHTML = DR_TABS.map(([k, l]) =>
+    `<button class="dr-tab ${S.drawerTab === k ? 'on' : ''}" data-act="drtab" data-val="${k}">${l}${k === 'bill' && d.bill ? ' •' : ''}</button>`).join('');
+  $('#drBody').innerHTML = drawerBody(d);
+  $('#drBody').scrollTop = 0;
+  $('#drFoot').innerHTML = S.role === 'partner'
+    ? `<button class="btn btn-primary btn-sm" data-act="offer">Make an offer</button>
+       <button class="btn btn-ghost btn-sm" data-act="export-onedeal">Export this deal</button>
+       <button class="btn btn-ghost btn-sm" data-act="watch">Add to watchlist</button>`
+    : `<button class="btn btn-ghost btn-sm" data-act="export-onedeal">Export this deal</button>
+       <button class="btn btn-ghost btn-sm" data-act="upload-bill">${d.bill ? 'Replace utility bills' : 'Upload utility bills'}</button>`;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   11. EXPORTS
+   ═══════════════════════════════════════════════════════════════════════════ */
+const stamp = () => iso(TODAY).replace(/-/g, '');
+
+function exportDeals(list) {
+  const rows = [['Deal ID','Name','City','State','Technology','MW','MWh','Capital ask (USD)','$/W','Stage','Outcome','Decline reason','Developer','Originator','Bidders','Offers','Sponsor IRR %','DSCR','Offtake','Site control','Permits','Interconnection','Submitted','Decided','Days in process','Target COD']];
+  list.forEach(d => rows.push([d.id, d.name, d.city, d.state, d.techName, d.mw, d.mwh || '', d.ask, d.ppw.toFixed(3), d.stage,
+    STATUS_PILL[d.status][1], d.declineReason || '', d.developer, d.originator, d.bidders, d.offers, d.irr, d.dscr,
+    d.offtake, d.siteControl, d.permits, d.interconnect, d.submitted, d.decided || '', d.cycleDays || d.ageDays, d.cod]));
+  downloadCSV(`omega-deal-details-${stamp()}.csv`, rows);
+}
+
+function exportEnergy(list) {
+  const rows = [['Deal ID','Name','State','Technology','Nameplate MW','Storage MWh','Duration h','Proposed rate ($/kWh)','Annual kWh (metered)','Peak demand kW','Load factor %','Blended bill rate ($/kWh)','Annual utility spend (USD)','Utility','Rate schedule','Interconnection','Target COD']];
+  list.forEach(d => {
+    const b = d.bill;
+    rows.push([d.id, d.name, d.state, d.techName, d.mw, d.mwh || '', d.mwh ? (d.mwh / d.mw).toFixed(2) : '',
+      d.ppaRate.toFixed(4), b ? Math.round(b.totalKwh) : '', b ? b.peakKw : '', b ? (b.loadFactor * 100).toFixed(1) : '',
+      b ? b.blended.toFixed(4) : '', b ? Math.round(b.totalCost) : '', b ? b.utility : '', b ? b.schedule : '', d.interconnect, d.cod]);
+  });
+  downloadCSV(`omega-energy-details-${stamp()}.csv`, rows);
+}
+
+function exportBills(list) {
+  const rows = [['Deal ID','Deal name','State','Utility','Account','Meter','Rate schedule','Statement month','kWh','Peak kW','Energy charge','Demand charge','Other charges','Total charge','Effective $/kWh','Peak month flag','Extraction confidence %']];
+  list.filter(d => d.bill).forEach(d => {
+    const b = d.bill;
+    b.months.forEach((m, i) => rows.push([d.id, d.name, d.state, b.utility, b.account, b.meter, b.schedule, m.label,
+      Math.round(m.kwh), m.kw, m.energy.toFixed(2), m.demand.toFixed(2), m.other.toFixed(2), m.total.toFixed(2),
+      (m.total / m.kwh).toFixed(5), i === b.peakIdx ? 'PEAK' : '', (b.confidence * 100).toFixed(1)]));
+  });
+  if (rows.length === 1) return toast('No utility bills in the current selection.', true);
+  downloadCSV(`omega-utility-bill-data-${stamp()}.csv`, rows);
+}
+
+function exportEquity(list) {
+  const rows = [['Deal ID','Name','State','Technology','Blended bill rate','Proposed offer rate','Saving ($/kWh)','Saving (%)','Year-1 saving (USD)','20-year saving (USD)','Verdict','$/W','Technology median $/W','Variance vs median (%)','Annual kWh','Peak kW']];
+  list.filter(d => d.bill).forEach(d => {
+    const v = equityVerdict(d);
+    rows.push([d.id, d.name, d.state, d.techName, d.bill.blended.toFixed(4), d.ppaRate.toFixed(4), v.saveRate.toFixed(4),
+      (v.savePct * 100).toFixed(1), Math.round(v.annual), Math.round(v.twenty), v.verdict, d.ppw.toFixed(3),
+      v.bench.median.toFixed(3), (v.ppwDelta * 100).toFixed(1), Math.round(d.bill.totalKwh), d.bill.peakKw]);
+  });
+  if (rows.length === 1) return toast('No utility bills in the current selection.', true);
+  downloadCSV(`omega-rate-equity-screen-${stamp()}.csv`, rows);
+}
+
+function exportStates(list) {
+  const rows = [['State','State name','Deals','Capacity MW','Capital sought (USD)','Funded','Declined','In market','Approval rate %','Average deal (USD)']];
+  Object.values(stateAgg(list)).sort((a, b) => b.ask - a.ask).forEach(s => {
+    const sub = list.filter(d => d.state === s.state), st = stats(sub);
+    rows.push([s.state, STATE_NAME[s.state], s.n, s.mw.toFixed(1), Math.round(s.ask), s.won, s.declined, s.active,
+      st.approvalRate.toFixed(1), Math.round(st.avgAsk)]);
+  });
+  downloadCSV(`omega-state-rollup-${stamp()}.csv`, rows);
+}
+
+function exportBy(list, key, filename) {
+  const groups = list.reduce((a, d) => ((a[d[key]] = a[d[key]] || []).push(d), a), {});
+  const rows = [[key === 'originator' ? 'Originator' : 'Developer','Deals','Capacity MW','Capital sought (USD)','Funded','Declined','Approval rate %','Average deal (USD)','Median deal (USD)','Avg days to close']];
+  Object.entries(groups).sort((a, b) => sum(b[1].map(d => d.ask)) - sum(a[1].map(d => d.ask))).forEach(([name, sub]) => {
+    const st = stats(sub);
+    rows.push([name, st.n, st.mw.toFixed(1), Math.round(st.ask), st.won, st.declined, st.approvalRate.toFixed(1),
+      Math.round(st.avgAsk), Math.round(st.medAsk), Math.round(st.avgCycle || 0)]);
+  });
+  downloadCSV(filename, rows);
+}
+
+function exportTimeline(list) {
+  const rows = [['Deal ID','Name','State','Outcome','Submitted','Decided','Total days',...STAGES.map(s => s + ' (days)')]];
+  list.forEach(d => rows.push([d.id, d.name, d.state, STATUS_PILL[d.status][1], d.submitted, d.decided || '',
+    d.cycleDays || d.ageDays, ...STAGES.map(s => { const x = d.durations.find(y => y.stage === s); return x ? x.days : ''; })]));
+  downloadCSV(`omega-deal-timelines-${stamp()}.csv`, rows);
+}
+
+function exportTech(list) {
+  const rows = [['Technology','Deals','Avg capital ask (USD)','Median capital ask (USD)','Avg MW','Total MW','Avg $/W','Median $/W','Approval rate %','Avg IRR %']];
+  TECHS.forEach(t => {
+    const sub = list.filter(d => d.tech === t.id); if (!sub.length) return;
+    const st = stats(sub);
+    rows.push([t.name, st.n, Math.round(st.avgAsk), Math.round(st.medAsk), st.avgMw.toFixed(1), st.mw.toFixed(1),
+      st.ppw.toFixed(3), median(sub.map(d => d.ppw)).toFixed(3), st.approvalRate.toFixed(1), st.avgIrr.toFixed(1)]);
+  });
+  downloadCSV(`omega-technology-rollup-${stamp()}.csv`, rows);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   12. SUBMIT A DEAL — with utility bill extraction
+   ═══════════════════════════════════════════════════════════════════════════ */
+let pendingBill = null;
+
+function openModal(html) { $('#modalEl').innerHTML = html; $('#modalBack').classList.add('show'); }
+function closeModal() { $('#modalBack').classList.remove('show'); $('#modalEl').innerHTML = ''; pendingBill = null; }
+
+function submitModal() {
+  pendingBill = null;
+  openModal(`
+  <div class="modal-head">
+    <div><h2>Submit a deal</h2>
+      <div class="mh-sub">Everything here is what a capital partner screens on first. Utility bills are optional, but deals with 12 months of statements get looked at roughly twice as fast.</div></div>
+    <button class="dr-x" data-act="close-modal" aria-label="Close">&times;</button>
+  </div>
+  <div class="modal-body">
+    <div class="field"><label for="nfName">Project name</label><input id="nfName" placeholder="Cedar Hollow Solar"></div>
+    <div class="field-row three">
+      <div class="field"><label for="nfState">State</label><select id="nfState">${Object.keys(MARKETS).sort().map(s => `<option value="${s}">${STATE_NAME[s]}</option>`).join('')}</select></div>
+      <div class="field"><label for="nfCity">City</label><input id="nfCity" placeholder="Abilene"></div>
+      <div class="field"><label for="nfTech">Technology</label><select id="nfTech">${TECHS.map(t => `<option value="${t.id}">${t.name}</option>`).join('')}</select></div>
+    </div>
+    <div class="field-row three">
+      <div class="field"><label for="nfMw">Nameplate (MW)</label><input id="nfMw" type="number" step="0.1" min="0.1" placeholder="42.5"></div>
+      <div class="field"><label for="nfMwh">Storage (MWh)</label><input id="nfMwh" type="number" step="0.1" min="0" placeholder="0"></div>
+      <div class="field"><label for="nfAsk">Capital ask (USD)</label><input id="nfAsk" type="number" step="100000" min="0" placeholder="58400000"></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label for="nfRate">Proposed offtake rate ($/kWh)</label><input id="nfRate" type="number" step="0.001" min="0" placeholder="0.089"></div>
+      <div class="field"><label for="nfOfftake">Offtake structure</label><select id="nfOfftake">${OFFTAKES.map(o => `<option>${o}</option>`).join('')}</select></div>
+    </div>
+    <div class="form-rule"></div>
+    <h4 style="font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--cs-muted-2);margin-bottom:11px">Utility bills</h4>
+    <div class="file-drop" id="billDrop">
+      <label for="billFile">
+        <svg class="fd-ic" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        <div class="fd-main">Drop 12 months of statements, or browse</div>
+        <div class="fd-sub">PDF, CSV or images — the extractor reads consumption, demand and cost off each statement</div>
+      </label>
+      <input type="file" id="billFile" multiple accept=".pdf,.csv,.png,.jpg,.jpeg" style="display:none">
+    </div>
+    <div id="billResult"></div>
+    <p class="field-note">Set the state and nameplate first — the extractor uses them to validate the meter data it reads.</p>
+  </div>
+  <div class="modal-foot">
+    <button class="btn btn-ghost" data-act="close-modal">Cancel</button>
+    <button class="btn btn-primary" data-act="save-deal">Submit to marketplace</button>
+  </div>`);
+
+  const drop = $('#billDrop'), input = $('#billFile');
+  ['dragenter','dragover'].forEach(e => drop.addEventListener(e, ev => { ev.preventDefault(); drop.classList.add('over'); }));
+  ['dragleave','drop'].forEach(e => drop.addEventListener(e, ev => { ev.preventDefault(); drop.classList.remove('over'); }));
+  drop.addEventListener('drop', ev => handleBills(ev.dataTransfer.files));
+  input.addEventListener('change', () => handleBills(input.files));
+}
+
+function handleBills(files) {
+  if (!files || !files.length) return;
+  const state = $('#nfState').value, mw = parseFloat($('#nfMw').value);
+  if (!mw || mw <= 0) { toast('Enter the nameplate MW first — the extractor validates against it.', true); return; }
+  const names = Array.from(files).map(f => f.name);
+  const box = $('#billResult');
+  box.innerHTML = `<div class="file-chip">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--cs-blue)" stroke-width="2"><path d="M9 2h6l5 5v15H4V2h5z"/></svg>
+    <span class="fc-name">${esc(names.slice(0, 2).join(', '))}${names.length > 2 ? ` +${names.length - 2} more` : ''}</span>
+    <span class="fc-state" id="exState">reading…</span></div>
+    <div class="extract-bar"><i id="exBar"></i></div>`;
+
+  const steps = ['reading pages…','finding meter numbers…','parsing kWh + demand…','normalizing charges…','done'];
+  let i = 0;
+  const tick = setInterval(() => {
+    i++;
+    $('#exBar').style.width = (i / steps.length * 100) + '%';
+    $('#exState').textContent = steps[Math.min(i, steps.length - 1)];
+    if (i >= steps.length) {
+      clearInterval(tick);
+      pendingBill = makeBill(state, mw, TECH_BY_ID[$('#nfTech').value]);
+      pendingBill.source = names.length + ' file' + (names.length > 1 ? 's' : '');
+      const b = pendingBill;
+      box.innerHTML += `<div style="margin-top:12px;background:var(--cs-card-2);border:1px solid var(--cs-border);border-radius:10px;padding:14px 16px">
+        <div style="display:flex;align-items:center;gap:9px;margin-bottom:11px">
+          <span class="demo-badge">Extracted</span>
+          <span style="font-size:12px;color:var(--cs-muted)">${pct(b.confidence * 100, 1)} field confidence · ${b.months.length} statements</span></div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:11px">
+          <div><div style="font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--cs-muted-2)">Annual kWh</div>
+            <div style="font-family:Syne;font-size:15px;font-weight:700;margin-top:2px">${Math.round(b.totalKwh / 1000).toLocaleString()}k</div></div>
+          <div><div style="font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--cs-muted-2)">Peak kW</div>
+            <div style="font-family:Syne;font-size:15px;font-weight:700;margin-top:2px">${b.peakKw.toLocaleString()}</div></div>
+          <div><div style="font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--cs-muted-2)">Blended rate</div>
+            <div style="font-family:Syne;font-size:15px;font-weight:700;margin-top:2px">$${b.blended.toFixed(3)}</div></div>
+          <div><div style="font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--cs-muted-2)">Annual spend</div>
+            <div style="font-family:Syne;font-size:15px;font-weight:700;margin-top:2px">${usdC(b.totalCost)}</div></div>
+        </div>
+        <p class="field-note" style="margin-top:11px">Utility read as <b>${esc(b.utility)}</b>. This becomes the baseline every partner is scored against.</p>
+      </div>`;
+      toast('Extracted 12 statements — blended rate $' + b.blended.toFixed(4) + '/kWh');
+    }
+  }, 340);
+}
+
+function saveDeal() {
+  const name = $('#nfName').value.trim(), state = $('#nfState').value, mw = parseFloat($('#nfMw').value);
+  const tech = TECH_BY_ID[$('#nfTech').value];
+  const ask = parseFloat($('#nfAsk').value);
+  if (!name) return toast('Give the project a name.', true);
+  if (!mw || mw <= 0) return toast('Nameplate MW is required.', true);
+  if (!ask || ask <= 0) return toast('Capital ask is required.', true);
+
+  const rate = parseFloat($('#nfRate').value) || (pendingBill ? pendingBill.blended * .82 : MARKETS[state].rate * .8);
+  const mwh = parseFloat($('#nfMwh').value) || 0;
+  const d = {
+    id: 'CS-' + (2400 + DEALS.length + S.uploaded.length),
+    name, state, city: $('#nfCity').value.trim() || MARKETS[state].cities[0],
+    developer: ME.org, originator: ME.name,
+    tech: tech.id, techName: tech.name, techColor: tech.color,
+    mw, mwh, ask, ppw: ask / (mw * 1e6),
+    stage:'Submitted', status:'active', declineReason:null,
+    submitted: iso(TODAY), decided:null, cycleDays:null, ageDays:0,
+    durations:[{stage:'Submitted', days:1, start:0}],
+    offers:0, bidders:0, wonBy:null, lead:null,
+    irr: Number(avg(tech.irr).toFixed(1)), dscr:1.35,
+    offtake: $('#nfOfftake').value,
+    interconnect:'Feasibility only', permits:'Pre-application', siteControl:'Letter of intent',
+    cod: iso(addDays(TODAY, 540)), cf: tech.id === 'solar' || tech.id === 'hybrid' ? .245 : .44,
+    ppaRate: rate, bill: pendingBill,
+    docs:[{label:'Utility bills (12 mo)', kind:'bills', have: !!pendingBill},
+          {label:'Site details & survey', kind:'site', have:false},
+          {label:'Interconnection study', kind:'intc', have:false},
+          {label:'Offtake / PPA draft', kind:'ppa', have:false},
+          {label:'Permits & zoning', kind:'permit', have:false},
+          {label:'Full diligence folder', kind:'folder', have:true}]
+  };
+  d.savings = d.bill ? (d.bill.blended - d.ppaRate) / d.bill.blended : null;
+  S.uploaded.unshift(d);
+  closeModal();
+  render();
+  toast(`${name} is live on the marketplace — ${usdC(ask)} sought.`);
+  setTimeout(() => openDeal(d.id), 400);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   13. RENDER
+   ═══════════════════════════════════════════════════════════════════════════ */
+const TABS = {
+  dev: [['overview','Overview'],['timelines','Timelines'],['deals','My deals']],
+  partner: [['market','Marketplace'],['coverage','Coverage'],['reports','Reports']]
+};
+
+function render() {
+  const isDev = S.role === 'dev';
+  const who = isDev ? ME : ME_PARTNER;
+  $('#userAvatar').textContent = who.initials;
+  $('#userName').textContent = who.name;
+
+  const valid = TABS[S.role].map(t => t[0]);
+  if (!valid.includes(S.tab)) S.tab = valid[0];
+
+  $('#pageTitle').textContent = isDev ? 'Deal intelligence' : 'Capital marketplace';
+  $('#pageSub').textContent = isDev
+    ? `${ME.org} · ${myBook().length} deals submitted. Where they are, how big they are, what came back, and how long it took.`
+    : `${ME_PARTNER.org} · ${allDeals().length} deals from ${new Set(allDeals().map(d => d.originator)).size} originators across ${Object.keys(stateAgg(allDeals())).length} states.`;
+
+  $('#headActions').innerHTML = isDev
+    ? `<button class="btn btn-ghost btn-sm" data-act="export-deals">Export my book</button>
+       <button class="btn btn-primary btn-sm" data-act="new-deal">
+         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+         Submit a deal</button>`
+    : `<button class="btn btn-ghost btn-sm" data-act="export-deals">Export current view</button>
+       <button class="btn btn-primary btn-sm" data-act="go-reports">Run a report</button>`;
+
+  $('#tabs').innerHTML = TABS[S.role].map(([k, l]) => {
+    const n = k === 'deals' || k === 'market' ? `<span class="cnt">${filtered().length}</span>` : '';
+    return `<button class="tab ${S.tab === k ? 'active' : ''}" data-act="tab" data-val="${k}">${l}${n}</button>`;
+  }).join('');
+
+  const view = $('#view');
+  if (isDev) {
+    view.innerHTML = S.tab === 'overview' ? devOverview()
+                   : S.tab === 'timelines' ? devTimelines()
+                   : filterBar(true) + filterChips() + dealTable(filtered(), {group: S.group, hide:['originator']})
+                     + `<p class="note" style="margin-top:12px">${filtered().length} of ${myBook().length} deals shown.</p>`;
+  } else {
+    view.innerHTML = S.tab === 'market' ? partnerMarketplace()
+                   : S.tab === 'coverage' ? partnerCoverage()
+                   : partnerReports();
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   14. EVENTS
+   ═══════════════════════════════════════════════════════════════════════════ */
+document.addEventListener('click', e => {
+  const el = e.target.closest('[data-act]');
+  if (!el) return;
+  const act = el.dataset.act, val = el.dataset.val;
+  const list = filtered();
+
+  switch (act) {
+    case 'tab':        S.tab = val; render(); window.scrollTo({top:0, behavior:'smooth'}); break;
+    case 'go-reports': S.tab = 'reports'; render(); break;
+    case 'state':      setFilter('state', val); break;
+    case 'tech':       setFilter('tech', val); break;
+    case 'status':     setFilter('status', val); break;
+    case 'stage':      setFilter('stage', val); break;
+    case 'dev':        setFilter('dev', val); if (S.role === 'partner') { S.tab = 'market'; render(); } closeDeal(); break;
+    case 'orig':       setFilter('orig', val); if (S.role === 'partner') { S.tab = 'market'; render(); } closeDeal(); break;
+    case 'clearstate': S.f.state = ''; render(); break;
+    case 'clearall':   clearFilters(); break;
+    case 'unfilter':   S.f[val] = (val === 'minMw' ? 0 : ''); render(); break;
+    case 'group-mode': S.group = val; S.openGroups.clear(); render(); break;
+    case 'group':      S.openGroups.has(val) ? S.openGroups.delete(val) : S.openGroups.add(val); render(); break;
+    case 'sort':       S.sort = {key: val, dir: S.sort.key === val ? -S.sort.dir : -1}; render(); break;
+    case 'open':       openDeal(val); break;
+    case 'drtab':      S.drawerTab = val; renderDrawer(); break;
+    case 'new-deal':   submitModal(); break;
+    case 'save-deal':  saveDeal(); break;
+    case 'close-modal':closeModal(); break;
+    case 'print':      window.print(); break;
+
+    case 'export-deals':    exportDeals(list); break;
+    case 'export-energy':   exportEnergy(list); break;
+    case 'export-bills':    exportBills(list); break;
+    case 'export-equity':   exportEquity(list); break;
+    case 'export-states':   exportStates(list); break;
+    case 'export-tech':     exportTech(list); break;
+    case 'export-timeline': exportTimeline(list); break;
+    case 'export-orig':     exportBy(list, 'originator', `omega-by-originator-${stamp()}.csv`); break;
+    case 'export-dev':      exportBy(list, 'developer', `omega-by-developer-${stamp()}.csv`); break;
+    case 'export-onedeal':  if (S.drawerDeal) exportDeals([S.drawerDeal]); break;
+    case 'export-onebill':  if (S.drawerDeal) exportBills([S.drawerDeal]); break;
+
+    case 'doc':        e.preventDefault();
+      if (val === 'bills' && S.drawerDeal && S.drawerDeal.bill) { S.drawerTab = 'bill'; renderDrawer(); }
+      else toast('Opening in the sponsor\'s document store — access logged to the audit trail.');
+      break;
+    case 'request-docs': toast('Request sent to ' + (S.drawerDeal ? S.drawerDeal.originator : 'the originator') + '.'); break;
+    case 'offer':      toast('Offer builder opens here — terms, structure and conditions precedent.'); break;
+    case 'watch':      toast('Added to your watchlist. You\'ll get a note when the stage changes.'); break;
+    case 'upload-bill':closeDeal(); submitModal(); break;
+  }
+});
+
+/* select filters */
+document.addEventListener('change', e => {
+  const el = e.target.closest('[data-act="sel"]');
+  if (!el) return;
+  const key = el.dataset.val;
+  S.f[key] = key === 'minMw' ? Number(el.value) : el.value;
+  render();
+});
+
+/* search box — keep focus across the re-render */
+let qTimer;
+document.addEventListener('input', e => {
+  if (e.target.id !== 'fbq') return;
+  const v = e.target.value;
+  clearTimeout(qTimer);
+  qTimer = setTimeout(() => {
+    S.f.q = v; render();
+    const box = $('#fbq');
+    if (box) { box.focus(); box.setSelectionRange(v.length, v.length); }
+  }, 220);
+});
+
+/* role switch */
+$('#roleSwitch').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  $$('#roleSwitch button').forEach(x => x.classList.toggle('on', x === b));
+  S.role = b.dataset.role;
+  S.tab = TABS[S.role][0][0];
+  S.group = 'state';
+  clearFilters();
+});
+
+/* drawer + modal dismissal */
+$('#drClose').addEventListener('click', closeDeal);
+$('#drawerBack').addEventListener('click', closeDeal);
+$('#modalBack').addEventListener('click', e => { if (e.target === $('#modalBack')) closeModal(); });
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') { closeDeal(); closeModal(); }
+  if (e.key === 'Enter' || e.key === ' ') {
+    const el = e.target.closest('[role="button"][data-act]');
+    if (el) { e.preventDefault(); el.click(); }
+  }
+});
+
+render();
+</script>
 </body>
 </html>
