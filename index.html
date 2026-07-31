@@ -123,7 +123,9 @@ code{font-family:var(--mono);font-size:11.5px;background:var(--cs-card-2);paddin
 .role-chip.orig{background:rgba(199,122,0,.22);color:#F0B45C}
 .role-chip.partner{background:rgba(18,128,92,.22);color:#4FD1A5}
 .role-chip.admin{background:rgba(255,255,255,.16);color:#fff}
-.btn-signout{background:rgba(255,255,255,.08);color:#fff;border:1px solid rgba(255,255,255,.15);padding:7px 15px;font-size:12.5px;border-radius:6px}
+.btn-signout{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.08);color:#fff;border:1px solid rgba(255,255,255,.15);padding:7px 15px;font-size:12.5px;border-radius:6px}
+.set-h{font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--cs-muted-2);margin-bottom:12px}
+.field input:disabled{background:var(--cs-card-2);color:var(--cs-muted);cursor:not-allowed}
 .btn-signout:hover{background:rgba(255,255,255,.16)}
 
 /* ---------- US CHOROPLETH ---------- */
@@ -442,6 +444,7 @@ code{font-family:var(--mono);font-size:11.5px;background:var(--cs-card-2);paddin
 .extract-bar{height:3px;background:var(--cs-border);border-radius:2px;overflow:hidden;margin-top:9px}
 .extract-bar i{display:block;height:100%;width:0;background:var(--cs-blue);transition:width .4s linear}
 
+.mate-tag{display:inline-block;font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--cs-blue);background:var(--cs-blue-dim);padding:2px 6px;border-radius:9px;margin-left:5px}
 .hidden-tag{display:inline-block;font-size:9.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--cs-red);background:var(--cs-red-dim);padding:2px 7px;border-radius:10px;vertical-align:middle;margin-left:6px}
 .sample-tag{display:inline-block;font-size:9.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--cs-amber);background:var(--cs-amber-dim);padding:2px 7px;border-radius:10px;vertical-align:middle;margin-left:6px}
 .sample-banner{display:flex;align-items:flex-start;gap:12px;background:var(--cs-amber-dim);border:1px solid rgba(199,122,0,.3);border-radius:12px;padding:14px 16px;margin-bottom:16px;font-size:12.5px;line-height:1.55;color:var(--cs-ink)}
@@ -607,6 +610,8 @@ code{font-family:var(--mono);font-size:11.5px;background:var(--cs-card-2);paddin
         </button>
         </div>
         <p class="auth-switch" id="regBackRow">Already a member? <button id="toLogin">Sign in</button></p>
+        <p class="auth-switch" id="regCancelRow" style="display:none">
+          <button id="cancelSetup">Cancel and return to sign in</button></p>
       </div>
     </div>
   </div>
@@ -630,6 +635,9 @@ code{font-family:var(--mono);font-size:11.5px;background:var(--cs-card-2);paddin
       <span class="avatar" id="userAvatar">—</span>
       <span id="userName"></span>
     </div>
+    <button class="btn-signout" id="settingsBtn" title="Account settings">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      Settings</button>
     <button class="btn-signout" id="signOutBtn">Sign out</button>
   </div>
 </div>
@@ -924,9 +932,12 @@ function buildDeal(spec) {
   const d = Object.assign({
     mwh:0, offers:0, bidders:0, wonBy:null, lead:null, declineReason:null,
     decided:null, links:[], bill:null, irr:11.5, dscr:1.35, fsStatus:null,
+    orgId:null, submittedBy:null,
     cf: (t.id === 'solar' || t.id === 'hybrid') ? .245 : .44
   }, spec);
   d.techName = t.name; d.techColor = t.color;
+  /* Older records predate submittedBy; fall back to the originator name. */
+  d.submittedBy = d.submittedBy || d.originator || d.developer || '—';
   /* `id` must be unique — it is what a row click and a withdraw resolve on.
      `ref` is only ever displayed. */
   d.ref = spec.ref || spec.id || newRef();
@@ -1064,9 +1075,14 @@ const allDeals = () => DEALS.concat(S.uploaded);
 /* what this account is allowed to see on the sponsor side */
 const myBook = () => allDeals().filter(d => {
   if (!SESSION) return false;
+  if (SESSION.role === 'admin') return true;              // admins see everything
+  /* With a backend the listener already restricts this to developerUid ==
+     the signed-in user. Re-filtering on the display name would drop deals
+     whose stored organisation differs from the profile's current one. */
+  if (FB.ready && d.docId) return true;
   if (SESSION.role === 'developer')  return d.developer === SESSION.org;
   if (SESSION.role === 'originator') return d.originator === SESSION.name;
-  return true;                                   // admin sees the whole book
+  return true;
 });
 
 function scopeDeals() { return S.role === 'dev' ? myBook() : allDeals(); }
@@ -1081,10 +1097,10 @@ function filtered(skip) {
     if (f.status && d.status !== f.status) return false;
     if (f.stage  && d.stage !== f.stage) return false;
     if (f.dev    && d.developer !== f.dev) return false;
-    if (f.orig   && d.originator !== f.orig) return false;
+    if (f.orig   && d.submittedBy !== f.orig) return false;
     if (f.minMw  && d.mw < f.minMw) return false;
     if (q) {
-      const hay = (d.name + ' ' + d.id + ' ' + d.city + ' ' + d.state + ' ' + d.developer + ' ' + d.originator + ' ' + d.techName).toLowerCase();
+      const hay = (d.name + ' ' + d.ref + ' ' + d.city + ' ' + d.state + ' ' + d.developer + ' ' + d.submittedBy + ' ' + d.originator + ' ' + d.techName).toLowerCase();
       if (!hay.includes(q)) return false;
     }
     return true;
@@ -1330,7 +1346,7 @@ function usMap(list, caption) {
 }
 
 function filterChips() {
-  const labels = {state:'State', tech:'Technology', status:'Outcome', stage:'Stage', dev:'Developer', orig:'Originator', q:'Search', minMw:'Min MW'};
+  const labels = {state:'State', tech:'Technology', status:'Outcome', stage:'Stage', dev:'Organization', orig:'Submitted by', q:'Search', minMw:'Min MW'};
   const names = {tech: v => TECH_BY_ID[v] ? TECH_BY_ID[v].name : v, state: v => STATE_NAME[v] || v,
                  status: v => ({active:'In market', won:'Funded', declined:'Declined', withdrawn:'Withdrawn'}[v] || v)};
   const chips = Object.entries(S.f).filter(([k, v]) => v !== '' && v !== 0)
@@ -1569,7 +1585,7 @@ const COLS = [
   {key:'status',    lab:'Outcome'},
   {key:'savings',   lab:'Bill savings', cls:'num', fmt:d => d.savings == null ? '—' : pct(d.savings * 100)},
   {key:'irr',       lab:'IRR',         cls:'num', fmt:d => d.irr.toFixed(1) + '%'},
-  {key:'originator',lab:'Originator'},
+  {key:'submittedBy',lab:'Submitted by'},
   {key:'developer', lab:'Developer'},
   {key:'submitted', lab:'Submitted',   cls:'num', fmt:d => dt(d.submitted)}
 ];
@@ -1579,6 +1595,7 @@ const STAGE_PILL = {'Submitted':'p-active','Screening':'p-screening','Diligence'
 function cellHTML(d, c) {
   if (c.key === 'name') return `<div>${esc(d.name)}${d.sample ? ' <span class="sample-tag">Sample</span>' : ''}${
     isPublished(d) ? '' : ' <span class="hidden-tag">Not on marketplace</span>'}<span>${esc(d.ref)} · ${esc(d.city)}, ${d.state}</span></div>`;
+  if (c.key === 'submittedBy') return `${esc(d.submittedBy)}${isOrgMate(d) && S.role !== 'partner' ? ' <span class="mate-tag">colleague</span>' : ''}`;
   if (c.key === 'status') { const [cls, lab] = STATUS_PILL[d.status]; return `<span class="pill ${cls}">${lab}</span>`; }
   if (c.key === 'stage') return `<span class="pill ${STAGE_PILL[d.stage]}">${d.stage}</span>`;
   if (c.key === 'techName') return `<span class="tag" style="color:${d.techColor};background:${d.techColor}18">${esc(d.techName)}</span>`;
@@ -1599,8 +1616,8 @@ function sortDeals(list) {
   });
 }
 
-const GROUP_KEY = {state:'state', originator:'originator', developer:'developer', tech:'techName'};
-const GROUP_LABEL = {state:'By state', originator:'By deal originator', developer:'By developer', tech:'By technology', none:'Flat list'};
+const GROUP_KEY = {state:'state', originator:'submittedBy', developer:'developer', tech:'techName'};
+const GROUP_LABEL = {state:'By state', originator:'By person', developer:'By organization', tech:'By technology', none:'Flat list'};
 
 function dealTable(list, opts) {
   opts = opts || {};
@@ -1639,7 +1656,7 @@ function dealTable(list, opts) {
    ═══════════════════════════════════════════════════════════════════════════ */
 function filterBar(showGroup) {
   const states = Object.keys(stateAgg(scopeDeals())).sort();
-  const origs = [...new Set(scopeDeals().map(d => d.originator))].sort();
+  const origs = [...new Set(scopeDeals().map(d => d.submittedBy))].sort();
   const devs  = [...new Set(scopeDeals().map(d => d.developer))].sort();
   return `<div class="filterbar">
     <input class="fb-search" id="fbq" placeholder="Search deals, cities, sponsors…" value="${esc(S.f.q)}" aria-label="Search deals">
@@ -1649,9 +1666,9 @@ function filterBar(showGroup) {
       ${TECHS.map(t => `<option value="${t.id}" ${S.f.tech === t.id ? 'selected' : ''}>${t.name}</option>`).join('')}</select>
     <select class="fb-sel" data-act="sel" data-val="status" aria-label="Outcome"><option value="">Any outcome</option>
       ${Object.entries(STATUS_PILL).map(([k, v]) => `<option value="${k}" ${S.f.status === k ? 'selected' : ''}>${v[1]}</option>`).join('')}</select>
-    ${S.role === 'partner' ? `<select class="fb-sel" data-act="sel" data-val="orig" aria-label="Originator"><option value="">Any originator</option>
+    ${S.role === 'partner' ? `<select class="fb-sel" data-act="sel" data-val="orig" aria-label="Submitted by"><option value="">Anyone</option>
       ${origs.map(o => `<option value="${esc(o)}" ${S.f.orig === o ? 'selected' : ''}>${esc(o)}</option>`).join('')}</select>
-    <select class="fb-sel" data-act="sel" data-val="dev" aria-label="Developer"><option value="">Any developer</option>
+    <select class="fb-sel" data-act="sel" data-val="dev" aria-label="Organization"><option value="">Any organization</option>
       ${devs.map(o => `<option value="${esc(o)}" ${S.f.dev === o ? 'selected' : ''}>${esc(o)}</option>`).join('')}</select>` : ''}
     <select class="fb-sel" data-act="sel" data-val="minMw" aria-label="Minimum size"><option value="0">Any size</option>
       ${[5, 10, 25, 50].map(v => `<option value="${v}" ${Number(S.f.minMw) === v ? 'selected' : ''}>${v}+ MW</option>`).join('')}</select>
@@ -1907,8 +1924,8 @@ function drawerBody(d) {
     <div class="sec">
       <h4>Sponsor &amp; site</h4>
       <div class="kv-list">
-        <div class="kv"><span class="k">Developer</span><span class="v"><button class="link-btn" data-act="dev" data-val="${esc(d.developer)}">${esc(d.developer)}</button></span></div>
-        <div class="kv"><span class="k">Originator</span><span class="v"><button class="link-btn" data-act="orig" data-val="${esc(d.originator)}">${esc(d.originator)}</button></span></div>
+        <div class="kv"><span class="k">Organization</span><span class="v"><button class="link-btn" data-act="dev" data-val="${esc(d.developer)}">${esc(d.developer)}</button>${d.orgId ? ` <span style="font-weight:400;color:var(--cs-muted-2);font-family:var(--mono);font-size:11px">${esc(d.orgId)}</span>` : ''}</span></div>
+        <div class="kv"><span class="k">Submitted by</span><span class="v"><button class="link-btn" data-act="orig" data-val="${esc(d.submittedBy)}">${esc(d.submittedBy)}</button></span></div>
         <div class="kv"><span class="k">Location</span><span class="v"><button class="link-btn" data-act="state" data-val="${d.state}">${esc(d.city)}, ${d.state}</button></span></div>
         <div class="kv"><span class="k">Site control</span><span class="v">${esc(d.siteControl)}</span></div>
         <div class="kv"><span class="k">Permits</span><span class="v">${esc(d.permits)}</span></div>
@@ -2365,6 +2382,7 @@ async function saveDeal() {
     ref: newRef(),
     name, state, city: $('#nfCity').value.trim() || MARKETS[state].cities[0],
     developer: SESSION.org, originator: SESSION.name,
+    submittedBy: SESSION.name, orgId: myOrgId(),
     tech: tech.id, mw, mwh: parseFloat($('#nfMwh').value) || 0, ask,
     stage:'Submitted', status:'active', submitted: iso(TODAY),
     offtake: $('#nfOfftake').value,
@@ -2406,13 +2424,33 @@ async function saveDeal() {
 /* ═══════════════════════════════════════════════════════════════════════════
    13. RENDER
    ═══════════════════════════════════════════════════════════════════════════ */
-const TABS = {
+const TABS_BASE = {
   dev: [['overview','Overview'],['timelines','Timelines'],['deals','My deals']],
   partner: [['market','Marketplace'],['coverage','Coverage'],['reports','Reports']]
 };
+const TABS = new Proxy({}, {get: (_, k) => {
+  const base = (TABS_BASE[k] || TABS_BASE.dev).slice();
+  if (SESSION && SESSION.role === 'admin') base.push(['people', 'People']);
+  return base;
+}});
 
 function render() {
   if (!SESSION) return;
+
+  if (awaitingApproval()) {
+    $('#tabs').innerHTML = '';
+    $('#headActions').innerHTML = '';
+    $('#srcBadge').innerHTML = '';
+    $('#pageTitle').textContent = 'Awaiting approval';
+    $('#pageSub').textContent = `${SESSION.org} · your account is with a ClearSky administrator.`;
+    $('#view').innerHTML = `<div class="empty">
+      <div class="e-ic" style="background:var(--cs-amber-dim);color:var(--cs-amber)"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
+      <h3>Your account is pending approval</h3>
+      <p>Capital partners see deal flow from every sponsor on the platform, so a ClearSky administrator reviews each request before granting access. You'll be let straight in once that happens — this page updates on its own, no need to sign in again.</p>
+      <p class="note" style="margin-top:14px">Signed in as <b>${esc(SESSION.email || SESSION.name)}</b> · ${esc(SESSION.org)}</p>
+    </div>`;
+    return;
+  }
   tipAgg = null; tipAb = null;
   const isDev = S.role === 'dev';
 
@@ -2429,11 +2467,12 @@ function render() {
       + (allDeals().length ? '' : ` <button class="link-btn" data-act="diagnostics" style="margin-left:10px">Diagnostics</button>`)
     : '');
   $('#pageTitle').textContent = isDev ? 'Deal intelligence' : 'Capital marketplace';
+  const people = new Set(book.map(d => d.submittedBy)).size;
   $('#pageSub').textContent = isDev
-    ? `${SESSION.org} · ${book.length} deal${book.length === 1 ? '' : 's'} ${SESSION.role === 'originator' ? 'originated' : 'submitted'}. Where they are, how big they are, what came back, and how long it took.`
+    ? `${SESSION.org} · ${plural(book.length, 'deal')}${people > 1 ? ' from ' + plural(people, 'colleague') : ''}. Where they are, how big they are, what came back, and how long it took.`
     : `${SESSION.org} · ${allDeals().length} deals from ${plural(new Set(allDeals().map(d => d.originator)).size, 'originator')} across ${plural(Object.keys(stateAgg(allDeals())).length, 'state')}.`;
 
-  const canSubmit = SESSION.role === 'developer' || SESSION.role === 'originator';
+  const canSubmit = ['developer', 'originator', 'admin'].indexOf(SESSION.role) !== -1;
   $('#headActions').innerHTML = isDev
     ? `<button class="btn btn-ghost btn-sm" data-act="export-deals">Export my book</button>
        ${canSubmit ? `<button class="btn btn-primary btn-sm" data-act="new-deal">
@@ -2448,12 +2487,18 @@ function render() {
   }).join('');
 
   const view = $('#view');
+  if (S.tab === 'people') {
+    view.innerHTML = peopleView();
+    if (!PEOPLE.length && !peopleErr) loadPeople();
+    return;
+  }
   if (isDev && !myBook().length) {
-    $('#tabs').innerHTML = '';
+    /* Keep the tab bar — an administrator still needs People, and a sponsor
+       still needs Timelines, even with nothing filed yet. */
     view.innerHTML = `<div class="empty">
       <div class="e-ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14"/><path d="M9 21v-6h6v6"/></svg></div>
       <h3>No deals filed yet</h3>
-      ${SESSION.role === 'developer' || SESSION.role === 'originator'
+      ${['developer', 'originator', 'admin'].indexOf(SESSION.role) !== -1
         ? `<p>Submit your first project and this fills in — where it sits, what capital partners came back with, and how long each stage took. Attach 12 months of utility bills and it screens roughly twice as fast.</p>
            <button class="btn btn-primary" data-act="new-deal">Submit a deal</button>
            ${DATA_SOURCE === 'live' ? '<button class="btn btn-ghost" style="margin-left:8px" data-act="load-samples">Show sample data</button>' : ''}`
@@ -2464,7 +2509,7 @@ function render() {
   if (isDev) {
     view.innerHTML = S.tab === 'overview' ? devOverview()
                    : S.tab === 'timelines' ? devTimelines()
-                   : filterBar(true) + filterChips() + dealTable(filtered(), {group: S.group, hide:['originator']})
+                   : filterBar(true) + filterChips() + dealTable(filtered(), {group: S.group})
                      + `<p class="note" style="margin-top:12px">${filtered().length} of ${myBook().length} deals shown.</p>`;
   } else {
     view.innerHTML = S.tab === 'market' ? partnerMarketplace()
@@ -2522,6 +2567,25 @@ document.addEventListener('click', e => {
       }
       render(); break;
     }
+    case 'settings':     settingsModal(); break;
+    case 'toggle-approve': { const p = PEOPLE.find(x => x.uid === val); setApproved(val, !(p && p.approved !== false)); break; }
+    case 'toggle-suspend': { const p = PEOPLE.find(x => x.uid === val); setSuspended(val, !(p && p.suspended)); break; }
+    case 'ask-delete-person': confirmDeletePerson(val); break;
+    case 'do-delete-person':  deletePerson(val); break;
+    case 'suspend-instead':   closeModal(); setSuspended(val, true); break;
+    case 'save-profile': saveProfile(); break;
+    case 'fix-role': {
+      if (!roleOutOfSync || !FB.auth.currentUser) break;
+      const {stored, effective} = roleOutOfSync;
+      FB.db.collection('fin_profiles').doc(FB.auth.currentUser.uid).update({role: effective})
+        .then(() => { roleOutOfSync = null; settingsModal(); toast('Profile role updated to ' + (ROLE_META[effective] || {}).label + '.'); })
+        .catch(err => { console.error('[OMEGA] role fix failed:', err);
+          modalErr(err.code === 'permission-denied'
+            ? 'The database refused the change. Deploy the latest firestore.rules, then try again.'
+            : explain(err)[0]); });
+      break;
+    }
+    case 'save-password':savePassword(); break;
     case 'republish':  republish(val); break;
     case 'edit-deal':  submitModal(val); break;
     case 'ask-delete': confirmDelete(val); break;
@@ -2555,6 +2619,8 @@ document.addEventListener('click', e => {
 
 /* select filters */
 document.addEventListener('change', e => {
+  const rl = e.target.closest('[data-act="set-role"]');
+  if (rl) { setPersonRole(rl.dataset.val, rl.value); return; }
   const el = e.target.closest('[data-act="sel"]');
   if (!el) return;
   const key = el.dataset.val;
@@ -2626,7 +2692,7 @@ document.addEventListener('mousemove', e => {
 /* ═══════════════════════════════════════════════════════════════════════════
    16. ACCOUNTS, ROLES AND SIGN-IN
    ═══════════════════════════════════════════════════════════════════════════ */
-const BUILD = '2026-07-31 · build 16';
+const BUILD = '2026-07-31 · build 22';
 
 const ROLE_META = {
   developer:  {side:'dev',     chip:'dev',     label:'Developer'},
@@ -2644,7 +2710,14 @@ const initialsOf = n => (n || '?').trim().split(/\s+/).slice(0, 2).map(x => x[0]
 const ADMIN_DOMAINS = /@(clearsky-usa|csebuilders)\.com$/i;
 function refreshAdminRoleOption(email) {
   const el = $('#adminRoleOpt'); if (!el) return;
-  el.style.display = ADMIN_DOMAINS.test(email || '') ? 'flex' : 'none';
+  const isAdminDomain = ADMIN_DOMAINS.test(email || '');
+  el.style.display = isAdminDomain ? 'flex' : 'none';
+  if (isAdminDomain) {
+    $$('#rolePick .role-opt').forEach(x => x.classList.toggle('sel', x === el));
+    regRole = 'admin';
+    const hint = $('#regRoleHint');
+    if (hint) hint.textContent = 'ClearSky addresses are always administrators. You will see every deal on the platform and can edit, remove or file projects.';
+  }
 }
 
 /* ── Firebase. Uses the collections the OMEGA firestore.rules already
@@ -2752,6 +2825,9 @@ function authBusy(btn, on, label) {
 function dealToDoc(d, uid) {
   return {
     developerUid: uid,
+    orgId: myOrgId(),                       // lets colleagues see it
+    submittedBy: SESSION.name,              // who in that org filed it
+    submittedByEmail: SESSION.email || null,
     status: 'open',
     awardedTo: null,
     outcome: d.status || 'active',
@@ -2778,7 +2854,8 @@ function docToDeal(doc) {
   }));
 }
 
-let dealsUnsub = null;
+let dealsUnsubs = [];
+function stopWatching() { dealsUnsubs.forEach(u => { try { u(); } catch (e) {} }); dealsUnsubs = []; }
 let DATA_SOURCE = 'none';     // 'live' | 'sample' | 'error' | 'none'
 let lastSync = null;
 let seenIds = null;           // null until the first snapshot lands
@@ -2787,44 +2864,56 @@ let seenIds = null;           // null until the first snapshot lands
    shows up in every capital partner's marketplace within a second, with no
    refresh. Single-field filters only, so no composite index is required. */
 function watchDeals() {
-  if (dealsUnsub) { dealsUnsub(); dealsUnsub = null; }
+  stopWatching();
   seenIds = null;
   if (!FB.ready || !FB.auth.currentUser) return;
 
   const col = FB.db.collection('fin_projects');
-  /* An administrator needs to see everything, including deals that are not
-     'open' — those are exactly the ones that need cleaning up. */
-  const q = SESSION.role === 'admin' ? col
-          : SESSION.role === 'partner' ? col.where('status', '==', 'open')
-          : col.where('developerUid', '==', FB.auth.currentUser.uid);
+  const uid = FB.auth.currentUser.uid;
 
-  dealsUnsub = q.onSnapshot(
-    snap => {
-      DEALS = snap.docs.map(docToDeal);
-      DATA_SOURCE = 'live';
-      lastSync = new Date();
+  /* Sponsors run two queries: everything filed under their organisation, plus
+     anything of their own that predates orgId. Results are merged by document
+     id, so a deal matched by both appears once. Administrators read the whole
+     collection; capital partners read what is open. */
+  const queries = SESSION.role === 'admin'   ? [['all',  col]]
+                : SESSION.role === 'partner' ? [['open', col.where('status', '==', 'open')]]
+                : [['org', col.where('orgId', '==', myOrgId())],
+                   ['own', col.where('developerUid', '==', uid)]];
 
-      /* Tell the person when something lands while they're looking at it —
-         a silently changing table is easy to miss. */
-      const ids = new Set(DEALS.map(d => d.id));
-      if (seenIds) {
-        const added = DEALS.filter(d => !seenIds.has(d.id));
-        const removed = [...seenIds].filter(id => !ids.has(id)).length;
-        if (added.length) toast(added.length === 1
-          ? `New deal on the marketplace: ${added[0].name}`
-          : `${plural(added.length, 'new deal')} on the marketplace.`);
-        else if (removed) toast(`${plural(removed, 'deal')} withdrawn.`);
-      }
-      seenIds = ids;
-      if (SESSION) render();
-    },
-    err => {
-      console.error('[OMEGA] fin_projects listener failed:', err);
-      DATA_SOURCE = 'error';
-      DEALS = [];
-      if (SESSION) { render(); toast(explain(err)[0], true); }
+  const buckets = {}, failed = {};
+  const emit = () => {
+    const merged = {};
+    Object.keys(buckets).forEach(k => buckets[k].forEach(doc => { merged[doc.id] = doc; }));
+    DEALS = Object.values(merged).map(docToDeal);
+    if (Object.keys(failed).length === queries.length) { DATA_SOURCE = 'error'; DEALS = []; }
+    else DATA_SOURCE = 'live';
+    lastSync = new Date();
+
+    const ids = new Set(DEALS.map(d => d.id));
+    if (seenIds) {
+      const added = DEALS.filter(d => !seenIds.has(d.id));
+      const removed = [...seenIds].filter(id => !ids.has(id)).length;
+      if (added.length) toast(added.length === 1
+        ? `New deal on the marketplace: ${added[0].name}`
+        : `${plural(added.length, 'new deal')} on the marketplace.`);
+      else if (removed) toast(`${plural(removed, 'deal')} withdrawn.`);
     }
-  );
+    seenIds = ids;
+    if (SESSION) render();
+  };
+
+  queries.forEach(([key, q]) => {
+    buckets[key] = [];
+    dealsUnsubs.push(q.onSnapshot(
+      snap => { delete failed[key]; buckets[key] = snap.docs; emit(); },
+      err => {
+        /* One query failing is survivable — the other may still return data. */
+        console.error('[OMEGA] fin_projects listener (' + key + ') failed:', err);
+        failed[key] = true; buckets[key] = []; emit();
+        if (Object.keys(failed).length === queries.length) toast(explain(err)[0], true);
+      }
+    ));
+  });
 }
 
 async function persistDeal(d) {
@@ -2936,6 +3025,295 @@ function diagnosticsModal() {
   }).catch(e => { $('#diagBody').innerHTML = `<p class="note">Diagnostics failed: ${esc(e.message)}</p>`; });
 }
 
+/* ── People (administrators only) ─────────────────────────────────────────
+   Suspension is enforced by the rules, not by hiding buttons: a suspended
+   profile is refused access to fin_projects entirely. Deleting a profile
+   removes it from the marketplace but NOT from Firebase Auth — that account
+   still exists and must be removed from the console or the Admin SDK. */
+let myProfileUnsub = null;
+
+/* While an account waits to be admitted, watch its own profile so approval
+   takes effect the moment an administrator grants it. */
+function watchMyProfile() {
+  if (myProfileUnsub) { myProfileUnsub(); myProfileUnsub = null; }
+  if (!FB.ready || !FB.auth.currentUser) return;
+  myProfileUnsub = FB.db.collection('fin_profiles').doc(FB.auth.currentUser.uid)
+    .onSnapshot(snap => {
+      if (!snap.exists || !SESSION) return;
+      const p = snap.data();
+      if (isApproved(p) && SESSION.approved === false) {
+        SESSION.approved = true;
+        myProfileUnsub(); myProfileUnsub = null;
+        watchDeals();
+        render();
+        toast('Your account has been approved. Welcome to the marketplace.');
+      }
+    }, err => console.warn('[OMEGA] profile watch failed:', err.code || err.message));
+}
+
+let PEOPLE = [];
+let peopleErr = null;
+
+async function loadPeople() {
+  if (!FB.ready || !isPlatformAdmin()) return;
+  try {
+    const snap = await FB.db.collection('fin_profiles').get();
+    PEOPLE = snap.docs.map(d => Object.assign({uid: d.id}, d.data()));
+    peopleErr = null;
+  } catch (e) {
+    console.error('[OMEGA] fin_profiles list failed:', e);
+    peopleErr = explain(e)[0];
+    PEOPLE = [];
+  }
+  render();
+}
+
+async function setApproved(uid, on) {
+  const p = PEOPLE.find(x => x.uid === uid);
+  try {
+    await FB.db.collection('fin_profiles').doc(uid).update({approved: !!on});
+    if (p) p.approved = !!on;
+    render();
+    toast(on ? `${(p && p.name) || 'That partner'} can now see the marketplace.`
+             : `Access revoked. ${(p && p.name) || 'They'} will see the pending screen.`);
+  } catch (err) {
+    console.error('[OMEGA] approval change failed:', err);
+    const [h, t] = explain(err);
+    toast(h + (t ? ' ' + t : ''), true);
+  }
+}
+
+async function setSuspended(uid, on) {
+  const me = FB.auth.currentUser;
+  if (me && uid === me.uid) return toast('You cannot suspend your own account.', true);
+  try {
+    await FB.db.collection('fin_profiles').doc(uid).update({suspended: !!on});
+    const p = PEOPLE.find(x => x.uid === uid); if (p) p.suspended = !!on;
+    render();
+    toast(on ? 'Account suspended. They can sign in but cannot reach any deals.' : 'Account restored.');
+  } catch (err) {
+    console.error('[OMEGA] suspend failed:', err);
+    toast(explain(err)[0], true);
+  }
+}
+
+async function setPersonRole(uid, role) {
+  try {
+    await FB.db.collection('fin_profiles').doc(uid).update({role});
+    const p = PEOPLE.find(x => x.uid === uid); if (p) p.role = role;
+    render();
+    toast('Role updated to ' + (ROLE_META[role] || {label: role}).label + '.');
+  } catch (err) {
+    console.error('[OMEGA] role change failed:', err);
+    toast(explain(err)[0], true);
+  }
+}
+
+function confirmDeletePerson(uid) {
+  const p = PEOPLE.find(x => x.uid === uid); if (!p) return;
+  const theirs = allDeals().filter(d => d.developerUid === uid);
+  openModal(`
+  <div class="modal-head">
+    <div><h2>Remove this account?</h2>
+      <div class="mh-sub">This removes their marketplace profile.</div></div>
+    <button class="dr-x" data-act="close-modal" aria-label="Close">&times;</button>
+  </div>
+  <div class="modal-body">
+    <div class="confirm-card">
+      <strong>${esc(p.name || '—')}</strong>
+      <span>${esc(p.email || p.uid)} · ${esc((ROLE_META[p.role] || {label: p.role || '—'}).label)}</span>
+    </div>
+    <p class="note" style="margin-top:14px">${theirs.length
+      ? `They have <b>${plural(theirs.length, 'deal')}</b> on the platform. Those stay where they are — remove them separately if they should go.`
+      : 'They have no deals on the platform.'}</p>
+    <div class="verdict fair" style="margin-top:14px">
+      <div class="vd-top"><span class="vd-badge">Read this</span><h5>Their sign-in still works</h5></div>
+      <p>Removing the profile does not delete the Firebase account. They can sign in and will be asked to set up a new profile. To stop them entirely, either <b>suspend</b> them instead, or delete the user from Firebase console → Authentication.</p>
+    </div>
+    <div class="auth-err" id="modalErr" style="margin-top:14px"></div>
+  </div>
+  <div class="modal-foot">
+    <button class="btn btn-ghost" data-act="close-modal">Cancel</button>
+    <button class="btn btn-ghost btn-sm btn-danger-ghost" data-act="suspend-instead" data-val="${uid}">Suspend instead</button>
+    <button class="btn btn-danger" data-act="do-delete-person" data-val="${uid}">Remove profile</button>
+  </div>`);
+}
+
+async function deletePerson(uid) {
+  const me = FB.auth.currentUser;
+  if (me && uid === me.uid) return modalErr('You cannot remove your own account.');
+  const btn = $('[data-act="do-delete-person"]');
+  if (btn) { btn.disabled = true; btn.textContent = 'Removing…'; }
+  try {
+    await FB.db.collection('fin_profiles').doc(uid).delete();
+  } catch (err) {
+    console.error('[OMEGA] profile delete failed:', err);
+    if (btn) { btn.disabled = false; btn.textContent = 'Remove profile'; }
+    return modalErr(explain(err)[0]);
+  }
+  PEOPLE = PEOPLE.filter(x => x.uid !== uid);
+  closeModal(); render();
+  toast('Profile removed. Their Firebase sign-in still exists.');
+}
+
+function peopleView() {
+  if (peopleErr) return `<div class="empty">
+    <div class="e-ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg></div>
+    <h3>Accounts could not be loaded</h3><p>${esc(peopleErr)}</p></div>`;
+  if (!PEOPLE.length) return `<div class="empty"><p>Loading accounts…</p></div>`;
+
+  const meUid = FB.auth.currentUser ? FB.auth.currentUser.uid : null;
+  const order = {admin:0, partner:1, developer:2, originator:3};
+  const rows = PEOPLE.slice().sort((a, b) =>
+    (order[a.role] ?? 9) - (order[b.role] ?? 9) || String(a.name || '').localeCompare(String(b.name || '')));
+
+  const pending = rows.filter(p => p.role === 'partner' && p.approved === false);
+
+  return `
+  ${pending.length ? `<div class="sample-banner" style="background:var(--cs-amber-dim);border-color:rgba(199,122,0,.3)">
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="color:var(--cs-amber)"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+    <div><b>${plural(pending.length, 'capital partner')} waiting for approval.</b>
+      ${pending.map(p => esc(p.name || p.email)).join(', ')} cannot see any deal flow until admitted.</div>
+  </div>` : ''}
+  <p class="note" style="margin-bottom:14px">${plural(PEOPLE.length, 'account')} on the platform.
+  <b>Suspending</b> blocks every deal in the database for that person and is reversible.
+  <b>Removing</b> deletes their marketplace profile but not their Firebase sign-in.</p>
+  <div class="sheet-wrap"><table class="sheet">
+    <thead><tr><th>Person</th><th>Organization</th><th>Role</th><th>Status</th><th>Deals</th><th style="text-align:right">Actions</th></tr></thead>
+    <tbody>${rows.map(p => {
+      const self = p.uid === meUid;
+      const theirs = allDeals().filter(d => d.developerUid === p.uid).length;
+      return `<tr style="cursor:default">
+        <td class="c-name"><div>${esc(p.name || '—')}${self ? ' <span class="tag">You</span>' : ''}<span>${esc(p.email || p.uid)}</span></div></td>
+        <td>${esc(p.org || '—')}</td>
+        <td>${self ? `<span class="pill p-active">${esc((ROLE_META[p.role] || {label:p.role}).label)}</span>`
+          : `<select class="fb-sel" style="padding:5px 8px;font-size:12px" data-act="set-role" data-val="${p.uid}">
+              ${['developer','originator','partner','admin'].map(r =>
+                `<option value="${r}"${p.role === r ? ' selected' : ''}>${ROLE_META[r].label}</option>`).join('')}
+             </select>`}</td>
+        <td>${p.suspended ? '<span class="pill p-declined">Suspended</span>'
+             : (p.role === 'partner' && p.approved === false) ? '<span class="pill p-diligence">Pending approval</span>'
+             : '<span class="pill p-won">Active</span>'}</td>
+        <td class="num">${theirs || '—'}</td>
+        <td style="text-align:right;white-space:nowrap">${self ? '<span class="note">—</span>' : `
+          ${p.role === 'partner' ? `<button class="btn ${p.approved === false ? 'btn-green' : 'btn-ghost'} btn-xs" style="margin-right:6px" data-act="toggle-approve" data-val="${p.uid}">${p.approved === false ? 'Approve' : 'Revoke access'}</button>` : ''}
+          <button class="btn btn-ghost btn-xs" data-act="toggle-suspend" data-val="${p.uid}">${p.suspended ? 'Restore' : 'Suspend'}</button>
+          <button class="btn btn-ghost btn-xs btn-danger-ghost" style="margin-left:6px" data-act="ask-delete-person" data-val="${p.uid}">Remove</button>`}
+        </td></tr>`;
+    }).join('')}</tbody>
+  </table></div>`;
+}
+
+/* ── Account settings ─────────────────────────────────────────────────────
+   Profile edits write to fin_profiles (role is fixed by domain, so it is
+   shown but not editable). Password changes go through Firebase Auth and
+   re-authenticate first, which Firebase requires for sensitive changes. */
+function authProvider() {
+  const u = FB.ready && FB.auth.currentUser;
+  if (!u || !u.providerData || !u.providerData.length) return 'password';
+  return u.providerData[0].providerId;
+}
+
+function settingsModal() {
+  if (!SESSION) return;
+  const meta = ROLE_META[SESSION.role] || ROLE_META.developer;
+  const google = authProvider() === 'google.com';
+  const local  = !FB.ready;
+
+  openModal(`
+  <div class="modal-head">
+    <div><h2>Account settings</h2>
+      <div class="mh-sub">Your details and how you sign in.</div></div>
+    <button class="dr-x" data-act="close-modal" aria-label="Close">&times;</button>
+  </div>
+  <div class="modal-body">
+    <div class="auth-err" id="modalErr"></div>
+
+    <h4 class="set-h">Profile</h4>
+    <div class="field"><label for="setName">Full name</label><input id="setName" value="${esc(SESSION.name)}"></div>
+    <div class="field"><label for="setOrg">Organization</label><input id="setOrg" value="${esc(SESSION.org)}"></div>
+    <div class="field-row">
+      <div class="field"><label>Email</label><input value="${esc(SESSION.email || '—')}" disabled></div>
+      <div class="field"><label>Role</label><input value="${esc(meta.label)}" disabled></div>
+    </div>
+    <p class="field-note">${ADMIN_DOMAINS.test(SESSION.email || '')
+      ? 'ClearSky addresses are administrators by policy, so this role cannot be changed here.'
+      : 'Your role determines which side of the marketplace you see. Contact an administrator to change it.'}</p>
+    ${roleOutOfSync ? `<div class="verdict fair" style="margin-top:12px">
+      <div class="vd-top"><span class="vd-badge">Out of sync</span><h5>Your saved profile disagrees</h5></div>
+      <p>This session has full <b>${esc((ROLE_META[roleOutOfSync.effective] || {}).label || roleOutOfSync.effective)}</b> rights because of your email domain, but the profile stored in the database still reads
+      <b>${esc((ROLE_META[roleOutOfSync.stored] || {}).label || roleOutOfSync.stored)}</b>. That usually means the latest security rules have not been deployed yet.</p>
+      <button class="btn btn-primary btn-sm" style="margin-top:11px" data-act="fix-role">Try to fix it now</button>
+    </div>` : ''}
+    <button class="btn btn-primary btn-sm" style="margin-top:12px" data-act="save-profile">Save profile</button>
+
+    <div class="form-rule"></div>
+    <h4 class="set-h">Password</h4>
+    ${local ? `<p class="field-note">This session is running without a backend, so there is no password to change.</p>`
+     : google ? `<p class="field-note">You sign in with Google, so there is no password held here. Manage it from your Google account.</p>
+        <a class="btn btn-ghost btn-sm" style="margin-top:10px" href="https://myaccount.google.com/security" target="_blank" rel="noopener noreferrer">Open Google security settings</a>`
+     : `<div class="field"><label for="setCur">Current password</label><input id="setCur" type="password" autocomplete="current-password"></div>
+        <div class="field-row">
+          <div class="field"><label for="setNew">New password</label><input id="setNew" type="password" autocomplete="new-password" placeholder="At least 6 characters"></div>
+          <div class="field"><label for="setNew2">Confirm new password</label><input id="setNew2" type="password" autocomplete="new-password"></div>
+        </div>
+        <button class="btn btn-primary btn-sm" data-act="save-password">Change password</button>`}
+  </div>
+  <div class="modal-foot">
+    <button class="btn btn-ghost" data-act="close-modal">Close</button>
+  </div>`);
+}
+
+async function saveProfile() {
+  const name = $('#setName').value.trim(), org = $('#setOrg').value.trim();
+  if (!name) return modalErr('Enter your full name.');
+  if (!org)  return modalErr('Enter your organization.');
+  const btn = $('[data-act="save-profile"]'), label = btn.textContent;
+  btn.disabled = true; btn.textContent = 'Saving…'; modalErr('');
+
+  if (FB.ready && FB.auth.currentUser) {
+    try {
+      await FB.db.collection('fin_profiles').doc(FB.auth.currentUser.uid).update({name, org});
+    } catch (err) {
+      console.error('[OMEGA] profile update failed:', err);
+      btn.disabled = false; btn.textContent = label;
+      const [h, t] = explain(err);
+      return modalErr(h + (t ? ' ' + t : ''));
+    }
+  }
+  SESSION.name = name; SESSION.org = org; SESSION.initials = initialsOf(name);
+  $('#userName').textContent = name;
+  $('#userAvatar').textContent = SESSION.initials;
+  btn.disabled = false; btn.textContent = label;
+  render();
+  toast('Profile updated.');
+}
+
+async function savePassword() {
+  const cur = $('#setCur').value, nw = $('#setNew').value, nw2 = $('#setNew2').value;
+  if (!cur) return modalErr('Enter your current password.');
+  if (nw.length < 6) return modalErr('Your new password must be at least 6 characters.');
+  if (nw !== nw2) return modalErr('The two new passwords do not match.');
+
+  const btn = $('[data-act="save-password"]'), label = btn.textContent;
+  btn.disabled = true; btn.textContent = 'Changing…'; modalErr('');
+  try {
+    const user = FB.auth.currentUser;
+    /* Firebase requires a recent sign-in before a password change. */
+    const cred = firebase.auth.EmailAuthProvider.credential(user.email, cur);
+    await user.reauthenticateWithCredential(cred);
+    await user.updatePassword(nw);
+    closeModal();
+    toast('Password changed.');
+  } catch (err) {
+    console.error('[OMEGA] password change failed:', err);
+    btn.disabled = false; btn.textContent = label;
+    modalErr(err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential'
+      ? 'That current password is not right.'
+      : explain(err)[0]);
+  }
+}
+
 /* ── Withdrawing a deal ───────────────────────────────────────────────────
    Mirrors the rule `allow delete: if isOwner() && status != 'awarded'`, so the
    button only appears where Firestore would actually permit the write. */
@@ -2960,12 +3338,33 @@ async function republish(id) {
   }
 }
 
-const isPlatformAdmin = () => !!SESSION && SESSION.role === 'admin';
+const isPlatformAdmin = () => !!SESSION &&
+  (SESSION.role === 'admin' || ADMIN_DOMAINS.test(SESSION.email || ''));
+
+/* A capital partner reads other companies' deal flow, so an administrator
+   admits them first. Sponsors and administrators need no approval. Profiles
+   written before this field are treated as approved, so nobody already
+   working is locked out — only an explicit false holds an account back. */
+const isApproved = p => !p || p.approved !== false;
+const awaitingApproval = () =>
+  !!SESSION && SESSION.role === 'partner' && SESSION.approved === false;
+
+/* The platform keys organisations by email domain — the same convention
+   userOrg() uses in firestore.rules — so colleagues share a workspace
+   automatically without anyone maintaining a membership list. */
+const orgIdOf = email => String(email || '').split('@')[1] || '';
+const myOrgId = () => orgIdOf(SESSION && SESSION.email);
 
 function isOwnerOf(d) {
   if (!d || !SESSION) return false;
   if (FB.ready && FB.auth.currentUser && d.docId) return d.developerUid === FB.auth.currentUser.uid;
-  return d.originator === SESSION.name || d.developer === SESSION.org;
+  return d.submittedBy === SESSION.name || d.developer === SESSION.org;
+}
+
+/* Someone else at the same company. They can see the deal; whether they can
+   change it is decided by the rules, so the UI only offers what will succeed. */
+function isOrgMate(d) {
+  return !!d && !!SESSION && !!d.orgId && d.orgId === myOrgId() && !isOwnerOf(d);
 }
 
 /* Mirrors the rules: the sponsor who filed it, or a platform administrator. */
@@ -3034,7 +3433,7 @@ async function deleteDeal(id) {
 
 /* ── Session ──────────────────────────────────────────────────────────── */
 async function signIn(acct) {
-  SESSION = Object.assign({}, acct, {initials: initialsOf(acct.name)});
+  SESSION = Object.assign({approved: true}, acct, {initials: initialsOf(acct.name)});
   const meta = ROLE_META[SESSION.role] || ROLE_META.developer;
   S.role = meta.side === 'partner' ? 'partner' : 'dev';
   S.tab = TABS[S.role][0][0];
@@ -3043,9 +3442,10 @@ async function signIn(acct) {
   S.f = {q:'', state:'', tech:'', status:'', stage:'', dev:'', orig:'', minMw:0};
 
   DEALS = [];
+  if (awaitingApproval()) { watchMyProfile(); }
   /* When there's a backend, show only what's really in it. Filling an empty
      result with samples is what made a missing deal look like a present one. */
-  if (FB.ready) {
+  else if (FB.ready) {
     DATA_SOURCE = 'live';
     watchDeals();
   } else {
@@ -3067,10 +3467,11 @@ async function signIn(acct) {
 }
 
 function signOut() {
-  if (dealsUnsub) { dealsUnsub(); dealsUnsub = null; }
+  stopWatching();
   DATA_SOURCE = 'none';
   if (FB.ready) { try { FB.auth.signOut(); } catch (e) {} }
-  SESSION = null; pendingUser = null;
+  if (myProfileUnsub) { myProfileUnsub(); myProfileUnsub = null; }
+  SESSION = null; pendingUser = null; PEOPLE = []; peopleErr = null;
   S.uploaded = []; DEALS = []; S.bannerOff = false;
   $('#appView').style.display = 'none';
   $('#authView').style.display = 'flex';
@@ -3089,6 +3490,7 @@ function showLogin() {
   $('#regGoogle').style.display = 'block';
   $('#registerBtn').textContent = 'Create account';
   $('#regBackRow').style.display = 'block';
+  $('#regCancelRow').style.display = 'none';
 }
 function showRegister() {
   authErr('');
@@ -3104,6 +3506,7 @@ function showProfileSetup(user) {
   $('#regCreds').style.display = 'none';
   $('#regGoogle').style.display = 'none';
   $('#regBackRow').style.display = 'none';
+  $('#regCancelRow').style.display = 'block';
   $('#registerBtn').textContent = 'Create my profile';
   $('#regEmail').value = user.email || '';
   refreshAdminRoleOption(user.email);
@@ -3111,12 +3514,46 @@ function showProfileSetup(user) {
   if (!$('#regOrg').value)  $('#regOrg').value  = (user.email || '').split('@')[1] || '';
 }
 
+/* Anyone on a ClearSky domain is an administrator, regardless of what they
+   picked at sign-up. The rules grant admin by domain, so the profile should
+   agree with them rather than drift. */
+const roleFor = (email, chosen) => ADMIN_DOMAINS.test(email || '') ? 'admin' : chosen;
+
 async function writeProfile(uid, prof) {
+  const role = roleFor(prof.email, prof.role);
   await FB.db.collection('fin_profiles').doc(uid).set({
     name: prof.name, org: prof.org,
     email: prof.email, emailLower: (prof.email || '').toLowerCase(),
-    role: prof.role, createdAt: Date.now()
+    role,
+    approved: role !== 'partner',        // capital partners await an admin
+    suspended: false,
+    createdAt: Date.now()
   });
+}
+
+/* An existing profile created before this rule, or with the wrong role,
+   is corrected on sign-in. */
+/* The rules grant admin purely by email domain, so the client can decide the
+   same way. The session role is therefore authoritative immediately and never
+   waits on — or is undone by — a failed Firestore write. Persisting the role
+   back to the profile is a best-effort tidy-up, and it says so if it fails. */
+let roleOutOfSync = null;      // {stored, effective} when the profile disagrees
+
+function effectiveRole(email, storedRole) {
+  return ADMIN_DOMAINS.test(email || '') ? 'admin' : (storedRole || 'developer');
+}
+
+async function persistRole(uid, role, stored) {
+  try {
+    await FB.db.collection('fin_profiles').doc(uid).update({role});
+    roleOutOfSync = null;
+    console.info('[OMEGA] profile role set to', role);
+  } catch (e) {
+    roleOutOfSync = {stored, effective: role};
+    console.warn('[OMEGA] could not write role to profile:', e.code || e.message);
+    toast('You are signed in as an administrator, but your saved profile still says "'
+      + (ROLE_META[stored] || {label: stored}).label + '". Deploy the latest security rules to fix it permanently.', true);
+  }
 }
 
 /* ── Handlers ─────────────────────────────────────────────────────────── */
@@ -3139,12 +3576,25 @@ async function afterFirebaseUser(user) {
   const snap = await FB.db.collection('fin_profiles').doc(user.uid).get();
   if (!snap.exists) return showProfileSetup(user);
   const p = snap.data();
+  if (p.suspended) {
+    try { await FB.auth.signOut(); } catch (e) {}
+    return authErr('This account has been suspended.',
+                   'Contact your ClearSky administrator to have it restored.', '');
+  }
+  const stored = p.role || 'developer';
+  const role = effectiveRole(user.email, stored);
+  roleOutOfSync = (role !== stored) ? {stored, effective: role} : null;
+
   await signIn({
     name: p.name || user.displayName || (user.email || '').split('@')[0],
     org:  p.org  || '—',
     email: user.email,
-    role: p.role || 'developer'
+    role,
+    approved: isApproved(p)
   });
+
+  /* tidy the stored profile up in the background — never blocks sign-in */
+  if (role !== stored) persistRole(user.uid, role, stored);
 }
 
 async function googleSignIn(btn) {
@@ -3172,6 +3622,16 @@ $('#regEmail').addEventListener('input', e => refreshAdminRoleOption(e.target.va
 $('#toRegister').addEventListener('click', showRegister);
 $('#toLogin').addEventListener('click', showLogin);
 $('#signOutBtn').addEventListener('click', signOut);
+$('#settingsBtn').addEventListener('click', settingsModal);
+
+/* Backing out of setup must also drop the half-finished Firebase session,
+   or the next page load lands straight back on this screen. */
+$('#cancelSetup').addEventListener('click', () => {
+  pendingUser = null;
+  if (FB.ready) { try { FB.auth.signOut(); } catch (e) {} }
+  ['#regName', '#regOrg', '#regEmail', '#regPass'].forEach(k => { const el = $(k); if (el) el.value = ''; });
+  showLogin();
+});
 
 $('#loginBtn').addEventListener('click', async () => {
   const email = $('#loginEmail').value.trim(), pass = $('#loginPass').value;
@@ -3220,7 +3680,8 @@ $('#registerBtn').addEventListener('click', async () => {
     try {
       await writeProfile(pendingUser.uid, {name, org, email: pendingUser.email, role: regRole});
       const u = pendingUser; pendingUser = null;
-      await signIn({name, org, email: u.email, role: regRole});
+      const r = roleFor(u.email, regRole);
+      await signIn({name, org, email: u.email, role: r, approved: r !== 'partner'});
     } catch (err) {
       console.error('[OMEGA] fin_profiles write failed:', err);
       showErr(err);
@@ -3233,14 +3694,15 @@ $('#registerBtn').addEventListener('click', async () => {
   if (pass.length < 6)      return authErr('Use a password of at least 6 characters.');
 
   /* Case 2: no backend — local account so the app is still explorable. */
-  if (!FB.ready) return signIn({name, org, email, role: regRole});
+  if (!FB.ready) return signIn({name, org, email, role: regRole, approved: true});
 
   /* Case 3: real Firebase sign-up. */
   authBusy(btn, true, label);
   try {
     const cred = await FB.auth.createUserWithEmailAndPassword(email, pass);
     await writeProfile(cred.user.uid, {name, org, email, role: regRole});
-    await signIn({name, org, email, role: regRole});
+    const r = roleFor(email, regRole);
+    await signIn({name, org, email, role: r, approved: r !== 'partner'});
   } catch (err) {
     console.error('[OMEGA] sign-up failed:', err);
     showErr(err);
