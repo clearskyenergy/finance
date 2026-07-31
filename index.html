@@ -72,6 +72,11 @@ input,select,textarea{font-family:inherit;font-size:14px}
 .setup-panel li.y::before{content:'✓';color:var(--cs-green)}
 .setup-panel li.n::before{content:'✕';color:var(--cs-red)}
 .setup-panel p{font-size:12px;line-height:1.55;color:var(--cs-muted)}
+.src{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:600;letter-spacing:.03em;padding:3px 9px;border-radius:11px}
+.src i{width:6px;height:6px;border-radius:50%;background:currentColor;flex:none}
+.src.on{color:var(--cs-green);background:var(--cs-green-dim)}
+.src.warn{color:var(--cs-amber);background:var(--cs-amber-dim)}
+.src.bad{color:var(--cs-red);background:var(--cs-red-dim)}
 .auth-or{display:flex;align-items:center;gap:12px;margin:16px 0;color:var(--cs-muted-2);font-size:11.5px}
 .auth-or::before,.auth-or::after{content:'';flex:1;height:1px;background:var(--cs-border)}
 .btn-google{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:11px 18px;
@@ -609,6 +614,7 @@ input,select,textarea{font-family:inherit;font-size:14px}
     <div>
       <h1 id="pageTitle">Deal intelligence</h1>
       <p class="ph-sub" id="pageSub"></p>
+      <div id="srcBadge" style="margin-top:9px"></div>
     </div>
     <div class="head-actions" id="headActions"></div>
   </div>
@@ -1597,6 +1603,15 @@ function partnerMarketplace() {
   const withBills = list.filter(d => d.bill);
   const equitable = withBills.filter(d => d.savings >= .12);
 
+  if (!scopeDeals().length) return `<div class="empty">
+    <div class="e-ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="2" y="6" width="20" height="13" rx="2"/><path d="M16 6V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg></div>
+    <h3>${DATA_SOURCE === 'error' ? 'Deals could not be loaded' : 'No deals on the marketplace yet'}</h3>
+    <p>${DATA_SOURCE === 'error'
+        ? 'The marketplace is reachable but refused to return deals for this account. An administrator may need to review its permissions.'
+        : 'As soon as a developer or originator submits a project, it appears here automatically — no refresh needed.'}</p>
+    ${DATA_SOURCE === 'live' ? '<button class="btn btn-ghost" data-act="load-samples">Show sample data</button>' : ''}
+  </div>`;
+
   return `
   <div class="kpi-strip">
     ${kpi('Deals in market', inMarket.length, '', `${usdC(sum(inMarket.map(d => d.ask)))} seeking capital`, '')}
@@ -2095,6 +2110,13 @@ function collectLinks() {
   return {links, bad};
 }
 
+function modalErr(msg) {
+  const el = $('#modalErr'); if (!el) return;
+  if (!msg) { el.classList.remove('show'); el.innerHTML = ''; return; }
+  el.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg><div><strong>${esc(msg)}</strong></div>`;
+  el.classList.add('show');
+}
+
 function openModal(html) { $('#modalEl').innerHTML = html; $('#modalBack').classList.add('show'); }
 function closeModal() { $('#modalBack').classList.remove('show'); $('#modalEl').innerHTML = ''; pendingBill = null; }
 
@@ -2147,6 +2169,7 @@ function submitModal() {
     </datalist>
   </div>
   <div class="modal-foot">
+    <div class="auth-err" id="modalErr" style="margin:0 auto 0 0;max-width:60%"></div>
     <button class="btn btn-ghost" data-act="close-modal">Cancel</button>
     <button class="btn btn-primary" data-act="save-deal">Submit to marketplace</button>
   </div>`);
@@ -2203,7 +2226,7 @@ function handleBills(files) {
   }, 340);
 }
 
-function saveDeal() {
+async function saveDeal() {
   const name = $('#nfName').value.trim(), state = $('#nfState').value, mw = parseFloat($('#nfMw').value);
   const tech = TECH_BY_ID[$('#nfTech').value];
   const ask = parseFloat($('#nfAsk').value);
@@ -2226,15 +2249,33 @@ function saveDeal() {
     ppaRate: parseFloat($('#nfRate').value) || (pendingBill ? pendingBill.blended * .82 : MARKETS[state].rate * .8),
     bill: pendingBill, links
   });
+
+  /* With a backend, don't close the dialog until the write is confirmed —
+     a deal that failed to save must never look like it succeeded. */
+  if (hasFirebase()) {
+    const btn = $('[data-act="save-deal"]');
+    const label = btn.textContent;
+    btn.disabled = true; btn.textContent = 'Submitting…';
+    modalErr('');
+    try {
+      await persistDeal(d);
+    } catch (err) {
+      console.error('[OMEGA] fin_projects write failed:', err);
+      btn.disabled = false; btn.textContent = label;
+      const [h, t] = explain(err);
+      modalErr(h + (t ? ' ' + t : ''));
+      return;
+    }
+    btn.disabled = false; btn.textContent = label;
+    closeModal();
+    toast(`${name} submitted — capital partners can see it now.`);
+    return;                       // the live listener re-renders with the saved copy
+  }
+
   S.uploaded.unshift(d);
   closeModal();
   render();
   toast(`${name} is live on the marketplace — ${usdC(ask)} sought.`);
-  if (hasFirebase()) {
-    persistDeal(d)
-      .then(() => toast(`${name} saved to fin_projects.`))
-      .catch(err => { console.error('[OMEGA] fin_projects write failed:', err); toast(explain(err)[0], true); });
-  }
   setTimeout(() => openDeal(d.id), 400);
 }
 
@@ -2255,6 +2296,11 @@ function render() {
   if (!valid.includes(S.tab)) S.tab = valid[0];
 
   const book = myBook();
+  const srcLabel = DATA_SOURCE === 'live'   ? `<span class="src on"><i></i>Live · ${plural(allDeals().length, 'deal')}</span>`
+                 : DATA_SOURCE === 'sample' ? `<span class="src warn"><i></i>Sample data · not saved</span>`
+                 : DATA_SOURCE === 'error'  ? `<span class="src bad"><i></i>Couldn't load deals</span>` : '';
+  $('#srcBadge').innerHTML = srcLabel + (DATA_SOURCE === 'live'
+    ? ` <button class="link-btn" data-act="refresh" style="margin-left:8px">Refresh</button>` : '');
   $('#pageTitle').textContent = isDev ? 'Deal intelligence' : 'Capital marketplace';
   $('#pageSub').textContent = isDev
     ? `${SESSION.org} · ${book.length} deal${book.length === 1 ? '' : 's'} ${SESSION.role === 'originator' ? 'originated' : 'submitted'}. Where they are, how big they are, what came back, and how long it took.`
@@ -2282,7 +2328,8 @@ function render() {
       <h3>No deals filed yet</h3>
       ${SESSION.role === 'developer' || SESSION.role === 'originator'
         ? `<p>Submit your first project and this fills in — where it sits, what capital partners came back with, and how long each stage took. Attach 12 months of utility bills and it screens roughly twice as fast.</p>
-           <button class="btn btn-primary" data-act="new-deal">Submit a deal</button>`
+           <button class="btn btn-primary" data-act="new-deal">Submit a deal</button>
+           ${DATA_SOURCE === 'live' ? '<button class="btn btn-ghost" style="margin-left:8px" data-act="load-samples">Show sample data</button>' : ''}`
         : `<p>Admin accounts review deals rather than file them. Switch to the capital view to see everything on the marketplace, or sign in with a developer or originator account to submit projects.</p>`}
       </div>`;
     return;
@@ -2334,6 +2381,9 @@ document.addEventListener('click', e => {
       mapSel = null; clearFilters();
       toast('Sample data cleared. Your workspace is now empty.');
       break;
+    case 'refresh':    watchDeals(); toast('Refreshed.'); break;
+    case 'load-samples': DEALS = DEALS.concat(seedSamples(SESSION)); render();
+                         toast('Sample data added to this browser only — it is never saved.'); break;
     case 'new-deal':   submitModal(); break;
     case 'add-link':   addLinkRow(); break;
     case 'rm-link':    el.closest('.link-row').remove(); break;
@@ -2434,7 +2484,7 @@ document.addEventListener('mousemove', e => {
 /* ═══════════════════════════════════════════════════════════════════════════
    16. ACCOUNTS, ROLES AND SIGN-IN
    ═══════════════════════════════════════════════════════════════════════════ */
-const BUILD = '2026-07-31 · build 8';
+const BUILD = '2026-07-31 · build 9';
 
 const ROLE_META = {
   developer:  {side:'dev',     chip:'dev',     label:'Developer'},
@@ -2577,18 +2627,35 @@ function docToDeal(doc) {
   }));
 }
 
-async function loadDeals() {
-  if (!FB.ready || !FB.auth.currentUser) return false;
+let dealsUnsub = null;
+let DATA_SOURCE = 'none';     // 'live' | 'sample' | 'error' | 'none'
+
+/* A live listener, not a one-shot read: a deal submitted by an originator
+   shows up in every capital partner's marketplace within a second, with no
+   refresh. Single-field filters only, so no composite index is required. */
+function watchDeals() {
+  if (dealsUnsub) { dealsUnsub(); dealsUnsub = null; }
+  if (!FB.ready || !FB.auth.currentUser) return;
+
   const col = FB.db.collection('fin_projects');
   const isCapital = SESSION.role === 'partner' || SESSION.role === 'admin';
-  /* Single-field filters only — no composite index needed. Sorting is done
-     client-side by the table, so no orderBy here on purpose. */
   const q = isCapital
     ? col.where('status', '==', 'open')
     : col.where('developerUid', '==', FB.auth.currentUser.uid);
-  const snap = await q.get();
-  DEALS = snap.docs.map(docToDeal);
-  return true;
+
+  dealsUnsub = q.onSnapshot(
+    snap => {
+      DEALS = snap.docs.map(docToDeal);
+      DATA_SOURCE = 'live';
+      if (SESSION) render();
+    },
+    err => {
+      console.error('[OMEGA] fin_projects listener failed:', err);
+      DATA_SOURCE = 'error';
+      DEALS = [];
+      if (SESSION) { render(); toast(explain(err)[0], true); }
+    }
+  );
 }
 
 async function persistDeal(d) {
@@ -2608,13 +2675,15 @@ async function signIn(acct) {
   S.f = {q:'', state:'', tech:'', status:'', stage:'', dev:'', orig:'', minMw:0};
 
   DEALS = [];
+  /* When there's a backend, show only what's really in it. Filling an empty
+     result with samples is what made a missing deal look like a present one. */
   if (FB.ready) {
-    try { await loadDeals(); }
-    catch (e) { console.error('[OMEGA] fin_projects read failed:', e); toast(explain(e)[0], true); }
+    DATA_SOURCE = 'live';
+    watchDeals();
+  } else {
+    DEALS = seedSamples(SESSION);
+    DATA_SOURCE = 'sample';
   }
-  /* Nothing to look at yet? Seed local, clearly-labelled sample records.
-     These are never written to Firestore. */
-  if (!DEALS.length) DEALS = seedSamples(SESSION);
 
   $('#authView').style.display = 'none';
   $('#appView').style.display = 'block';
@@ -2630,6 +2699,8 @@ async function signIn(acct) {
 }
 
 function signOut() {
+  if (dealsUnsub) { dealsUnsub(); dealsUnsub = null; }
+  DATA_SOURCE = 'none';
   if (FB.ready) { try { FB.auth.signOut(); } catch (e) {} }
   SESSION = null; pendingUser = null;
   S.uploaded = []; DEALS = []; S.bannerOff = false;
