@@ -582,6 +582,9 @@ code{font-family:var(--mono);font-size:11.5px;background:var(--cs-card-2);paddin
           <button type="button" class="role-opt" data-role="partner">
             <svg class="r-ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="13" rx="2"/><path d="M16 6V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
             <div><h4>Financing partner</h4><p>You deploy capital. Screen the whole marketplace by state, sponsor or technology.</p></div></button>
+          <button type="button" class="role-opt" data-role="admin" id="adminRoleOpt" style="display:none">
+            <svg class="r-ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6z"/><path d="M9 12l2 2 4-4"/></svg>
+            <div><h4>Platform administrator</h4><p>Oversee the whole marketplace. Review, edit and remove any deal, from any sponsor.</p></div></button>
         </div>
         <p class="role-hint" id="regRoleHint">Developers see every deal filed under their organization.</p>
         <div class="field"><label for="regName">Full name</label><input type="text" id="regName" placeholder="Jane Sponsor" autocomplete="name"></div>
@@ -2057,13 +2060,14 @@ function renderDrawer() {
     `<button class="dr-tab ${S.drawerTab === k ? 'on' : ''}" data-act="drtab" data-val="${k}">${l}${k === 'bill' && d.bill ? ' •' : ''}</button>`).join('');
   $('#drBody').innerHTML = drawerBody(d);
   $('#drBody').scrollTop = 0;
-  $('#drFoot').innerHTML = S.role === 'partner'
-    ? `<button class="btn btn-primary btn-sm" data-act="offer">Make an offer</button>
-       <button class="btn btn-ghost btn-sm" data-act="export-onedeal">Export this deal</button>
-       <button class="btn btn-ghost btn-sm" data-act="watch">Add to watchlist</button>`
-    : `<button class="btn btn-ghost btn-sm" data-act="export-onedeal">Export this deal</button>
-       <button class="btn btn-ghost btn-sm" data-act="upload-bill">${d.bill ? 'Replace utility bills' : 'Upload utility bills'}</button>
-       ${canDelete(d) ? `<button class="btn btn-ghost btn-sm btn-danger-ghost" style="margin-left:auto" data-act="ask-delete" data-val="${d.id}">Withdraw</button>` : ''}`;
+  const actions = [];
+  if (S.role === 'partner' && !isPlatformAdmin()) actions.push(`<button class="btn btn-primary btn-sm" data-act="offer">Make an offer</button>`);
+  if (canEdit(d))   actions.push(`<button class="btn btn-ghost btn-sm" data-act="edit-deal" data-val="${d.id}">Edit</button>`);
+  actions.push(`<button class="btn btn-ghost btn-sm" data-act="export-onedeal">Export this deal</button>`);
+  if (S.role !== 'partner' && isOwnerOf(d)) actions.push(`<button class="btn btn-ghost btn-sm" data-act="upload-bill">${d.bill ? 'Replace utility bills' : 'Upload utility bills'}</button>`);
+  if (S.role === 'partner' && !isPlatformAdmin()) actions.push(`<button class="btn btn-ghost btn-sm" data-act="watch">Add to watchlist</button>`);
+  if (canDelete(d)) actions.push(`<button class="btn btn-ghost btn-sm btn-danger-ghost" style="margin-left:auto" data-act="ask-delete" data-val="${d.id}">${isOwnerOf(d) ? 'Withdraw' : 'Delete'}</button>`);
+  $('#drFoot').innerHTML = actions.join('');
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -2159,12 +2163,12 @@ function exportTech(list) {
    ═══════════════════════════════════════════════════════════════════════════ */
 let pendingBill = null;
 
-function addLinkRow(label) {
+function addLinkRow(label, url) {
   const box = $('#linkRows'); if (!box) return;
   const row = document.createElement('div');
   row.className = 'link-row';
   row.innerHTML = `<input class="lr-label" list="linkPresets" placeholder="What is it?" value="${esc(typeof label === 'string' ? label : '')}">
-    <input class="lr-url" type="url" placeholder="https://drive.google.com/…  or  https://dropbox.com/…">
+    <input class="lr-url" type="url" placeholder="https://drive.google.com/…  or  https://dropbox.com/…" value="${esc(url || '')}">
     <button class="lr-x" data-act="rm-link" aria-label="Remove this link">&times;</button>`;
   box.appendChild(row);
 }
@@ -2190,31 +2194,41 @@ function modalErr(msg) {
 }
 
 function openModal(html) { $('#modalEl').innerHTML = html; $('#modalBack').classList.add('show'); }
-function closeModal() { $('#modalBack').classList.remove('show'); $('#modalEl').innerHTML = ''; pendingBill = null; }
+function closeModal() { $('#modalBack').classList.remove('show'); $('#modalEl').innerHTML = ''; pendingBill = null; editingId = null; }
 
-function submitModal() {
-  pendingBill = null;
+let editingId = null;
+
+function submitModal(dealId) {
+  const ed = dealId ? allDeals().find(x => x.id === dealId) : null;
+  editingId = ed ? ed.id : null;
+  pendingBill = ed ? ed.bill : null;
+  const val = v => v == null ? '' : esc(String(v));
+  const sel = (a, b) => a === b ? ' selected' : '';
+
   openModal(`
   <div class="modal-head">
-    <div><h2>Submit a deal</h2>
-      <div class="mh-sub">Everything here is what a capital partner screens on first. Utility bills are optional, but deals with 12 months of statements get looked at roughly twice as fast.</div></div>
+    <div><h2>${ed ? 'Edit deal' : 'Submit a deal'}</h2>
+      <div class="mh-sub">${ed
+        ? (isOwnerOf(ed) ? 'Changes are visible to capital partners as soon as you save.'
+                         : `Editing <b>${esc(ed.originator)}</b>'s project as a platform administrator. The sponsor will see your changes.`)
+        : 'Everything here is what a capital partner screens on first. Utility bills are optional, but deals with 12 months of statements get looked at roughly twice as fast.'}</div></div>
     <button class="dr-x" data-act="close-modal" aria-label="Close">&times;</button>
   </div>
   <div class="modal-body">
-    <div class="field"><label for="nfName">Project name</label><input id="nfName" placeholder="Cedar Hollow Solar"></div>
+    <div class="field"><label for="nfName">Project name</label><input id="nfName" placeholder="Cedar Hollow Solar" value="${ed ? val(ed.name) : ''}"></div>
     <div class="field-row three">
-      <div class="field"><label for="nfState">State</label><select id="nfState">${Object.keys(MARKETS).sort().map(s => `<option value="${s}">${STATE_NAME[s]}</option>`).join('')}</select></div>
-      <div class="field"><label for="nfCity">City</label><input id="nfCity" placeholder="Abilene"></div>
-      <div class="field"><label for="nfTech">Technology</label><select id="nfTech">${TECHS.map(t => `<option value="${t.id}">${t.name}</option>`).join('')}</select></div>
+      <div class="field"><label for="nfState">State</label><select id="nfState">${Object.keys(MARKETS).sort().map(s => `<option value="${s}"${ed ? sel(s, ed.state) : ''}>${STATE_NAME[s]}</option>`).join('')}</select></div>
+      <div class="field"><label for="nfCity">City</label><input id="nfCity" placeholder="Abilene" value="${ed ? val(ed.city) : ''}"></div>
+      <div class="field"><label for="nfTech">Technology</label><select id="nfTech">${TECHS.map(t => `<option value="${t.id}"${ed ? sel(t.id, ed.tech) : ''}>${t.name}</option>`).join('')}</select></div>
     </div>
     <div class="field-row three">
-      <div class="field"><label for="nfMw">Nameplate (MW)</label><input id="nfMw" type="number" step="0.1" min="0.1" placeholder="42.5"></div>
-      <div class="field"><label for="nfMwh">Storage (MWh)</label><input id="nfMwh" type="number" step="0.1" min="0" placeholder="0"></div>
-      <div class="field"><label for="nfAsk">Capital ask (USD)</label><input id="nfAsk" type="number" step="100000" min="0" placeholder="58400000"></div>
+      <div class="field"><label for="nfMw">Nameplate (MW)</label><input id="nfMw" type="number" step="0.1" min="0.1" placeholder="42.5" value="${ed ? val(ed.mw) : ''}"></div>
+      <div class="field"><label for="nfMwh">Storage (MWh)</label><input id="nfMwh" type="number" step="0.1" min="0" placeholder="0" value="${ed ? val(ed.mwh) : ''}"></div>
+      <div class="field"><label for="nfAsk">Capital ask (USD)</label><input id="nfAsk" type="number" step="100000" min="0" placeholder="58400000" value="${ed ? val(ed.ask) : ''}"></div>
     </div>
     <div class="field-row">
-      <div class="field"><label for="nfRate">Proposed offtake rate ($/kWh)</label><input id="nfRate" type="number" step="0.001" min="0" placeholder="0.089"></div>
-      <div class="field"><label for="nfOfftake">Offtake structure</label><select id="nfOfftake">${OFFTAKES.map(o => `<option>${o}</option>`).join('')}</select></div>
+      <div class="field"><label for="nfRate">Proposed offtake rate ($/kWh)</label><input id="nfRate" type="number" step="0.001" min="0" placeholder="0.089" value="${ed ? val(ed.ppaRate ? ed.ppaRate.toFixed(4) : '') : ''}"></div>
+      <div class="field"><label for="nfOfftake">Offtake structure</label><select id="nfOfftake">${OFFTAKES.map(o => `<option${ed ? sel(o, ed.offtake) : ''}>${o}</option>`).join('')}</select></div>
     </div>
     <div class="form-rule"></div>
     <h4 style="font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--cs-muted-2);margin-bottom:11px">Utility bills</h4>
@@ -2243,10 +2257,11 @@ function submitModal() {
   <div class="modal-foot">
     <div class="auth-err" id="modalErr" style="margin:0 auto 0 0;max-width:60%"></div>
     <button class="btn btn-ghost" data-act="close-modal">Cancel</button>
-    <button class="btn btn-primary" data-act="save-deal">Submit to marketplace</button>
+    <button class="btn btn-primary" data-act="save-deal">${ed ? 'Save changes' : 'Submit to marketplace'}</button>
   </div>`);
 
-  ['Utility bills', 'Site details', 'Diligence folder'].forEach(addLinkRow);
+  if (ed && ed.links && ed.links.length) ed.links.forEach(l => addLinkRow(l.label, l.url));
+  else ['Utility bills', 'Site details', 'Diligence folder'].forEach(l => addLinkRow(l));
   const drop = $('#billDrop'), input = $('#billFile');
   ['dragenter','dragover'].forEach(e => drop.addEventListener(e, ev => { ev.preventDefault(); drop.classList.add('over'); }));
   ['dragleave','drop'].forEach(e => drop.addEventListener(e, ev => { ev.preventDefault(); drop.classList.remove('over'); }));
@@ -2308,6 +2323,43 @@ async function saveDeal() {
 
   const {links, bad} = collectLinks();
   if (bad.length) return toast('Links need to start with https:// — check "' + bad[0] + '".', true);
+
+  /* ── editing an existing deal ── */
+  if (editingId) {
+    const existing = allDeals().find(x => x.id === editingId);
+    const patch = {
+      name, state, city: $('#nfCity').value.trim() || (existing ? existing.city : ''),
+      tech: tech.id, mw, mwh: parseFloat($('#nfMwh').value) || 0, ask,
+      ppaRate: parseFloat($('#nfRate').value) || (existing ? existing.ppaRate : 0),
+      offtake: $('#nfOfftake').value, links
+    };
+    if (pendingBill) patch.bill = pendingBill;
+
+    if (existing && existing.docId && FB.ready) {
+      const btn = $('[data-act="save-deal"]'), label = btn.textContent;
+      btn.disabled = true; btn.textContent = 'Saving…';
+      modalErr('');
+      try {
+        await FB.db.collection('fin_projects').doc(existing.docId).update(patch);
+      } catch (err) {
+        console.error('[OMEGA] fin_projects update failed:', err);
+        btn.disabled = false; btn.textContent = label;
+        const [h, t] = explain(err);
+        modalErr(err.code === 'permission-denied'
+          ? 'You do not have permission to change this deal.'
+          : h + (t ? ' ' + t : ''));
+        return;
+      }
+      btn.disabled = false; btn.textContent = label;
+      editingId = null; closeModal();
+      toast(`${name} updated.`);
+      return;
+    }
+    Object.assign(existing, buildDeal(Object.assign({}, existing, patch)));
+    editingId = null; closeModal(); render();
+    toast(`${name} updated.`);
+    return;
+  }
 
   const d = buildDeal({
     ref: newRef(),
@@ -2471,6 +2523,7 @@ document.addEventListener('click', e => {
       render(); break;
     }
     case 'republish':  republish(val); break;
+    case 'edit-deal':  submitModal(val); break;
     case 'ask-delete': confirmDelete(val); break;
     case 'do-delete':  deleteDeal(val); break;
     case 'new-deal':   submitModal(); break;
@@ -2573,7 +2626,7 @@ document.addEventListener('mousemove', e => {
 /* ═══════════════════════════════════════════════════════════════════════════
    16. ACCOUNTS, ROLES AND SIGN-IN
    ═══════════════════════════════════════════════════════════════════════════ */
-const BUILD = '2026-07-31 · build 15';
+const BUILD = '2026-07-31 · build 16';
 
 const ROLE_META = {
   developer:  {side:'dev',     chip:'dev',     label:'Developer'},
@@ -2586,6 +2639,13 @@ let regRole = 'developer';
 let pendingUser = null;        // authenticated, but no fin_profiles doc yet
 
 const initialsOf = n => (n || '?').trim().split(/\s+/).slice(0, 2).map(x => x[0]).join('').toUpperCase();
+
+/* The rules grant admin by email domain, so only offer the role to those. */
+const ADMIN_DOMAINS = /@(clearsky-usa|csebuilders)\.com$/i;
+function refreshAdminRoleOption(email) {
+  const el = $('#adminRoleOpt'); if (!el) return;
+  el.style.display = ADMIN_DOMAINS.test(email || '') ? 'flex' : 'none';
+}
 
 /* ── Firebase. Uses the collections the OMEGA firestore.rules already
    define — fin_profiles and fin_projects — so no rules change is needed. ── */
@@ -2732,10 +2792,11 @@ function watchDeals() {
   if (!FB.ready || !FB.auth.currentUser) return;
 
   const col = FB.db.collection('fin_projects');
-  const isCapital = SESSION.role === 'partner' || SESSION.role === 'admin';
-  const q = isCapital
-    ? col.where('status', '==', 'open')
-    : col.where('developerUid', '==', FB.auth.currentUser.uid);
+  /* An administrator needs to see everything, including deals that are not
+     'open' — those are exactly the ones that need cleaning up. */
+  const q = SESSION.role === 'admin' ? col
+          : SESSION.role === 'partner' ? col.where('status', '==', 'open')
+          : col.where('developerUid', '==', FB.auth.currentUser.uid);
 
   dealsUnsub = q.onSnapshot(
     snap => {
@@ -2899,13 +2960,21 @@ async function republish(id) {
   }
 }
 
+const isPlatformAdmin = () => !!SESSION && SESSION.role === 'admin';
+
+function isOwnerOf(d) {
+  if (!d || !SESSION) return false;
+  if (FB.ready && FB.auth.currentUser && d.docId) return d.developerUid === FB.auth.currentUser.uid;
+  return d.originator === SESSION.name || d.developer === SESSION.org;
+}
+
+/* Mirrors the rules: the sponsor who filed it, or a platform administrator. */
+function canEdit(d)   { return !!d && (isOwnerOf(d) || isPlatformAdmin()); }
 function canDelete(d) {
   if (!d || !SESSION) return false;
+  if (isPlatformAdmin()) return true;                   // admins may remove anything
   if (d.status === 'won') return false;                 // awarded: rules refuse
-  if (FB.ready && FB.auth.currentUser && d.docId) {
-    return d.developerUid === FB.auth.currentUser.uid;
-  }
-  return d.originator === SESSION.name || d.developer === SESSION.org;
+  return isOwnerOf(d);
 }
 
 function confirmDelete(id) {
@@ -3037,6 +3106,7 @@ function showProfileSetup(user) {
   $('#regBackRow').style.display = 'none';
   $('#registerBtn').textContent = 'Create my profile';
   $('#regEmail').value = user.email || '';
+  refreshAdminRoleOption(user.email);
   if (!$('#regName').value) $('#regName').value = (user.displayName || (user.email || '').split('@')[0]);
   if (!$('#regOrg').value)  $('#regOrg').value  = (user.email || '').split('@')[1] || '';
 }
@@ -3058,6 +3128,8 @@ $('#rolePick').addEventListener('click', e => {
     ? 'Developers see every deal filed under their organization.'
     : regRole === 'originator'
     ? 'Originators see the deals they personally brought to market.'
+    : regRole === 'admin'
+    ? 'Administrators see every deal on the platform, including ones no partner can see, and may correct or remove any of them.'
     : 'Financing partners see the whole marketplace, across every sponsor and state.';
 });
 
@@ -3096,6 +3168,7 @@ document.addEventListener('click', e => {
   if (b) { e.preventDefault(); googleSignIn(b); }
 });
 
+$('#regEmail').addEventListener('input', e => refreshAdminRoleOption(e.target.value));
 $('#toRegister').addEventListener('click', showRegister);
 $('#toLogin').addEventListener('click', showLogin);
 $('#signOutBtn').addEventListener('click', signOut);
