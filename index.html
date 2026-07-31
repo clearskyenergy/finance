@@ -36,6 +36,95 @@ input,select,textarea{font-family:inherit;font-size:14px}
 :focus-visible{outline:2px solid var(--cs-blue-bright);outline-offset:2px;border-radius:4px}
 @media (prefers-reduced-motion:reduce){*{animation-duration:.001ms!important;transition-duration:.001ms!important}}
 
+/* ---------- AUTH ---------- */
+#authView{min-height:100vh;display:flex;align-items:stretch}
+#appView{display:none}
+.auth-left{flex:1;background:
+  radial-gradient(900px 500px at 75% -10%,rgba(0,174,239,.22),transparent 60%),
+  radial-gradient(600px 400px at 10% 115%,rgba(0,137,189,.16),transparent 62%),
+  var(--cs-navy);
+  color:#fff;padding:60px 54px;display:flex;flex-direction:column;justify-content:space-between;position:relative;overflow:hidden}
+.auth-left .grid-bg{position:absolute;inset:0;opacity:.4;
+  background-image:linear-gradient(rgba(255,255,255,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.05) 1px,transparent 1px);
+  background-size:44px 44px;mask-image:linear-gradient(180deg,black,transparent 85%);-webkit-mask-image:linear-gradient(180deg,black,transparent 85%)}
+.auth-brand{position:relative;display:flex;align-items:center;gap:11px;font-family:'Syne',sans-serif;font-weight:800;font-size:20px}
+.auth-brand .omega{width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:17px}
+.auth-brand small{display:block;font-family:'Inter',sans-serif;font-weight:400;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.55);margin-top:2px}
+.auth-hero{position:relative}
+.auth-hero .eyebrow{font-size:11px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--cs-blue-bright);margin-bottom:18px}
+.auth-hero h1{font-family:'Syne',sans-serif;font-size:38px;font-weight:800;line-height:1.1;letter-spacing:-1.3px;margin-bottom:16px;max-width:16ch}
+.auth-hero h1 .accent{color:var(--cs-blue-bright)}
+.auth-hero p{font-size:14.5px;line-height:1.65;color:rgba(255,255,255,.72);max-width:48ch}
+.auth-split{position:relative;display:grid;grid-template-columns:1fr 1fr;gap:26px;margin-top:30px;max-width:520px}
+.auth-split div{border-left:2px solid rgba(0,174,239,.5);padding-left:14px}
+.auth-split h5{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;margin-bottom:5px}
+.auth-split p{font-size:12px;line-height:1.55;color:rgba(255,255,255,.6)}
+.auth-foot{position:relative;font-size:12px;color:rgba(255,255,255,.5)}
+.auth-right{width:490px;max-width:46%;background:var(--cs-card);padding:56px 50px;display:flex;flex-direction:column;justify-content:center;overflow-y:auto}
+.auth-card h2{font-family:'Syne',sans-serif;font-size:25px;font-weight:700;letter-spacing:-.5px;margin-bottom:6px}
+.auth-card .sub{font-size:13.5px;color:var(--cs-muted);margin-bottom:26px;line-height:1.55}
+.role-pick{display:flex;flex-direction:column;gap:8px;margin-bottom:10px}
+.role-opt{display:flex;align-items:flex-start;gap:13px;border:1px solid var(--cs-border);border-radius:10px;padding:13px 15px;text-align:left;background:var(--cs-card-2);transition:border-color .18s,background .18s;width:100%}
+.role-opt:hover{border-color:var(--cs-border-blue)}
+.role-opt.sel{border-color:var(--cs-blue);background:var(--cs-blue-dim)}
+.role-opt .r-ic{color:var(--cs-blue);flex:none;margin-top:1px}
+.role-opt h4{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;margin-bottom:3px}
+.role-opt p{font-size:11.5px;color:var(--cs-muted);line-height:1.45}
+.role-hint{font-size:11.5px;color:var(--cs-muted-2);line-height:1.5;margin-bottom:16px}
+.auth-switch{font-size:13px;color:var(--cs-muted);margin-top:18px;text-align:center}
+.auth-switch button{background:none;border:none;color:var(--cs-blue);font-weight:600;font-size:13px}
+.auth-err{background:var(--cs-red-dim);color:var(--cs-red);font-size:13px;padding:11px 14px;border-radius:8px;margin-bottom:16px;line-height:1.45;display:none}
+.auth-err.show{display:block}
+.demo-keys{margin-top:22px;padding-top:18px;border-top:1px solid var(--cs-border)}
+.demo-keys h5{font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--cs-muted-2);margin-bottom:10px}
+.demo-key{display:flex;align-items:center;gap:11px;width:100%;text-align:left;background:var(--cs-card-2);border:1px solid var(--cs-border);border-radius:9px;padding:10px 13px;margin-bottom:7px;transition:border-color .16s,background .16s}
+.demo-key:hover{border-color:var(--cs-blue);background:var(--cs-blue-dim)}
+.demo-key .dk-role{font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:3px 8px;border-radius:11px;flex:none}
+.demo-key .dk-mail{flex:1;font-size:12px;color:var(--cs-muted);font-family:var(--mono);overflow:hidden;text-overflow:ellipsis}
+.role-chip{font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:5px 12px;border-radius:20px}
+.role-chip.dev{background:rgba(0,174,239,.18);color:var(--cs-blue-bright)}
+.role-chip.orig{background:rgba(199,122,0,.22);color:#F0B45C}
+.role-chip.partner{background:rgba(18,128,92,.22);color:#4FD1A5}
+.role-chip.admin{background:rgba(255,255,255,.16);color:#fff}
+.btn-signout{background:rgba(255,255,255,.08);color:#fff;border:1px solid rgba(255,255,255,.15);padding:7px 15px;font-size:12.5px;border-radius:6px}
+.btn-signout:hover{background:rgba(255,255,255,.16)}
+
+/* ---------- US CHOROPLETH ---------- */
+.map-shell{position:relative;display:grid;grid-template-columns:minmax(0,1fr) 268px;gap:22px;align-items:start}
+.map-box{position:relative}
+.usmap{width:100%;height:auto;display:block;overflow:visible}
+.usmap path.st{stroke:#fff;stroke-width:1;stroke-linejoin:round;transition:fill .25s,opacity .15s;cursor:pointer}
+.usmap path.st.none{cursor:default}
+.usmap path.st:hover{opacity:.82}
+.usmap path.st.sel{stroke:var(--cs-navy);stroke-width:2.4}
+.usmap text.lbl{font-family:'Inter',sans-serif;font-size:10.5px;font-weight:700;pointer-events:none;text-anchor:middle}
+.usmap .callout rect{stroke:#fff;stroke-width:1;cursor:pointer;transition:fill .25s}
+.usmap .callout rect.sel{stroke:var(--cs-navy);stroke-width:2.2}
+.usmap .callout line{stroke:var(--cs-muted-2);stroke-width:.8;opacity:.55}
+.usmap .callout text{font-family:'Inter',sans-serif;font-size:9.5px;font-weight:700;pointer-events:none;text-anchor:middle}
+.map-tip{position:absolute;pointer-events:none;background:var(--cs-navy);color:#fff;padding:9px 12px;border-radius:8px;font-size:12px;line-height:1.5;box-shadow:0 10px 30px rgba(14,26,36,.3);opacity:0;transition:opacity .12s;z-index:8;white-space:nowrap}
+.map-tip.on{opacity:1}
+.map-tip b{font-family:'Syne',sans-serif;font-size:13px;display:block;margin-bottom:3px}
+.map-tip span{color:rgba(255,255,255,.7)}
+.map-legend{display:flex;align-items:center;gap:9px;margin-top:12px;font-size:11.5px;color:var(--cs-muted);flex-wrap:wrap}
+.map-legend .buckets{display:flex;gap:3px}
+.map-legend .buckets i{width:30px;height:10px;border-radius:2px;display:block}
+.state-panel{border:1px solid var(--cs-border);border-radius:12px;padding:17px 18px;background:var(--cs-card-2);min-height:240px}
+.state-panel .sp-ab{font-family:'Syne',sans-serif;font-size:11px;font-weight:700;letter-spacing:.1em;color:var(--cs-blue)}
+.state-panel h4{font-family:'Syne',sans-serif;font-size:18px;font-weight:700;letter-spacing:-.3px;margin:2px 0 14px}
+.sp-nums{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.sp-num{background:var(--cs-card);border-radius:9px;padding:10px 12px}
+.sp-num .k{font-size:9.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--cs-muted-2)}
+.sp-num .v{font-family:'Syne',sans-serif;font-size:17px;font-weight:700;margin-top:2px;line-height:1.1}
+.sp-num .v small{font-size:11px;font-weight:600;color:var(--cs-muted);margin-left:2px}
+.sp-list{border-top:1px solid var(--cs-border);padding-top:11px;margin-top:4px}
+.sp-deal{display:flex;align-items:center;gap:9px;padding:7px 6px;border-radius:7px;cursor:pointer;font-size:12px}
+.sp-deal:hover{background:var(--cs-blue-dim)}
+.sp-deal .dot{width:7px;height:7px;border-radius:50%;flex:none}
+.sp-deal .nm{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500}
+.sp-deal .mw{font-family:var(--mono);font-size:11px;color:var(--cs-muted)}
+.sp-empty{font-size:12.5px;color:var(--cs-muted);line-height:1.6}
+
 /* ---------- BUTTONS ---------- */
 .btn{border:none;padding:11px 22px;border-radius:7px;font-weight:600;font-size:14px;transition:opacity .18s,border-color .18s,color .18s,background .18s;display:inline-flex;align-items:center;gap:8px;white-space:nowrap}
 .btn-primary{background:var(--cs-blue);color:#fff}
@@ -341,11 +430,14 @@ input,select,textarea{font-family:inherit;font-size:14px}
 /* responsive */
 @media (max-width:1080px){
   .tg-layout{grid-template-columns:minmax(0,1fr)!important}
+  .map-shell{grid-template-columns:minmax(0,1fr)}
   .spine-head,.spine-row{grid-template-columns:150px 1fr 78px}
   .spine-axis{padding-left:162px}
 }
 @media (max-width:900px){
   .grid{grid-template-columns:minmax(0,1fr)!important}
+  .auth-left{display:none}
+  .auth-right{width:100%;max-width:100%;padding:36px 22px}
 }
 @media (max-width:760px){
   .app-body{padding:22px 14px 80px}
@@ -365,21 +457,97 @@ input,select,textarea{font-family:inherit;font-size:14px}
 </head>
 <body>
 
+<!-- ═══════════════════ AUTH ═══════════════════ -->
+<div id="authView">
+  <div class="auth-left">
+    <div class="grid-bg"></div>
+    <div class="auth-brand"><span class="omega">&#937;</span>
+      <div>ClearSky OMEGA<small>Financing Marketplace</small></div></div>
+    <div class="auth-hero">
+      <div class="eyebrow">Capital, matched to projects</div>
+      <h1>Every deal, <span class="accent">priced on the same evidence.</span></h1>
+      <p>Sponsors post projects with their utility data attached. Capital partners screen the same numbers, in the same format, across every state. No spreadsheets going back and forth.</p>
+      <div class="auth-split">
+        <div><h5>If you build or originate</h5><p>Track where your deals sit, what came back approved, and how long each stage really takes.</p></div>
+        <div><h5>If you deploy capital</h5><p>Filter by state, sponsor or technology. Pull extracted bill data and check the deal is fair before committee.</p></div>
+      </div>
+    </div>
+    <div class="auth-foot">© 2025 ClearSky Energy Solutions LLC · Proprietary</div>
+  </div>
+
+  <div class="auth-right">
+    <div class="auth-card">
+      <div class="auth-err" id="authErr"></div>
+
+      <div id="loginForm">
+        <h2>Sign in</h2>
+        <p class="sub">Your account decides which side of the marketplace you land on.</p>
+        <div class="field"><label for="loginEmail">Work email</label><input type="email" id="loginEmail" placeholder="you@company.com" autocomplete="email"></div>
+        <div class="field"><label for="loginPass">Password</label><input type="password" id="loginPass" placeholder="Your password" autocomplete="current-password"></div>
+        <button class="btn btn-primary btn-block" id="loginBtn">Sign in</button>
+        <p class="auth-switch">New here? <button id="toRegister">Create an account</button></p>
+        <div class="demo-keys">
+          <h5>Or open a demo account</h5>
+          <button class="demo-key" data-demo="originator">
+            <span class="dk-role" style="background:var(--cs-amber-dim);color:var(--cs-amber)">Originator</span>
+            <span class="dk-mail">marta@ridgeline.dev</span></button>
+          <button class="demo-key" data-demo="developer">
+            <span class="dk-role" style="background:var(--cs-blue-dim);color:var(--cs-blue)">Developer</span>
+            <span class="dk-mail">ops@ridgeline.dev</span></button>
+          <button class="demo-key" data-demo="partner">
+            <span class="dk-role" style="background:var(--cs-green-dim);color:var(--cs-green)">Financing partner</span>
+            <span class="dk-mail">alan@coastlinecap.com</span></button>
+          <button class="demo-key" data-demo="admin">
+            <span class="dk-role" style="background:rgba(14,26,36,.08);color:var(--cs-muted)">Admin</span>
+            <span class="dk-mail">admin@clearsky.energy</span></button>
+        </div>
+      </div>
+
+      <div id="registerForm" style="display:none">
+        <h2>Create an account</h2>
+        <p class="sub">Pick the role that matches how you work. It sets your permissions and your dashboard.</p>
+        <div class="role-pick" id="rolePick">
+          <button type="button" class="role-opt sel" data-role="developer">
+            <svg class="r-ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14"/><path d="M9 21v-6h6v6"/></svg>
+            <div><h4>Developer</h4><p>You build the projects. See your company's whole book and submit new sites.</p></div></button>
+          <button type="button" class="role-opt" data-role="originator">
+            <svg class="r-ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+            <div><h4>Deal originator</h4><p>You bring deals to market. Track what you sourced, what closed, and your win rate.</p></div></button>
+          <button type="button" class="role-opt" data-role="partner">
+            <svg class="r-ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="13" rx="2"/><path d="M16 6V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
+            <div><h4>Financing partner</h4><p>You deploy capital. Screen the whole marketplace by state, sponsor or technology.</p></div></button>
+        </div>
+        <p class="role-hint" id="regRoleHint">Developers see every deal filed under their organization.</p>
+        <div class="field"><label for="regName">Full name</label><input type="text" id="regName" placeholder="Jane Sponsor" autocomplete="name"></div>
+        <div class="field"><label for="regOrg">Organization</label><input type="text" id="regOrg" placeholder="Company or fund name" autocomplete="organization"></div>
+        <div class="field"><label for="regEmail">Work email</label><input type="email" id="regEmail" placeholder="you@company.com" autocomplete="email"></div>
+        <div class="field"><label for="regPass">Password</label><input type="password" id="regPass" placeholder="At least 6 characters" autocomplete="new-password"></div>
+        <button class="btn btn-primary btn-block" id="registerBtn">Create account</button>
+        <p class="auth-switch">Already a member? <button id="toLogin">Sign in</button></p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════ APP ═══════════════════ -->
+<div id="appView">
 <div class="topbar">
   <div class="topbar-brand">
     <span class="omega">&#937;</span>
     ClearSky OMEGA
     <span class="tag">Financing Marketplace</span>
   </div>
-  <div class="role-switch" id="roleSwitch">
-    <button data-role="dev" class="on">Developer &amp; originator</button>
-    <button data-role="partner">Financing partner</button>
+  <div class="role-switch" id="roleSwitch" style="display:none">
+    <button data-role="dev" class="on">Sponsor view</button>
+    <button data-role="partner">Capital view</button>
   </div>
   <div class="topbar-right">
+    <span class="role-chip" id="roleChip"></span>
     <div class="user-mini">
-      <span class="avatar" id="userAvatar">MQ</span>
-      <span id="userName">Marta Quintero</span>
+      <span class="avatar" id="userAvatar">—</span>
+      <span id="userName"></span>
     </div>
+    <button class="btn-signout" id="signOutBtn">Sign out</button>
   </div>
 </div>
 
@@ -394,6 +562,7 @@ input,select,textarea{font-family:inherit;font-size:14px}
 
   <div class="tabs" id="tabs"></div>
   <div id="view"></div>
+</div>
 </div>
 
 <!-- deal drawer -->
@@ -420,6 +589,17 @@ input,select,textarea{font-family:inherit;font-size:14px}
 
 <div id="toast" role="status" aria-live="polite"></div>
 
+<!--
+  To run against real accounts, uncomment these three tags and drop in your
+  firebase-config.js (the same one the rest of OMEGA uses). The app detects
+  window.CLEARSKY_CONFIG at boot: present = real auth against Firebase and the
+  `marketplace_users` collection; absent = the demo accounts on the sign-in card.
+
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+  <script src="/firebase-config.js"></script>
+-->
 <script>
 /* ═══════════════════════════════════════════════════════════════════════════
    1. UTILITIES
@@ -480,6 +660,12 @@ function downloadCSV(filename, rows) {
   setTimeout(() => URL.revokeObjectURL(url), 1500);
   toast('Exported ' + filename + ' — ' + (rows.length - 1) + ' rows');
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   2a. US GEOMETRY — Albers USA, pre-projected to a 975x610 frame, then
+       Douglas-Peucker simplified. AK and HI are the standard insets.
+   ═══════════════════════════════════════════════════════════════════════════ */
+const US_MAP={"AL":{"d":"M641.6 384L689.2 379.7L702.5 427L707.8 436.5L707.3 438.8L709.6 439.9L706.7 443.2L707.1 446L705.9 450.1L708.6 457.1L708.3 464.8L710.8 468.8L660.7 474L660.3 477L662 478.7L665.4 481.9L664.6 484.7L666.3 486.4L664.7 489.5L655.2 492L659.1 490.2L655.9 487.8L655.4 483.1L653.4 481.7L652.4 482.7L651.6 490.2L649.1 489L646.5 489.5L642.2 455L643.7 386.2L642.6 385.6L641.6 384Z","c":[672,432]},"AK":{"d":"M99.1 569.9L100.1 569.7L102.2 565.9L103.4 565.2L103.5 567L105 567.5L104.7 569.1L102.5 568.9L100.9 570.5L99.1 569.9ZM93.3 575.4L95.7 573.1L97.1 574.4L96.9 571.9L99.5 571.6L99 570.7L101.3 571.6L103.1 570.6L103.9 572.3L103.2 573.5L104.5 573.3L103.8 574.9L102 574.3L102.6 575.3L100.2 576.9L101.5 577.1L99.7 578.4L99.5 576.8L97.1 580.2L96 580.4L97.5 577.1L95.4 579.6L93.3 576.1L93.3 575.4ZM44.2 547.5L46.2 547.9L49.5 546.7L50.9 548.5L51 551.2L48.4 552L44.4 548.7L44.2 547.5ZM31.3 600.8L33.8 600.4L35.9 598.5L36.7 599.1L35.4 597.5L36.1 596.7L37.9 596.5L38.5 597.5L39.2 596.8L39.8 597.5L38 598.9L40 598.8L36.6 600.9L32.2 601.5L31.3 600.8ZM50.7 504.5L63.9 499.5L65.7 499.7L65.2 503.9L71.4 505.1L72.5 503.4L74.3 503.7L72.7 502.2L71.4 502.5L71.7 501.2L69.7 498.2L70.7 497.6L72.6 501.9L73.4 501.7L71.9 499.6L73.2 497.6L66.5 495.6L66.2 492.3L59.4 484.4L61 483.3L61.5 480.8L67.2 481.3L69.5 480L71.7 475L75.3 471.4L78.2 471.3L82.9 467.9L84.2 468.7L86.7 468.1L89.3 465.1L92.5 466.1L91.5 468.6L94 466.3L96.2 469.2L98.7 468L101.4 468.7L100.9 470.4L102.8 470.8L102.4 471.8L108.9 470.8L113.9 472.8L118.9 472.6L121.6 473.8L126 471.7L132.9 474.4L147.3 547.1L151.4 547.2L152.2 545.7L154.5 545.1L154.6 547.3L162.3 552.4L163.6 554.8L166.5 551.9L166.5 548.3L169.4 545.9L171.7 547.2L172.6 549.3L180.8 553.8L191.6 565.6L200.1 566.6L202.9 572.6L202.4 575.9L201.4 577.9L200.3 577.8L196.8 570.2L198.1 571.9L198.1 575.1L194.4 573.7L194.1 570.7L193.9 574L192.8 573.7L192.2 568.8L191.1 571.8L189.2 570.5L189.6 567.2L190.4 567.2L185.7 563.9L183.2 563.5L181.4 559.6L183.6 560L181 559.1L178.4 555.8L176.2 556.8L170.3 549.6L174.7 557.7L172.7 556.5L170.8 557.2L169.2 554.1L168.7 554.7L167.1 553.4L165.7 554.3L169 555.3L170.3 557.4L168 559.3L160 554.5L153 552.1L153.9 551.3L153.4 547.9L151 551.3L146.3 550.7L146.8 549.7L140.6 550L135.3 551.6L134 553.4L135.8 551.2L132.3 550.3L132.3 548.5L130.8 549.7L128 548.9L128.8 547.8L127.5 549.7L125.3 550.6L125.4 549L128.4 547.8L127.9 546.9L126.9 547.7L127.4 546.7L124.8 547L126.7 545.9L125.3 546.4L124.8 544L123.6 545.6L123.1 544.2L122.8 545.7L119.2 547.1L119.8 544.9L119 545L118.7 549.7L119.6 548.7L120.3 549.9L119.7 551.6L121.1 552.9L120.3 553.9L119.4 554L118.9 552.4L118.7 554L116 553.9L114.9 555L114.7 552.9L114.6 554.5L113.5 554.3L113.7 556.8L112.5 555.7L112.9 556.6L111.3 558.7L110.5 557.4L108.8 560.4L107.2 560L105.8 561L104.8 560.3L105.2 559L108.7 555.9L106.7 557.2L105.2 556.2L106.9 552.5L106.7 548.5L110.5 545.8L112.1 547.1L112.9 546.2L115.5 546.8L111.6 544.8L113.9 542.3L113.2 542L111.9 544.1L109.4 543.8L105.1 547.5L105.5 548.5L101.7 553L102.3 553.8L101.4 555.4L99.8 555.5L100.5 556.9L96.2 559.5L96 562.3L97.7 562L99.6 563.5L96.4 566.5L95.8 569.3L92 570.7L91.2 572.6L89.9 572.1L89.3 573.9L88 573.7L88.1 574.7L85.8 575.8L86.7 575.5L86.6 576.7L85.6 578.3L82.8 579.9L82 579.1L79.7 582.1L77.7 581.9L77 582.9L78.5 583.9L76.7 585.8L76.1 584.8L76 585.9L72.2 586.5L71 588.6L71.7 586.8L70.6 586.4L67.3 589.1L65.9 588.5L64.1 589.7L62.9 589.5L63.7 587.5L62.6 587.5L60.3 590.3L60.6 591.3L58.2 591.4L57.8 589.3L57.7 592L54.8 591L55.6 591.9L53.9 592.8L55.2 594.1L54 593.3L46.7 594.8L46.5 593.5L48.6 591.6L53.4 590.8L54.2 592.2L54.5 590.3L56.5 590.1L62 585.2L66.5 584.6L66.3 586.9L66.5 585.7L68.7 586.9L67.5 585L68.6 583L75.2 578.8L76.4 579.3L77.9 575.9L80.9 573.4L82.4 566L84.4 563.1L79.6 565L78.1 563.5L78.4 561.8L77.2 562.8L76.4 566.6L73.3 562L72.5 563.1L71 560.7L64.7 564.1L64.2 558.3L65.8 556.7L63.8 551.1L60.7 553.1L56.6 552.7L56.5 551.2L53.4 547.4L54.2 546.8L52.6 546.7L54.4 545.2L53.9 543.1L54.7 542.9L53.8 541.4L52.7 541.9L51.8 539.8L52.5 538.6L51.1 538.2L52.6 537.2L51.8 535.9L53.4 535.9L53.7 533.6L59.6 526L64.3 527.9L67.5 524.9L71.5 525.2L73 523.2L72.7 519.5L71 517.8L72.8 517.3L73.7 515.7L72.5 514L71.8 515.1L69 515.5L66.5 518L65.6 515.4L65.9 516.7L64.1 515.8L59.1 516L55.2 514.1L54.6 512.8L53.9 509.4L55.9 508.7L50.7 505.2L50.7 504.5ZM24.9 603L26.8 600.9L28.9 600.7L29.3 599.1L31 598.7L31.9 599.3L31.4 600.2L24.6 603.3L24.9 603ZM34.4 517.8L35.3 516.1L37.7 518.5L39.4 517.9L42 521.2L44.8 522.4L43.9 523.5L42.1 523L40.8 524.5L37.5 519.7L34.4 519.3L34.4 517.8ZM-6.2 601.2L-1 601.3L0 599.9L0.7 600.9L-0.2 602.3L-3.5 602.2L-6.2 601.2ZM-15 601.4L-13.6 600.4L-13.1 599.3L-12 599.5L-12.5 600.5L-11.1 600.8L-11.5 601.8L-12.3 601.4L-14.2 601.9L-15 601.4ZM-57.6 570.9L-56.6 570.8L-54.7 571.9L-53.9 573.8L-54.7 573.2L-55.2 573.4L-56.4 573.1L-56.9 571.3L-57.6 570.9ZM184.9 573.1L185 569.8L186.8 569.5L190 571.8L192.7 574.5L191.4 574.2L191.2 575L193.4 575.3L193.6 576.5L194.4 575.9L194.5 578.1L195 577.6L195.8 579.3L194.4 580.4L192.5 579L192.1 577.4L191.8 578.9L189.6 577.5L193 580.4L192 581.3L189.2 577.9L188.2 578.3L189.4 576.3L185.8 574.3L186.1 572.3L185.5 573.5L184.9 573.1ZM180.3 567.2L181.7 566.1L182.4 566.9L181.9 564.6L185.4 564.3L188.7 566.7L187.8 567.7L184.4 569.2L183.9 568.5L183.4 573.2L181.4 569.3L180.3 567.2ZM174.6 555.9L176.1 557.5L178.2 556.9L180.8 560.6L179.3 559.9L181.4 562.6L179.1 566L178.9 563.1L175.2 557.3L174.6 555.9ZM173.9 564.8L174.6 562.9L177.2 563.4L179.7 568.3L180.8 572.7L180.1 572.3L175.5 568.5L176 567L175.5 565.3L174.8 565.6L173.9 564.8ZM169.1 561.4L169.1 558.6L169.9 559.2L171.5 557.8L175.3 558.7L175 560.1L177.1 562.7L173.7 562.2L173.8 564.8L170.2 562L169.1 561.4ZM120.8 555.1L121.2 554L122.6 552.2L123.6 550L124.3 550.9L122.4 553.8L122.9 554.1L120.8 555.1Z","c":[102,521]},"AZ":{"d":"M145.1 407L148.8 406.9L150.3 405.1L150.2 400.8L147.4 400.1L147 398.6L148.3 394.9L147.5 393.9L148 391.7L149.9 391.5L152.4 389.1L153.9 380.5L156.8 377L160.1 376.1L162.8 373.6L158.9 369.3L158.5 363.2L156.2 359.1L157.1 354L158.7 352.8L158.8 347.1L158.7 340L160.1 336.5L159.5 331.4L163.1 330.6L166.6 331.5L168.4 334.8L170 334.9L172.6 331.5L176 313.3L264.6 328L246.8 456.3L208.2 450.5L142.3 411.7L143.9 408.4L145.1 407Z","c":[208,382]},"CO":{"d":"M277.1 237.2L333.1 244L395.3 249L389.7 340.7L372.5 339.4L315.3 334.3L264.6 328L275.9 245.8L277.1 237.2Z","c":[332,290]},"FL":{"d":"M793.7 604.2L794.8 602L800.5 597.7L805.1 600.1L793.8 604.8L793.7 604.2ZM777.4 558.3L777.9 558.6L779.8 562.4L781.8 563.2L782.3 562.8L783.3 563.1L781.7 563.9L779.5 562.7L777.6 559.3L777.4 558.3ZM710.8 468.8L714.2 475L765.8 471.5L767.3 476L769.7 475.6L768.7 466L770 464.9L780.5 466.3L781 470.2L787 486.3L794.9 499.6L804.6 511L806.1 513.6L805 517.2L806.6 521.9L822.1 549L823.8 574.5L822.7 572.9L821.8 573.7L820.8 578.1L821.8 581.3L820.7 583L820.9 583.7L822.4 582.7L824 577.8L823.8 580.3L821.6 586.6L816.4 593.2L819.1 589.4L819.7 586.1L813.6 588L812.2 587.4L806.9 589.7L805.5 588.9L804.7 587.7L805.3 585L800.6 577.8L793.1 574.2L791.9 575.4L786.5 564.2L783 561.3L781.4 562.6L779.2 558.4L781 558.5L780.4 552L778.5 553.2L779.5 555.9L777.3 557.8L776.5 555.5L765.2 540.9L766.1 541.7L767 541L769.8 535.5L771.2 533.2L770.6 531.9L769 531.7L769.7 533.8L767.9 533.5L767.6 530.8L764.7 529.8L764.2 531.7L766.3 532.3L767.4 534.3L766.8 536.8L765.2 537.3L765.1 539.2L761.9 533.4L760.7 526.1L762.7 529.5L761.9 527.3L763.6 517.1L761.3 511.5L761.9 510.2L758.8 506.7L758.9 505.1L755 504.9L754 506.1L752.9 503.1L751.3 502.8L749.9 500L746.1 498.3L745.3 494.9L742.8 494.1L739.3 489.9L732.2 486.7L727.4 487.4L725.8 489.7L726.4 492.2L722.7 492.3L716.3 497.4L715.7 496L714.3 497.8L711.8 498L714.2 499.9L720.1 496L713.7 500.8L710 499.1L707.4 499.8L705.7 496.1L706.2 495L707.6 499.1L708.1 496.6L705.7 493.6L695.8 488.4L688.8 486.2L678.4 486.1L663.7 490.1L666.3 486.4L664.6 484.7L665.1 480.9L660.3 477L660.7 474L693.6 470.8L710.8 468.8Z","c":[767,515]},"GA":{"d":"M689.2 379.7L734.9 373.7L731.6 379L731.7 381.5L738.4 385.4L741.1 385.4L748.3 396.2L752.6 398.1L756 402.3L761.9 405.8L761.6 407.7L763.6 408.7L765.7 411.8L771.3 414.4L774 422.7L778.7 425.8L781.4 433.4L786.9 434.7L784.7 438.9L783.3 438.7L783.6 441.1L781.4 442.3L782.7 442.9L782.9 444.6L782.4 446.2L780.7 447L782.4 447.1L781 450.8L781.3 454.4L778.3 460.2L779.9 459.9L780.1 466.1L774.7 466.1L771.1 464.9L768.7 466L769.7 475.6L767.3 476L765.8 471.5L714.2 475L708.3 464.8L708.6 457.1L705.9 450.1L707.1 446L706.7 443.2L709.6 439.9L707.3 438.8L707.8 436.5L702.5 427L689.9 382.4L689.2 379.7Z","c":[736,428]},"IN":{"d":"M640.3 229.8L644.9 231.4L651.9 227.6L685.6 223.9L692.5 284.3L691.3 285.7L692.5 286.9L692.2 289.1L693.7 289.3L693.5 291.6L690.7 292L687.5 294.5L685.1 293.5L682.9 294.1L683.6 298.2L680.6 301L678.7 305.1L677.1 305.1L676 311L674.1 312.8L669.8 310.7L668.2 307.9L668.6 308.8L666.3 309.9L666 314.3L664.6 314.6L664.4 316.1L663.4 316.2L663.6 315L661.7 315.1L660.8 313.4L659.7 313.6L656.7 315.7L655.3 318.7L650.6 315.6L648.3 316.5L646.7 315L646.7 318.3L645.6 318.5L645.3 316.8L642.7 317.7L641.3 316.7L640.9 320.2L639.4 319.7L638 317.4L639.5 317.5L638.5 317L639.3 315.7L638.7 314.3L640.5 311.8L639.4 310.3L640.2 308.2L641.5 308.6L646.8 296.6L645.7 294.8L646.2 292.6L644.9 291.9L643.5 287.9L645 283.6L641.1 239.2L640.3 229.8Z","c":[665,269]},"KS":{"d":"M393.9 271.9L453.9 274.6L509.9 275.2L513.1 278.1L516.5 277.7L517.4 279.2L516.6 280L517.3 281.4L516.1 281L513.5 284.9L515.7 288L517.3 289.1L517.2 291.2L518.5 293.2L522.6 294.4L522.8 343.8L458.9 343.6L389.7 340.7L392.2 300.4L393.9 271.9Z","c":[456,309]},"ME":{"d":"M931.4 119.2L931.6 118.3L932.7 117.1L933.2 118.1L934.3 119.4L934 120.3L933 120.8L932.2 120.6L931.9 119.1L931.4 119.2ZM910.2 150.1L907.8 149.2L907.5 147.2L903.6 143.5L890.9 102.4L891.8 101.2L894.8 103.1L894.3 99.3L895.2 98.3L897.3 98.8L895.2 96.3L896.9 92.3L899.1 90.1L898.2 88.9L900 86.1L898.4 83.6L898.8 80.5L897.7 79.7L898.1 76.3L899.9 73.8L899.1 67.5L905.9 47.6L908.8 47.5L910 51.5L912.5 52.3L916.6 48.5L919.6 47.6L919.7 45.9L922.6 45.8L929.7 49.7L937.9 74.4L937.3 75.4L938.5 76.5L938.7 79.9L944.6 79.9L945.7 81.9L944.5 82.6L946.6 85.5L946.1 87L949.5 89.7L949.8 88.1L952 88.1L956.3 92.6L957.1 94.8L955 99.4L953.8 100.3L952.8 98.6L951.5 99.6L952.4 100.5L950 103.7L951.1 104.1L950.2 105.6L948.5 104L947.5 105.2L946.8 104.3L946.3 107.5L944 108.4L943.8 110.3L942.5 109.2L941.4 109.7L942.2 113L938.9 113.7L937.4 111.9L938.7 110.4L938.1 109.7L935.4 111.3L937 114L936.3 116.8L937.3 119.8L936.5 120.3L933.9 115.9L934.5 114.7L932.8 113.6L931.9 114.3L931 110.1L930.3 112L928.5 112.6L929.7 113.9L928.9 118.7L929.3 120.5L930.2 120.3L930.2 122.9L928.6 123.2L927.1 126.5L927 124.7L925.8 125.7L925.7 124.4L924.8 124.8L924.4 127.8L923.5 127L919.7 132.2L919 130.7L918.1 130.9L917.3 132.8L915.1 134.1L914.8 137.5L912.8 138.3L912.9 142.3L911.2 143.3L910.6 149.8L910.2 150.1Z","c":[919,94]},"MA":{"d":"M927.7 186.8L928.5 187L930.2 186.4L931.2 185.8L931.5 184.3L933 186L932.4 187.2L930.7 187.6L928.1 187.2L927.7 186.8ZM918.3 188.3L921.3 184.4L922.6 185.7L923.8 186L924.2 185.1L924.6 186.7L919.6 189.2L918.3 188.3ZM871 167.6L902.9 160.7L906.2 156L909.5 154.8L911.2 158.5L914.3 158.4L913.8 160.4L910.6 162.2L911.2 162.6L909.5 165.8L910.4 166.9L909.6 167.1L910 168.6L911.8 167.4L915 169L917 171.2L916.4 173.3L919.4 174.4L921.7 177.7L925.5 177.8L928.8 175.1L927.8 172L927.3 172.8L925.1 169.6L923.6 170L926.7 169.7L930.1 174.2L930.6 179.8L929.7 177.6L924.7 179.9L916.1 187.6L920 183.3L919.6 179.8L917.9 179.4L917.7 181.7L915.4 182.8L915.4 185.3L912.8 186.4L911.6 182.9L907.7 181L905.5 176L883.1 181.4L882.3 182.5L882.2 181.6L871.2 184L870.6 183.2L871 167.6Z","c":[897,172]},"MN":{"d":"M479.5 70.7L510.8 70.8L510.7 62.2L513.7 62.5L515.6 64.1L518.6 76.5L524.3 77.3L524.9 78.4L530.7 78.8L531.5 81.3L536.5 80.5L538.2 78.6L543.7 78.5L549.1 80.2L548 82L551.1 82.2L553.4 87.3L554.9 86.6L554.9 84.2L558.1 84L559.7 86.7L563.4 87.3L564.6 89.6L565.9 89.3L565.8 90.7L570.6 89.6L576 85.7L578.1 88.9L587.6 88L591.8 90.6L597.6 89.5L577.1 101.1L568.2 111.3L558.9 119.4L560.2 121.1L559 120.2L557.5 121L557.4 122.4L555.9 122.3L556.4 135.6L550.1 139.9L547.6 144L547.5 147.3L549.3 147.4L551.3 149.9L549.7 153.6L549.3 165.9L553.6 169.9L556.9 170.1L559.2 172.7L563.9 174.9L564.9 177.8L569.8 181.6L572.3 182.2L575.6 187.1L576.3 193.3L490.6 195.2L490.8 154.3L490.2 153L487.1 151.7L484.4 147.3L488.8 142.5L489.3 136.5L488.6 130.9L485.5 123.3L484.9 102.5L480.5 89.4L481.4 77.7L479.3 71.4L479.5 70.7Z","c":[525,132]},"NJ":{"d":"M849.2 245.8L850.8 241.4L854.8 238.7L854.8 236.9L860.6 230.8L855.4 226.5L853.7 226.4L852.9 223.6L850.7 223.4L849.9 220.8L851.5 216.1L849.6 213.8L851.8 211.1L854.1 204.5L870.1 209L868.9 217.2L866.9 218.3L866.8 222.3L871.4 222.4L871.5 221.5L873.2 237.3L871.2 244.6L867.1 250.9L864.4 258.6L862.6 259L862.9 253.8L860.3 253.1L858.6 254.3L850.4 249.5L849.4 246.3L849.2 245.8Z","c":[862,230]},"NC":{"d":"M863.3 349.7L863.6 348.4L870.9 343.2L869.2 332.6L870.7 335.7L871.3 344.1L867.2 346.2L863.3 349.7ZM755.5 334L794.2 328.7L858.8 315.9L862 322.8L868.4 331.7L864 327.6L859.7 318.9L856.8 316.9L855.9 317.5L858.4 318.9L862.3 326.4L859.3 323L858.5 322.9L858.9 324.2L860 324.7L857.9 324.6L854.4 322.8L857.3 325.6L855.3 326.7L853.3 325.7L854.8 327.4L850.1 326.4L853.3 327.6L848.7 330.8L846.8 330.3L845.6 328.1L845.8 325.3L844.9 326.8L847.4 332.7L856 329.6L859 329.8L859.9 336.6L860.2 329.5L861.9 328.7L863.3 329.4L864.9 331.9L865.7 336.1L863 337.9L859.7 344.3L853.4 344.7L850.9 342L853.1 340.5L850.1 342.1L851.6 344.7L843 343.4L844.4 345L853.4 345.8L854.2 347.1L853.4 350.5L849.6 355L845.9 353.5L846.2 354.7L850.5 355.8L854.8 352.9L855 351.4L856.9 353.2L858 353.1L857.1 351.8L858.7 352.1L859.2 353.5L857.1 355.8L855.9 360.3L853.7 358.3L854.1 359.9L853.1 360.2L856.1 360.9L862.3 349.7L862.9 350L857.9 357.4L856.1 362.4L855.6 361.2L851.4 360.8L843.8 364.5L835.6 373.9L833.4 384.1L829.2 383.5L822.8 386.1L798.1 368.4L777.6 371.5L777.5 368.8L774.1 365.4L772.4 367.1L772 364.7L747.2 367L740.7 371.4L734.9 373.7L712.7 376.8L712.6 371.4L717.3 369.2L717 366.7L719.2 363.8L726.3 361.7L731.6 356.5L734.6 355.9L735.7 351.7L737.2 352.1L737.8 350.2L740.1 348.3L740.8 350.5L741.8 350.7L746.1 345.9L750.7 345.5L752.4 341.1L754.2 339.5L755.7 339.8L755.2 335.5L755.5 334Z","c":[801,351]},"ND":{"d":"M376.9 65.7L431.2 69.3L479.5 70.7L481.4 77.7L480.5 89.4L484.9 102.5L485 111.2L485.5 123.3L488.6 130.9L489.1 139.9L432.2 138.3L371.1 134.3L375 88.2L376.9 65.7Z","c":[429,104]},"OK":{"d":"M372.5 339.4L443.3 343.1L522.8 343.8L523 355.3L526.8 380.5L526.4 420.7L522.2 419.6L521 418.1L519.6 418.5L517.3 415.7L512.4 413.5L511.4 415.4L506.5 415.4L506.2 414.2L500.9 416.3L499.2 415.2L496.1 416.1L491.6 419.8L490.1 417.8L486.2 416L487.1 415.2L485.4 414.7L483.8 416.6L481.5 415.6L481.1 413.8L479.4 413.7L479.6 415.2L477.7 416.9L477.5 418.8L476.1 418.5L475.4 414.4L471.3 416.6L470.7 414.6L468.2 414.4L468.3 413.5L466.5 412.7L463.1 415.8L460.9 414.6L461.7 412.5L459 412.1L458.5 408.7L457.6 409.6L454 408.5L451.7 410.6L448.7 408.2L446.6 409.1L442.5 406.8L438.7 406.8L438.4 404L435.3 401.1L434.9 402.9L431.6 401.9L431.2 402.8L429.4 402.6L425.9 398.5L423.9 398.3L425.8 353.9L371.6 350.8L372.5 339.4Z","c":[471,376]},"PA":{"d":"M756.1 209L767.5 200.3L768.6 206.4L840.9 192.1L843.2 194.8L844.5 194.3L846.3 195.3L847.5 199.9L849.7 202.4L853.9 202.5L855 204L849.6 213.8L851.5 216.1L850.1 218.7L850.7 223.4L852.9 223.6L853.7 226.4L855.4 226.5L860.6 230.8L854.8 236.9L854.8 238.7L850.8 241.4L846.5 241.9L844.9 244.6L764.5 259.9L761.1 239.2L756.1 209Z","c":[806,226]},"SD":{"d":"M369.1 155.7L371.1 134.3L432.2 138.3L489.1 139.9L488.8 142.5L484.4 147.3L487.1 151.7L490.2 153L490.8 154.3L490.6 195.2L488.2 195.2L489.5 197.9L488.8 201.5L490 201.5L490.8 203.9L487.5 211.9L490.1 216.8L490.6 218.3L488 217.9L486 214.2L479.3 211.8L476.4 209.5L467.8 209.4L464.3 211.7L456.8 206.2L403.8 203.9L365.3 201L367.5 175.1L369.1 155.7Z","c":[430,172]},"TX":{"d":"M371.6 350.8L425.8 353.9L423.9 398.3L425.9 398.5L429.4 402.6L431.2 402.8L431.6 401.9L434.9 402.9L435.3 401.1L438.4 404L438.7 406.8L442.5 406.8L446.6 409.1L448.7 408.2L451.7 410.6L454 408.5L457.6 409.6L458.5 408.7L459 412.1L461.7 412.5L460.9 414.6L463.1 415.8L467.5 412.8L468.2 414.4L470.7 414.6L470.7 416.1L472.3 416.6L475.4 414.4L476.1 418.5L477.5 418.8L479.4 413.7L481.1 413.8L481.5 415.6L483.8 416.6L485.4 414.7L487.1 415.2L486.2 416L490.1 417.8L491.6 419.8L496.1 416.1L499.2 415.2L500.9 416.3L506.2 414.2L506.5 415.4L511.4 415.4L512.4 413.5L517.3 415.7L519.6 418.5L521 418.1L525.8 421.2L526.9 420.5L528.8 422.8L532.1 421.6L534.8 422.5L535.5 457.9L539.8 463L539.6 467L541.8 469.1L542.7 473.5L544 474.4L544.4 476.5L545.4 476.2L546.1 479.9L545.2 480.5L546 481.8L545.5 484.5L542.1 491L543 493.3L541.7 495.7L542.7 496.6L543.1 502.1L538.9 507.5L540.6 510.6L534.8 511.5L522.2 518.2L524.2 515.5L527.7 514.4L526.7 513.3L522.1 514.3L523.8 510.6L523.7 509.2L522.5 508.6L520.2 511.2L518.4 510.5L517.4 513.8L519.6 515.1L519.9 519.4L515.9 522.5L514.7 522.2L514.6 523.9L521.5 518.4L523.1 518.8L510.3 529.5L492 539.2L477.8 551.1L471.8 561.9L470 570.2L474.2 592.2L471.8 581.9L470.1 581.5L471.3 581L469.5 574L470.4 563.6L476.2 551L482.2 544.8L489.2 541.4L489 539.7L484.3 542L483.8 539.9L482.5 539.9L482 544L479.3 546.3L477.2 544.8L473.6 547L475.2 547.7L477.4 546.5L477.4 548.1L474.1 553L472.8 551.8L468 551.5L467.5 552.3L470.2 552.6L470.4 554.8L472.7 555.8L469.4 564.3L467.4 565.3L466.7 564.9L467.7 564.5L467.3 563.3L465 566L469.2 565.7L467.9 575.9L468.5 580.3L471.8 588L471.5 591.7L474.3 592.7L474.4 595.1L471.7 595.1L469.7 596.1L469.7 597.6L468.2 597.4L464.1 593.5L451.8 592.1L447.4 588.6L443.2 588.2L440.1 585.1L434.9 584.3L431.4 574.1L427.9 569.9L428.2 564.8L426.3 563.3L427.6 559.5L426.7 559.2L427.1 557.7L419.9 552.1L419 548L412 540.8L411.3 535.8L408.3 532.1L405.1 521.7L398.1 513.5L394.2 511.5L394.2 509.3L393.6 510.6L391.5 506.3L388.9 505.3L385.8 505.8L377.8 504.7L373.4 502.6L372.4 504.9L370.4 504.4L366.4 505.5L362 513.6L362 516.1L359.4 517.5L356.8 521.6L353.5 521.4L350.7 519.8L348.3 517L337.2 510.9L335.1 507.8L331.3 505.3L327.7 497.8L328.1 492L325.2 486.9L324.4 481.9L319.1 476.9L315.8 475.4L306.2 462.7L301.7 459.9L299 453.5L294.9 450.9L295.1 447L362.9 453.3L370.9 350.7L371.6 350.8Z","c":[434,469]},"WY":{"d":"M369.1 155.7L361.4 246.5L301.1 240.3L243.5 232.2L249.8 193.3L257.8 142L320.8 150.9L357.8 154.7L369.1 155.7Z","c":[308,195]},"CT":{"d":"M871.2 184L882.2 181.6L882.3 182.5L883.1 181.4L898.7 177.7L902.1 192.8L890.4 197.6L885 199.4L884.7 198.4L881.9 202.6L881 202.4L874.1 208.3L872.3 206L875.7 202.6L874.1 201L872.9 193.7L871.2 184Z","c":[886,190]},"MO":{"d":"M502 261.9L530.6 261.8L570.9 259.6L574.6 264.1L576.5 264.7L575.2 270.5L578.1 279.5L589.7 289.9L591.3 297.3L593.4 298.3L594.9 296.1L601 298.4L599.4 301.4L600 304.2L597.6 309.3L597.6 313.2L602.6 317.5L605.6 318.5L605.2 320.3L607.1 319.7L613.3 324.3L613.5 327.8L615.4 331L613.8 333.4L616.7 338.9L618.6 340L617.9 338.2L618.8 338.2L620.1 340.1L621.8 340.3L620.7 344L621.8 344.7L620.4 346.1L621.2 347.2L620.2 349.5L617.4 348.6L616.3 352.2L615.6 349.8L614 350.3L615.4 354.2L613.6 355.9L615.1 356.7L612.2 357.3L614.2 360.1L611.9 363.1L600.2 364L605.2 357.3L605.4 355.4L603.6 352.2L523 355.3L522.6 294.4L518.5 293.2L517.2 291.2L517.3 289.1L513.5 285.8L516.1 281L517.3 281.4L516.5 277.7L513.1 278.1L508.2 274.5L508.4 272.3L504.7 268.1L503.3 264.5L503.6 262.4L502.1 263.2L502 261.9Z","c":[560,312]},"WV":{"d":"M733.2 294.8L737.9 293.5L738 290.5L739.9 289.3L738.6 285.4L741.4 279.5L744 282.7L745 280.9L746 281.3L744.6 277.8L745.7 277.3L745.2 275.5L746.4 273.1L748.1 273L748.1 271.4L749.8 269.4L751.7 270.6L753.7 269.4L758.8 263L758.9 256.6L759.8 256.2L759.5 252.5L760.9 246.6L759.2 240L761.1 239.2L764.5 259.9L782.3 256.9L784.1 268.5L787.1 265.8L789.7 261.4L792.3 261.6L794.2 256.7L797 258.6L800.4 258.3L800.4 256.6L801.8 255.2L803.3 255.4L804.5 253.4L807.7 255L810.8 254.4L810.6 256.4L812.3 257.3L813.9 260.3L812.9 264.9L802.6 259.1L802.9 266L800.3 271.2L797.4 273.6L796.6 276.6L794 275L790.3 285.9L787.3 285.4L785.9 283.4L783.8 282.9L782.6 290.6L776 305.1L777.5 306.3L775.9 308.1L776.6 309.3L773.8 311.7L772.3 310.8L768.8 313.7L767 312.7L766.7 315.4L761.3 318.1L758.5 316.2L755.4 319.7L753.4 320.1L750 318.6L746.8 314.7L747.9 313.7L744.4 313.1L740.9 311.1L736.4 305.6L736.9 304.4L733.2 300.7L734.1 298.3L733.4 296.5L733.2 294.8Z","c":[767,285]},"IL":{"d":"M576.5 264.7L577.3 261.9L576.5 260.9L577.4 259.4L581.2 257.8L581.5 254.5L583.6 251.8L583.7 247.9L580.7 244.7L581.6 240.8L591.3 237.7L593.2 236.1L593.5 232.7L595.5 231L595.5 223.8L591.6 221.6L591 219.4L587 215.4L634.2 212.4L634 216.8L640.3 229.8L645 283.6L643.5 287.9L644.9 291.9L646.2 292.6L645.7 294.8L646.8 296.6L641.5 308.6L640.2 308.2L639.4 310.3L640.5 311.8L638.7 314.3L639.3 315.7L638.5 317L639.5 317.5L638 317.4L639.4 319.7L637.3 323.1L639 327.3L632.2 329.8L631.7 332.2L633.6 335.1L633.1 336.9L624.4 334.1L623.1 334.2L620.6 337.5L621.2 339.9L620.1 340.1L618.8 338.2L617.9 338.2L618.6 340L616.7 338.9L613.8 333.4L615.4 331L613.5 327.8L613.3 324.3L607.1 319.7L605.2 320.3L605.6 318.5L602.6 317.5L597.6 313.2L597.6 309.3L600 304.2L599.4 301.4L601 298.4L594.9 296.1L593.4 298.3L591.3 297.3L589.7 289.9L578.1 279.5L575.2 270.5L575.8 265.6L576.5 264.7Z","c":[615,270]},"NM":{"d":"M264.6 328L315.3 334.3L372.5 339.4L362.9 453.3L350.3 452.3L295.1 447L294.3 449.3L296.3 452.1L264.2 448.2L262.9 458.4L246.8 456.3L259.5 365.1L264.6 328Z","c":[311,393]},"AR":{"d":"M523 355.3L603.6 352.2L605.4 355.4L605.2 357.3L600.2 364L611.9 363.1L613.7 365.2L611.5 365.7L612.7 367.3L608.4 369.4L609 371.2L610.1 370.8L608.4 372.9L609.2 374.5L607 373.8L606.9 377.1L606.6 375.7L604.8 376.8L604.7 377.7L606.6 377.6L605.1 379.7L607.1 383.2L605.2 383.8L604.6 385.9L603.1 385.7L604 388.7L600.9 390.5L599.8 389.5L600.5 392.4L599.4 393L599.3 391.4L598.4 393L600.4 394.3L598.9 395.3L598.8 394L598.1 394.5L598.9 399.8L597.3 402.4L595.3 401.6L595.8 402.9L594.1 403.9L593.9 405.3L592.8 404.5L592.3 405.2L594.5 405.8L594.2 406.9L592 407L593.6 408.2L593.4 409.4L591.5 409.7L591.4 411L591 410.1L589.7 410.8L591.2 411.9L590.2 413.3L591.8 415.1L588.9 415.5L588.9 416.6L591.1 417.7L588.7 417L587.4 417.8L589.3 419.6L587.6 420.4L588.5 421.8L587.6 423.2L588.9 421.8L589.6 422.4L588.2 423.7L588.9 424.5L590.4 422.8L590.9 423.3L589.5 425.1L590.4 427.7L591.4 426.9L590.7 429.8L588.6 430.7L590.1 431.7L589.4 433.1L535 434.7L534.8 422.5L532.1 421.6L528.8 422.8L526.4 420.7L526.8 380.5L523.6 359.8L523 355.3Z","c":[564,391]},"CA":{"d":"M77.2 374.3L81.1 376.9L81.3 379.5L78.9 378.3L79 376.1L77.8 375.5L77.2 374.3ZM74.7 384.2L75.3 384.3L76.4 387.1L78.3 390L76.8 390.1L75.8 388.7L74.7 384.2ZM56.6 355L60.5 357.4L63.6 357.8L59.5 358.6L56.9 357.4L57.1 356.2L56.6 355ZM50.3 355.2L51.7 355.4L54.1 355.4L53.9 356.3L55 356.9L54.9 357.8L51.9 358.1L51.2 357.4L50.3 355.2ZM32.6 160L100.5 179.2L83.3 245.5L156.8 356.2L156.2 359.1L158.5 363.2L158.9 369.3L162.8 373.6L160.1 376.1L156.8 377L153.9 380.5L152.4 389.1L149.9 391.5L148 391.7L147.5 393.9L148.3 394.9L147 398.6L147.4 400.1L150.2 400.8L150.7 403.8L148.8 406.9L99.5 401.7L99.7 399.5L98.9 397.9L97.9 398.1L98.7 387.7L96.5 382.3L87.9 371L86.4 369.8L84.7 370.8L82.1 369.3L83 367.2L81.7 362.5L76.4 361.8L71 358.1L69.3 354.1L65 349.3L59.3 347.9L54.9 345.2L48.8 344.3L48.5 342.4L46.5 340.5L47.9 338.2L48.6 334.9L47.9 333.2L49.8 328.1L46.4 325.7L47.3 321.2L45.3 319.3L43.4 314.7L41.6 313.3L39.7 305L34.8 296.1L35.1 289.9L38.1 289L39.7 285.9L39.2 282.7L38.3 281.4L35.1 281L31.4 274.3L32.5 270.7L31.6 266.5L33.3 260.8L35.3 260.7L34.7 265.7L39.3 270.3L38.6 265L36.4 261.7L37.3 259L35.8 257.2L39.2 256.3L38.9 254.7L37.6 253.4L35.7 253.7L35.7 256.7L34.4 257.6L35.2 259L34.2 258.4L34.2 259.9L33.2 259.9L28.5 253.7L26.2 253.5L28.3 250.3L28.5 247.8L27.2 246.7L27.1 243.1L24.4 239.5L20.1 229.8L21.6 226.9L21.4 219.4L23.6 215.7L24 209.2L21.6 201.9L18.5 197.2L18.9 193.1L27.7 181.7L27.7 178.9L31.3 172.9L31.6 165.8L30.4 164.4L31.9 162.4L32.6 160Z","c":[82,288]},"DE":{"d":"M844.9 244.6L846.5 241.9L850.8 241.4L848.5 246.7L849.4 247.4L849.3 249.3L852.8 252.5L856.8 260.7L859.5 262.9L861.3 262.7L863.7 270.3L852.6 272.5L845.8 248.4L844.9 244.6Z","c":[853,260]},"DC":{"d":"M825.9 267L827 265.3L829.7 267.2L827.9 269.9L827.8 268.6L826.9 267.6L825.9 267Z","c":[828,267]},"HI":{"d":"M305.4 584.5L310.2 579.2L308.6 574L309.7 572.5L322.2 578.3L326.3 582L326.1 584.5L327.9 584.4L328.4 586.6L332.1 589.1L331.9 590.3L328.6 593.3L325.3 594.9L321.8 595.2L317.3 598.1L313.8 603.1L309.3 600.5L308.3 590.5L305.3 584.8L305.4 584.5ZM291.6 557.9L292.4 556L293.9 555.4L296.4 558.5L299.6 557.2L301.6 557.7L306.5 560.7L306.8 562.4L305.4 563.9L298.5 565.6L297.1 564.8L296.7 561.1L295.1 561.1L292.1 559.1L291.6 557.9ZM291.6 566.7L294.3 565L295 565.6L294.8 567L293.7 566.9L292 567.3L291.6 566.7ZM283.9 558.3L285.5 557.7L287.4 558L288.7 559.2L289.3 560.4L288.7 561.4L287.2 562L285.9 562.1L285 559.4L283.9 558.3ZM278.6 553.8L279.6 551.2L290.1 552.1L291.4 552.6L290.8 553.6L287.8 555L283.2 553.8L279.8 554.2L278.6 553.8ZM258.1 543L261.3 542.9L264.7 540L267.4 544.2L267.3 545.8L268.7 546.8L269.9 545.8L269.5 547L271.4 549.4L267.7 550.2L266.3 549.2L261.5 549.3L259 543.9L258.1 543ZM226.1 532.6L227.3 530.2L231 528.2L234.3 528.1L236.6 530.2L235.8 534.3L233.3 536.3L230 535.8L226.5 533.6L226.1 532.6ZM216.3 536.6L216.6 535.7L218.6 534.4L219.2 533.3L220 533.2L219.8 535.6L218.1 536.2L217.1 538.2L216.2 537.3L216.3 536.6Z","c":[317,588]},"IA":{"d":"M490.6 195.2L576.3 193.3L576.5 196.3L579.2 198.7L577.4 201.6L579.9 210.5L585.6 212.4L587 216.2L590 218.2L591.6 221.6L595.5 223.8L596 228.6L595.5 231L593.5 232.7L593.2 236.1L588.1 239.3L581.6 240.8L580.7 244.7L583.7 247.9L583.6 251.8L581.5 254.5L581.2 257.8L577.4 259.4L576.5 260.9L577.2 264.4L575.4 264.6L571.8 260.9L570.9 259.6L530.6 261.8L502 261.9L499.9 258.5L501.2 255.1L500 248.8L500.7 248.2L499.5 248.1L499.3 241.9L496.4 239.9L496.9 234L495.3 231.7L495.9 230.2L493.5 228.5L491.1 221.5L491.4 218.4L489.9 217.6L489.1 214.5L487.6 213.3L490.8 203.9L490 201.5L488.8 201.5L489.5 197.9L488.2 195.2L490.6 195.2Z","c":[540,227]},"KY":{"d":"M621.2 339.9L620.6 337.5L623.1 334.2L633.1 336.9L633.6 335.1L631.7 332.2L632.2 329.8L639 327.3L637.3 323.1L639.4 319.7L641.5 319.4L641.3 316.7L642.7 317.7L645.3 316.8L645.6 318.5L646.7 318.3L646.7 315L648.3 316.5L650.6 315.6L655.3 318.7L656.7 315.7L660.8 313.4L661.7 315.1L663.6 315L663.4 316.2L664.4 316.1L664.6 314.6L666 314.3L666.3 309.9L668.6 308.8L668.2 307.9L669.8 310.7L674.1 312.8L676 311L677.1 305.1L678.7 305.1L680.6 301L683.6 298.2L682.9 294.1L685.1 293.5L687.5 294.5L690.7 292L693.5 291.6L693.7 289.3L692.2 289.1L692.5 286.9L691.3 285.7L693.7 283.2L696.4 284.6L698.5 283.2L700.9 284.9L703.9 289.8L710.2 290.2L713.9 292.7L716.2 290.6L720.6 292.4L727 287.9L728.4 291.7L732.8 293.7L734.1 298.3L733.2 300.7L736.9 304.4L736.4 305.6L740.9 311.1L744.4 313.1L747.1 313.2L741.2 320.4L735.2 324.6L735.4 326.3L733 328.2L733.1 330.3L729.8 331.5L729 334.2L722.1 336.9L719.6 339.2L644.8 346.1L640.8 345.4L641.4 349.5L616.9 351.3L617.4 348.6L620.2 349.5L621.2 347.2L620.4 346.1L621.8 344.7L620.7 344L621.8 340.3L621.2 339.9Z","c":[688,321]},"MD":{"d":"M782.3 256.9L844.9 244.6L852.6 272.5L863.7 270.3L862.5 280.5L856.1 282.7L855.5 283.8L853.4 283.8L852.3 285.3L851.4 284.2L852.5 281.9L851.2 281.8L851.9 280.3L849.9 281.2L849.6 279.5L851.2 278.7L849.7 277.8L850.2 275.4L848.9 278.3L847.7 275.6L847.6 278.7L845.5 279.1L841.4 274.1L842.6 273.6L841.8 272.3L842.5 270.7L846.4 271.3L841.6 268.4L840.3 269.8L840.8 265.9L842.3 266.1L841.6 263.9L839.4 264.9L839 266.3L839.4 261.7L840.1 262.9L841.9 262.2L841.8 260L840.9 260.4L841.1 262.1L839.3 259.3L840.2 254.7L842.9 253.3L842.6 248.9L840.5 249.9L841.6 251.7L839.2 254.5L838.3 252.4L838.5 255.8L836.8 254L837.6 255.7L836.3 258.8L833.5 257.8L836.8 260.1L838 262.7L836.8 263.9L837.3 265.3L836.2 268.8L838.1 274L841 276.7L839.9 278.3L841.6 278.7L843.8 284.2L841.2 281.9L840.8 283.3L838.3 281.3L834.6 281.5L833 279L833.8 281.3L832.2 280.7L829.9 277.6L827 280.2L826.1 279.8L825.6 276L829.7 267.2L827 265.3L825.9 267L821.5 264.9L819.4 265L818.2 264.2L818.7 261.5L816.6 260.2L813.2 260.2L812.9 258.1L810.1 255.4L810.8 254.4L807.7 255L804.5 253.4L803.3 255.4L801.8 255.2L800.4 256.6L800.4 258.3L798.6 258.6L794.2 256.7L792.3 261.6L789.7 261.4L787.1 265.8L784.1 268.5L782.3 256.9Z","c":[832,263]},"MI":{"d":"M677.1 130.8L677.8 130.8L678.2 131.6L682 132.3L681.1 133.6L679.8 133.4L677.1 130.8ZM662.4 138.6L662.6 136.6L663 135.9L663 134.8L664 134.8L664.5 138.1L663.5 139L662.4 138.6ZM651.9 227.6L655.1 224.2L659.8 210.2L659.4 200.2L652.4 184.3L653.8 180.1L651.9 174.9L655.2 168L654.7 161.1L654.9 159.7L657.1 158.7L657.1 154.9L658.5 154.8L659.1 153.3L661.1 153.5L663.6 147.8L664.8 147.2L663.8 149.2L664.7 150.6L663.6 152.7L664.3 152.2L664.5 153.7L663.9 155.9L665 157.2L666.3 152L665.3 157.4L666.1 157.6L667.8 153.2L667.3 145.5L669.6 143.3L674.2 141.9L671.2 140.3L670.5 138.3L672.9 134.4L671.7 133.8L675.1 133.7L675.4 132.7L680.6 135.2L684.6 135.1L686.6 137.8L696.7 139.9L698.8 141.7L699.5 144L701.3 147L699.1 146.2L698.4 147.2L698.8 148.9L700.9 150.3L702.2 153.9L702.4 162.5L699.8 164.4L699.2 169.4L697.7 170.1L697.8 171L695.4 171.5L694.4 173.2L694.1 177.1L695.1 178.8L699 180.2L702 176.6L702.1 173L702.5 173.9L703.7 172.6L702.4 172.1L709.9 167.7L713 169.1L715.2 172.4L718.9 185.8L721.5 191.2L720.9 199.8L718.5 202.2L717.8 200.5L719.1 198.7L716.3 199.4L716.8 201.4L715.4 202.5L715.1 206.5L712.9 207.6L712.5 212.9L709 218.4L708.3 221.7L685.8 225.4L685.6 223.9L669.2 225.8L651.9 227.6ZM601.4 92.4L610.1 85.8L613.2 85L610.1 88.7L605.2 91.4L606.6 91.7L602.5 93.3L601.4 92.4ZM585.3 123.1L591.3 120.2L594.8 116.8L600.5 115.8L604.9 112.1L606.9 111.9L615.1 102.8L618.6 100.5L624.4 99.7L625.9 101.1L622.2 101.8L622.5 102.8L618.6 106.1L615.4 111.8L615.6 116.6L620.1 111.5L618.2 114.7L619.7 113L624 112.5L628.3 114.3L630.6 117.9L632.6 118.9L633.1 120.8L638.5 119.7L641.8 121.6L642.2 120.6L643.6 121.4L643.2 119L644.1 118.6L645.3 120.6L651.8 115.2L662 114L665.3 111.9L670 111L669 112.8L669.8 117.6L673.2 118L675.7 116.8L676.5 118.3L678.5 117.5L679 116.1L683.4 114.8L684.4 121.5L682.8 121.7L682.5 123L684.5 122.7L686.1 123.6L685.5 124.6L687 125.7L689 126.3L690.2 126.2L689.4 123.8L690.2 124L693.2 123.6L695.2 125.8L694 127.6L685.2 127.2L681.2 128.8L676.5 126.6L675.7 131.6L671.2 128.3L662.9 127.3L660.4 130.5L657.3 130.7L657 131.8L654.9 131.1L651.3 131.9L650.3 135.5L647 137.7L646.8 140L645 138.4L646.9 136.1L647.3 133.5L645.8 134.9L643.6 134.5L643 137.7L641.4 138.5L639.9 135.4L639.6 138.4L637.9 139.6L632.4 153L629.9 151.5L631 147.6L630.2 146.5L629.3 147.5L627.3 147L628.2 140.2L624.6 137.7L623.1 138.1L622.7 135L616.1 133.4L611.9 133.8L606.7 131.4L590.3 128L588.3 124.2L585.8 123.8L585.3 123.1Z","c":[684,185]},"MS":{"d":"M589.4 433.1L590.1 431.7L588.6 430.7L590.7 429.8L591.4 426.9L590.4 427.7L589.5 425.1L590.9 423.3L590.4 422.8L588.9 424.5L588.2 423.7L589.6 422.4L588.9 421.8L587.6 423.2L588.5 421.8L587.6 420.4L589.3 419.6L587.4 417.8L588.7 417L591.1 417.7L588.9 416.6L588.9 415.5L591.8 415.1L590.2 413.3L591.2 411.9L589.7 410.8L591 410.1L591.4 411L591.5 409.7L593.4 409.4L593.6 408.2L592 407L594.2 406.9L594.5 405.8L592.3 405.2L592.8 404.5L593.9 405.3L594.1 403.9L595.8 402.9L595.3 401.6L597.3 402.4L598.6 400.4L599.1 397.5L598.1 394.5L598.8 394L598.9 395.3L600.4 394.3L598.4 393L599.3 391.4L599.4 393L600.5 392.4L599.8 389.5L600.9 390.5L604 388.7L602.8 386.7L641.6 384L643.7 386.2L642.2 455L646.5 489.5L644.4 490.8L638.3 489.8L629.1 492.3L628.5 490.7L626.2 495.2L623.9 495.5L621.2 489.5L617.6 484.9L619.1 477.1L582.6 479.2L584 478.2L582.2 473.1L584.6 472.8L583.3 470L583.9 469.2L585.3 470.7L584.4 467L586.4 466L584.2 465.1L586.5 464.8L586.4 462.8L589 461.4L587 461.4L587.4 459.5L588.8 459.4L592.3 455.5L590.6 454.6L591.8 454.8L593.4 452.2L590.5 452.9L590.4 451.5L593.6 450.9L593.8 449L595.4 448.2L593.6 447.8L593.3 445.5L590.9 444.9L591.2 443.9L593.4 444.5L591.5 443.2L592.5 441.1L590.8 442.6L590.1 441.4L591.8 439.3L589.8 439L590 436.7L591.3 435.6L590.9 433.6L590 433.6L589.8 435.4L588.6 434.8L589.4 433.1Z","c":[618,438]},"MT":{"d":"M198.1 39L232.9 46.1L284.5 54.8L326 60.5L376.9 65.7L369.4 155.7L320.8 150.9L257.8 142L256 153.9L251.5 146.7L249.9 147.5L249.1 151.2L245.9 150.2L243.8 151.1L243.3 149.7L239.3 150.1L236.7 148.5L234.6 150.9L228.5 149L227 151.6L224.8 149.1L224.1 141.5L220.7 139.8L219.1 136.6L219.9 136.4L220.2 134.2L216.9 127.4L217.2 123L216.1 122.8L216.9 121L214.6 118.2L208.1 122.6L206.6 120L205.2 119.7L205.3 117.9L206.4 117.5L205.8 114.9L209.1 113.1L208.1 107.3L209.5 106.4L209.5 104.3L213.4 96.3L208.9 95.6L208.1 93.1L206.8 93.8L206.8 91.9L204.8 89.7L205.3 88.4L203.7 86.9L200.8 79.7L198 78L195.3 74.3L197 74.2L195.8 71.8L196.9 71.1L196.8 68.7L193.3 61.5L198.1 39Z","c":[287,100]},"NH":{"d":"M886.1 110.5L886.6 105.9L885.8 105.4L887.8 103.3L890.5 103.9L890.9 102.4L903.6 143.5L907.5 147.2L907.8 149.2L910.2 150.1L909.5 154.8L906.2 156L902.9 160.7L884.1 164.8L881.7 161.7L882.4 159.5L880.6 145.8L883.1 133L881.6 129.2L887.9 122.1L887.5 119.1L885.6 116.8L886.9 112.7L885.7 111.3L886.1 110.5Z","c":[893,140]},"NY":{"d":"M868.9 217.2L869.5 218.4L868.5 220.3L866.6 221.4L867 220L866.9 218.3L868.9 217.2ZM767.5 200.3L776.4 192.1L777.5 188.8L780.3 186.1L776.6 180.2L775.5 180.1L774.8 176L783.8 171.7L795.8 170.3L799.8 171.9L801.9 170.5L809 169.2L812.8 166.7L816.6 161.8L819.3 161.1L819.4 158.3L818.1 154.9L816.9 154.4L819.3 152.5L814.7 150.3L815 146.4L820.5 141.3L828.6 127.9L834.4 123.1L857.6 117.8L859.2 127.3L861.4 130.5L861.3 139.5L864.1 145.3L863.9 149.7L864.6 148.6L865.6 148.3L867.1 150.3L871 167.6L870.6 183.2L874.1 201L875.7 202.6L872.3 206L874.1 208.3L872.2 212L873 213L873.7 211.1L877.1 208.5L881.6 208.4L882.7 206.7L890.9 204.2L896.5 198.7L895.6 200.6L896.8 201.3L898.3 200.7L899.5 201.8L903.1 198.9L885.7 213L871.7 219.3L871.7 218.5L870.3 218.8L869.2 216.4L870.1 209L855 204L853.9 202.5L849.7 202.4L847.5 199.9L846.3 195.3L844.5 194.3L843.2 194.8L840.9 192.1L768.6 206.4L767.5 200.3Z","c":[834,172]},"OH":{"d":"M685.8 225.4L708.3 221.7L717.6 225.5L719 223.6L725.6 227.4L733 223.3L737.5 223.2L744.2 215.9L756.1 209L761.1 239.2L758.9 241L760.5 243.2L760.9 246.6L759.5 252.5L759.8 256.2L758.9 256.6L759.2 260.8L758.8 263L753.7 269.4L751.7 270.6L749.8 269.4L748.1 271.4L748.1 273L746.4 273.1L745.2 275.5L745.7 277.3L744.6 277.8L746 281.3L745 280.9L744 282.7L741.4 279.5L740.2 281L738.6 285.4L739.7 289.8L738 290.5L737.9 293.5L734.4 295L728.4 291.7L727 287.9L720.6 292.4L716.2 290.6L713.9 292.7L710.2 290.2L703.9 289.8L701.7 285.5L698.5 283.2L696.4 284.6L693.7 283.2L692.5 284.3L688.5 247.4L685.8 225.4Z","c":[724,253]},"OR":{"d":"M71 70.2L72 70.3L72.9 73.5L77 73.8L79.5 76.9L80.1 80L79 86.8L84.9 91.1L88.6 91.3L93.8 89.9L101.1 91.9L102.7 93.1L102.8 94.7L107.5 95.1L112 93.9L115.3 95.9L127.5 95.3L129.4 94.2L136.2 95.7L138.7 94.8L170.5 102.4L172 106.8L175 109L175.7 112.3L166.8 124.1L166.6 126.2L158.2 134.8L157.9 139.9L160.9 141.2L161.7 143.3L160.1 144.5L160.4 146.1L157.9 150.5L148.9 190.7L95.8 178L32.6 160L31.1 156.7L31.4 151.6L33.6 146.5L32.8 139.9L45.4 120.7L58.3 89.6L62.2 75L63.6 73.9L63.8 68.9L65.7 71.1L65.7 70.3L69.6 70.9L71 70.2Z","c":[103,134]},"TN":{"d":"M611.9 363.1L614.2 360.1L612.2 357.3L615.1 356.7L613.6 355.9L615.4 354.2L614.7 351.5L616.3 352.2L619 351L641.4 349.5L640.8 345.4L644.8 346.1L704.2 340.8L756 333.4L755 338.2L755.7 339.8L754.2 339.5L752.4 341.1L750.7 345.5L746.1 345.9L741.8 350.7L740.8 350.5L740.1 348.3L737.8 350.2L737.2 352.1L735.7 351.7L734.6 355.9L731.6 356.5L726.3 361.7L719.2 363.8L717 366.7L717.3 369.2L712.6 371.4L712.7 376.8L666.5 381.9L602.8 386.7L603.1 385.7L604.6 385.9L605.2 383.8L607.1 383.2L605.1 379.7L606.6 377.6L604.7 377.7L604.8 376.8L606.6 375.7L606.9 377.1L607 373.8L609.2 374.5L608.4 372.9L610.1 370.8L609 371.2L608.4 369.4L612.7 367.3L611.5 365.7L613.7 365.2L612.2 363.8L611.9 363.1Z","c":[674,361]},"UT":{"d":"M197.7 201.1L247.2 209.6L243.5 232.2L277.1 237.2L266.4 315.9L264.6 328L176 313.3L197.3 203.5L197.7 201.1Z","c":[227,269]},"VA":{"d":"M855.5 283.8L856.1 282.7L862.5 280.5L861.3 284.3L859.9 284.8L858.4 288.2L856.6 301.3L854.2 304.2L852.6 300.7L853.7 287.9L855.6 285.9L854.2 285.2L855.5 283.8ZM747.1 313.2L747.9 313.7L746.8 314.7L748.2 316.7L753.4 320.1L755.4 319.7L758.5 316.2L761.3 318.1L766.7 315.4L767 312.7L768.8 313.7L772.3 310.8L773.8 311.7L776.6 309.3L775.9 308.1L777.5 306.3L776 305.1L782.6 290.6L783.8 282.9L785.9 283.4L787.3 285.4L790.3 285.9L794 275L796.6 276.6L797.4 273.6L800.3 271.2L802.9 266L802.6 259.1L812.9 264.9L813.9 260.3L816.6 260.2L818.7 261.5L818.2 264.2L823.4 265.5L827.8 268.6L828.2 271.6L827.1 273.8L825.1 274L824.5 278.6L825.8 280.9L829.6 278.7L831.9 282.6L838.2 282.9L840.5 285.2L845.9 287.3L846 288.6L845.1 289.3L845.3 292.9L846.2 293.2L845.1 294L842.3 293.8L840.5 291.3L834 287.8L842.2 294.6L846.4 294.9L845.5 296.1L847 296L847.8 297.3L848 300.4L845.1 298.9L844.8 299.8L846.9 301.5L844.5 302.6L848.6 304.6L849 307.5L847.3 308.7L842.9 306L841.9 303.8L840.1 304.8L837.8 303.7L836.6 304.6L840.5 305.7L841.3 304.4L842.2 307.4L846 309.2L846.3 310.5L848.5 309.4L849.3 310.1L848.8 308.5L849.8 308.1L853.1 308.8L854.4 308L858.8 315.9L780.3 331.1L756 333.4L719.8 338.7L729 334.2L729.8 331.5L733.1 330.3L733 328.2L735.4 326.3L735.2 324.6L741.2 320.4L747.1 313.2Z","c":[801,305]},"WA":{"d":"M93.2 50.9L94 49L94.9 47.8L95.3 48.9L94.8 50.2L95.7 50.9L94.2 51.5L93.2 51.4L93.2 50.9ZM95 31L98.5 27.7L99.3 30.6L98 30.2L95.8 31.6L97.4 32.7L97.1 36.6L98.3 35.1L99.6 36.9L99.5 38.7L98.1 39.2L97.9 37.5L96.7 37.6L96.2 36L96.8 33.1L95.9 33L95 31ZM91 21.2L92.6 21.1L94 22.9L93.4 21.4L95.9 19.9L98.1 21.8L96.9 22.4L95.6 26.6L91.6 23.8L91 21.2ZM183.6 35.9L170.1 94.1L171.3 98.5L170.5 102.4L138.7 94.8L136.2 95.7L129.4 94.2L127.5 95.3L122.8 94.9L118.4 96L113.8 95.4L112 93.9L103.6 94.8L102.7 93.1L98.2 90.6L92.9 89.9L86.2 91.5L80.1 88.1L79 86.8L80.1 80L79.5 76.9L77 73.8L72.9 73.5L72 70.3L68.6 68.5L65.9 69.2L64.2 66.9L63 67.6L65.5 59.8L64.7 65.5L65.6 65.8L65.9 63.1L66.4 63.7L67.5 62.7L67.2 60.2L69.7 59L69 58L67 58.6L65.9 57.2L66.3 53.6L66.8 54.6L70.7 53.9L67.5 50.7L65.8 52.9L67.2 47.5L66.6 43L67.6 34.1L65.7 30.2L66 23.6L68.1 20.5L67.4 19.1L68.6 19.3L76.9 27.1L85.2 30.8L88.9 30.7L92.3 34.5L92.6 35.6L92.7 33.1L94.6 32.9L93.7 33.9L93.9 35L95.3 34L95.2 36L94.3 36L95.3 39.1L93.9 39.1L91 42.7L92 40.3L91.1 40.4L83.8 48.2L87.7 48.6L88.5 48L84.6 47.6L88.1 44.1L91.8 43.1L95.6 39.9L95.7 37.9L96.6 39L92.4 52.4L91.2 53.6L90.2 51.8L91.1 50.1L90.1 50.6L89.5 52.7L90.5 53.7L89.1 55.2L87.9 51.7L89.1 50.1L87.6 51.3L87 53.6L89.4 55.7L92.8 51.7L93.9 53.2L96.1 51.9L96.1 46.6L97.5 46.2L96.5 44.8L100.1 39L101.5 38.7L100.5 32.6L99.1 33.1L100 36.3L98.2 34.1L98.7 31.6L100.5 32L100.9 30.4L99.5 27.4L97.9 27.5L97.5 26.4L99.1 25.3L100.9 27L101 24.9L102.4 24.4L101.9 20.2L99.6 20.5L100.2 19.7L98.9 16.8L99.8 16L98.8 15.5L100 14.4L166.5 31.9L183.6 35.9Z","c":[124,59]},"WI":{"d":"M560.2 121.1L563.3 121.4L578.3 114.6L579.7 116.1L577 122.8L580 121.6L580.2 120.5L582.7 122.4L588.3 124.2L590.3 128L606.7 131.4L611.9 133.8L616.1 133.4L622.7 135L623.1 138.1L624.6 137.7L628.2 140.2L627.3 147L629.3 147.5L630.2 146.5L631 147.6L629.9 151.5L632.4 153L632 155.7L629 156.6L626.2 165.6L628.1 166.1L632.6 158.9L635.3 157.4L635.8 158.1L637.9 150.9L639.7 150.2L640.5 147.8L641.6 147.6L641.8 149.4L641 149.3L641 152.4L639.1 155.3L639 157.4L635.5 165.1L634.7 170.5L635.4 173.6L633.5 175.5L632.5 180.8L633.4 185.3L630.8 195.3L631.7 200.9L634.1 205.7L634.2 212.4L587 215.4L585.6 212.4L579.9 210.5L578.2 206.8L577.4 201.6L579.2 198.7L576.5 196.3L574.9 185.5L572.3 182.2L569.8 181.6L564.9 177.8L563.9 174.9L559.2 172.7L556.9 170.1L553.6 169.9L549.3 165.9L549.7 153.6L551.3 149.9L549.3 147.4L547.5 147.3L547.6 144L550.1 139.9L556.4 135.6L555.9 122.3L557.4 122.4L557.5 121L559 120.2L560.2 121.1Z","c":[595,167]},"NE":{"d":"M365.3 201L403.8 203.9L456.8 206.2L464.3 211.7L467.8 209.4L476.4 209.5L479.3 211.8L486 214.2L488 217.9L491.4 218.4L491.1 221.5L492.6 224.2L492.3 225.8L494.2 229.6L495.9 230.2L495.3 231.7L496.9 234L496.4 237.7L496.4 239.9L499.3 241.9L499.5 248.1L500.7 248.2L500 248.8L501.2 255.1L499.9 258.5L502.3 261.3L502.1 263.2L503.6 262.4L503.3 264.5L504.7 268.1L507.1 270L508.2 274.5L509.9 275.2L453.9 274.6L393.9 271.9L395.3 249L361.4 246.5L365.3 201Z","c":[434,239]},"SC":{"d":"M734.9 373.7L740.7 371.4L747.2 367L772 364.7L772.4 367.1L774.1 365.4L777.5 368.8L777.6 371.5L798.1 368.4L822.8 386.1L819.8 387.9L816.3 392.2L813.5 398.8L813.6 403.6L811.3 405.9L811 407.9L806.9 408.6L806.5 410.1L807.4 410.8L802.9 415.1L802.1 414.5L801.4 415.4L802.6 415.6L802.5 416.8L800.6 419L794.9 422.9L792.2 422.9L793.4 425.2L793 426.9L790 428.8L788.3 427.5L787.4 428.4L789.5 429.8L786.1 434.6L781.4 433.4L778.7 425.8L774 422.7L771.3 414.4L765.7 411.8L763.6 408.7L761.6 407.7L761.9 405.8L756 402.3L752.6 398.1L748.3 396.2L741.1 385.4L738.4 385.4L731.7 381.5L731.6 379L734.8 375.1L734.9 373.7Z","c":[779,392]},"ID":{"d":"M170.5 102.4L171.3 98.5L170.1 94.1L183.6 35.9L198.1 39L193.3 61.5L196.8 68.7L196.9 71.1L195.8 71.8L197 74.2L195.3 74.3L198 78L200.8 79.7L203.7 86.9L205.3 88.4L204.8 89.7L206.8 91.9L206.8 93.8L208.1 93.1L208.9 95.6L213.4 96.3L209.5 104.3L209.5 106.4L208.1 107.3L209.1 113.1L205.8 114.9L206.4 117.5L205.3 117.9L205.2 119.7L206.6 120L208.1 122.6L214.6 118.2L216.9 121L216.1 122.8L217.2 123L216.9 127.4L220.2 134.2L219.4 138.5L220.8 140.7L222.5 140.1L224.7 143.8L224.8 149.1L227 151.6L228.5 149L234.6 150.9L236.7 148.5L239.3 150.1L243.3 149.7L243.8 151.1L245.9 150.2L249.1 151.2L249.9 147.5L251.5 146.7L256 153.9L247.2 209.6L200.2 201.7L148.9 190.7L157.9 150.5L160.4 146.1L160.1 144.5L161.7 143.3L160.9 141.2L157.9 139.9L157.4 136.6L161.9 129.9L164.2 129.1L166.6 126.2L166.8 124.1L175.7 112.3L175 109L172 106.8L170.9 104.3L170.5 102.4Z","c":[199,147]},"NV":{"d":"M100.5 179.2L197.7 201.1L172.6 331.5L170 334.9L168.4 334.8L166.6 331.5L163.1 330.6L159.5 331.4L160.1 336.5L159 337.8L158.2 345.1L158.7 352.8L157.1 354L156.8 356.2L83.3 245.5L94 204L100.5 179.2Z","c":[142,252]},"VT":{"d":"M857.6 117.8L886.1 110.5L886.9 112.7L885.6 116.8L887.5 119.1L887.9 122.1L881.6 129.2L883.1 133L880.6 145.8L881.7 155.6L882.7 158.5L881.7 161.7L884.1 164.8L871 167.6L867.1 150.3L865.6 148.3L863.9 149.7L864.1 145.3L861.3 139.5L861.4 130.5L859.2 127.3L858.1 119.9L857.6 117.8Z","c":[873,136]},"LA":{"d":"M628.5 497.9L631.3 495.4L630.7 496.9L631.8 498L630.8 499.1L630.5 498.2L628.6 498.3L628.5 497.9ZM576.5 511.5L578.3 510.5L579.9 510.5L582.6 512L581.6 512.8L581.6 513.5L580 513.9L576.3 511.9L576.5 511.5ZM535 434.7L589.4 433.1L588.6 434.8L589.8 435.4L590 433.6L590.9 433.6L591.3 435.6L590 436.7L589.8 439L591.8 439.3L590.1 441.4L590.8 442.6L592.5 441.1L591.5 443.2L593.4 444.5L591.2 443.9L590.9 444.9L593.3 445.5L593.6 447.8L595.4 448.2L593.8 449L593.6 450.9L590.4 451.5L590.5 452.9L593.4 452.2L591.8 454.8L590.6 454.6L592.3 455.5L588.8 459.4L587.4 459.5L587 461.4L589 461.4L586.4 462.8L586.5 464.8L584.2 465.1L586.4 466L584.4 467L585.3 470.7L583.9 469.2L583.3 470L584.6 472.8L582.2 473.1L584 478.2L582.6 479.2L619.6 477.2L617.6 484.9L621.2 489.5L622.9 494.5L624.8 495.4L623 496.1L621.2 499.1L619.2 498.9L619 501.1L621.1 500.7L621.9 502.7L623.8 502.3L623.9 499.7L625.7 497.6L627.9 498.5L626.9 499.9L628.2 501.3L630 499.3L631.1 499.7L629.2 501.8L630.5 502.2L628 503L630.2 503.5L629.7 504.7L628.1 504.1L626.7 507.3L625.4 505.7L625.4 507.5L622.8 507.8L624.1 509.1L622.5 508.2L623.4 509.3L622.5 509.6L625.8 511.9L626.3 513.4L630.2 513.1L631.7 514.7L632.4 513.8L634.8 517.2L636.1 516.6L636.6 517.3L634.9 517.8L636 518.4L635.5 519.4L634.7 519L634.2 521.8L631.8 519.9L628.8 523.6L631.2 518.7L630.3 517.3L629.8 519L628.6 519.1L623.8 515.7L619.8 515.3L612.6 521.1L610.8 517.1L609.8 516.3L608.8 518L608.1 515.4L607.3 516.7L604.9 516.6L604.1 519.7L601.2 521.5L601 522.8L597.9 519.8L591.5 518.6L590.3 517.5L591.6 516L594.6 518.3L592.5 514.3L590.2 515.4L589.6 512.7L587.7 513.7L585.7 510.1L583.8 510.2L584.2 507.9L579.1 508.6L580 505.9L577.2 505.9L574.5 508.2L572.8 507.9L574.8 509.2L574.8 511L576.2 510.6L576.1 511.6L570.6 513.1L553.6 508.2L547.7 508.4L540.6 510.4L538.9 507.5L543.1 502.1L542.7 496.6L541.7 495.7L543 493.3L542.1 491L545.5 484.5L546 481.8L545.2 480.5L546.1 479.9L545.4 476.2L544.4 476.5L544 474.4L542.7 473.5L541.8 469.1L539.6 467L539.8 463L535.5 457.9L535 434.7Z","c":[576,478]},"RI":{"d":"M910.5 182.8L911.6 182.9L912.8 186.4L911.8 187.6L910.1 184.2L911 187.2L910 188.1L909.1 188.3L909.5 184.4L910.5 182.8ZM901.7 193.5L902.2 191.1L898.8 178L905.5 176L907.7 181L909.8 182.1L909.3 184L906.7 181.2L907.6 190.7L901.9 193.8L901.7 193.5Z","c":[904,184]}};
 
 /* ═══════════════════════════════════════════════════════════════════════════
    2. REFERENCE DATA
@@ -550,8 +736,8 @@ const OFFTAKES = ['Investment-grade PPA · 20 yr','Municipal PPA · 25 yr','Merc
 const SITE_NOUNS = ['Hollow','Crossing','Ridge','Flats','Bend','Junction','Landing','Prairie','Basin','Gate','Fork','Mesa','Hollow','Reach','Bluff'];
 const SITE_ADJ = ['Cedar','Copper','Willow','Granite','Amber','Salt','Juniper','Elk','Sable','Hickory','Blue Rock','Prospect','Meridian','Foxglove','Windmere','Harlow','Quail','Sandstone'];
 
-const ME = {name:'Marta Quintero', org:'Ridgeline Renewables', initials:'MQ'};
-const ME_PARTNER = {name:'Alan Petrossian', org:'Coastline Infrastructure Capital', initials:'AP'};
+/* seed identity used only to give the demo dataset a coherent owner */
+const ME = {name:'Marta Quintero', org:'Ridgeline Renewables'};
 
 /* ═══════════════════════════════════════════════════════════════════════════
    3. DEAL GENERATION
@@ -709,14 +895,23 @@ const S = {
 };
 
 const allDeals = () => DEALS.concat(S.uploaded);
-const myBook  = () => allDeals().filter(d => d.originator === ME.name);
+
+/* what this account is allowed to see on the sponsor side */
+const myBook = () => allDeals().filter(d => {
+  if (!SESSION) return false;
+  if (SESSION.role === 'developer')  return d.developer === SESSION.org;
+  if (SESSION.role === 'originator') return d.originator === SESSION.name;
+  return true;                                   // admin sees the whole book
+});
 
 function scopeDeals() { return S.role === 'dev' ? myBook() : allDeals(); }
 
-function filtered() {
+/* `skip` lets a caller ignore one facet — the choropleth passes 'state' so the
+   whole country stays visible while a single state is pinned. */
+function filtered(skip) {
   const f = S.f, q = f.q.trim().toLowerCase();
   return scopeDeals().filter(d => {
-    if (f.state  && d.state !== f.state) return false;
+    if (f.state  && skip !== 'state' && d.state !== f.state) return false;
     if (f.tech   && d.tech !== f.tech) return false;
     if (f.status && d.status !== f.status) return false;
     if (f.stage  && d.stage !== f.stage) return false;
@@ -735,7 +930,7 @@ function setFilter(key, val) {
   S.f[key] = (S.f[key] === val && key !== 'q' && key !== 'minMw') ? '' : val;
   render();
 }
-function clearFilters() { S.f = {q:'', state:'', tech:'', status:'', stage:'', dev:'', orig:'', minMw:0}; render(); }
+function clearFilters() { S.f = {q:'', state:'', tech:'', status:'', stage:'', dev:'', orig:'', minMw:0}; mapSel = null; render(); }
 function activeFilterCount() { return Object.entries(S.f).filter(([k, v]) => v !== '' && v !== 0).length; }
 
 /* rollup stats for any list of deals */
@@ -854,51 +1049,115 @@ function stateAgg(list) {
   return map;
 }
 
-/* the signature block: schematic state grid, shaded by capital in play */
-function tileGrid(list, caption) {
+/* ── The signature block: a real Albers-projected choropleth. Fill darkness is
+   deal count; clicking a state pins it and opens its detail panel. Nine states
+   are too small to click at this scale, so they get labelled callout chips. ── */
+const RAMP = ['#D6E9F2','#A3D0E5','#63AFD3','#2189BD','#0A5C86'];
+const CALLOUTS = ['NH','VT','MA','RI','CT','NJ','DE','MD','DC'];
+let mapSel = null;
+
+function shadeIdx(n, maxN) {
+  if (!n) return -1;
+  return Math.max(0, Math.min(4, Math.ceil(n / maxN * 5) - 1));
+}
+
+function statePanel(agg, list) {
+  const ab = mapSel;
+  if (!ab || !agg[ab]) {
+    const top = Object.values(agg).sort((a, b) => b.n - a.n).slice(0, 7);
+    return `<div class="state-panel">
+      <div class="sp-ab">Top markets</div>
+      <h4>${Object.keys(agg).length} states active</h4>
+      ${top.map(t => `<div class="sp-deal" data-act="mapsel" data-val="${t.state}">
+        <span class="dot" style="background:${RAMP[shadeIdx(t.n, Math.max(...Object.values(agg).map(x => x.n)))]}"></span>
+        <span class="nm">${esc(STATE_NAME[t.state])}</span>
+        <span class="mw">${t.n} · ${num(t.mw, 0)} MW</span></div>`).join('')}
+      <p class="sp-empty" style="margin-top:12px">Click any state on the map to see its deal count, capacity and capital.</p>
+    </div>`;
+  }
+  const rows = list.filter(d => d.state === ab);
+  const st = stats(rows);
+  const mwh = sum(rows.map(d => d.mwh || 0));
+  return `<div class="state-panel">
+    <div class="sp-ab">${ab}</div>
+    <h4>${esc(STATE_NAME[ab])}</h4>
+    <div class="sp-nums">
+      <div class="sp-num"><div class="k">Deals</div><div class="v">${st.n}</div></div>
+      <div class="sp-num"><div class="k">Capacity</div><div class="v">${num(st.mw, 1)}<small>MW</small></div></div>
+      <div class="sp-num"><div class="k">Capital sought</div><div class="v">${usdC(st.ask)}</div></div>
+      <div class="sp-num"><div class="k">Approved</div><div class="v">${pct(st.approvalRate)}</div></div>
+    </div>
+    <div style="font-size:11.5px;color:var(--cs-muted);line-height:1.6;margin-bottom:10px">
+      ${mwh ? num(mwh, 0) + ' MWh of storage · ' : ''}${st.active} in market, ${st.won} funded, ${st.declined} declined.
+      Average check ${usdC(st.avgAsk)} at $${st.ppw.toFixed(2)}/W.
+    </div>
+    <div class="sp-list">
+      ${rows.slice(0, 8).map(d => `<div class="sp-deal" data-act="open" data-val="${d.id}">
+        <span class="dot" style="background:${d.techColor}"></span>
+        <span class="nm">${esc(d.name)}</span>
+        <span class="mw">${num(d.mw)} MW</span></div>`).join('')}
+      ${rows.length > 8 ? `<div style="font-size:11px;color:var(--cs-muted-2);padding:6px">+ ${rows.length - 8} more</div>` : ''}
+    </div>
+    <button class="btn btn-ghost btn-xs" style="margin-top:11px;width:100%;justify-content:center" data-act="mapclear">Clear ${ab}</button>
+  </div>`;
+}
+
+function usMap(list, caption) {
   const agg = stateAgg(list);
-  const maxAsk = Math.max(...Object.values(agg).map(s => s.ask), 1);
-  const shade = v => {
-    const t = Math.pow(v / maxAsk, 0.55);
-    return `rgba(0,137,189,${(0.16 + t * 0.82).toFixed(3)})`;
-  };
-  const rows = TILE_GRID.map(row => row.map(ab => {
-    if (!ab) return `<div></div>`;
-    const s = agg[ab];
-    if (!s) return `<div class="tile empty" title="${esc(STATE_NAME[ab] || ab)} — no deals"><span class="ab">${ab}</span></div>`;
-    const t = Math.pow(s.ask / maxAsk, 0.55);
-    const ink = t > 0.45 ? '#fff' : 'var(--cs-ink)';
-    return `<div class="tile has ${S.f.state === ab ? 'sel' : ''}" data-act="state" data-val="${ab}" role="button" tabindex="0"
-      style="background:${shade(s.ask)};color:${ink}"
-      title="${esc(STATE_NAME[ab])} — ${s.n} deals · ${usdC(s.ask)} sought · ${num(s.mw)} MW">
-      <span class="ab">${ab}</span><span class="n">${s.n}</span></div>`;
-  }).join('')).join('');
-  const top = Object.values(agg).sort((a, b) => b.ask - a.ask).slice(0, 6);
+  const maxN = Math.max(...Object.values(agg).map(s => s.n), 1);
+  if (mapSel && !agg[mapSel]) mapSel = null;
+
+  const paths = Object.keys(US_MAP).map(ab => {
+    const s = agg[ab], i = shadeIdx(s ? s.n : 0, maxN);
+    const fill = i < 0 ? '#EDF1F5' : RAMP[i];
+    return `<path class="st ${s ? '' : 'none'} ${mapSel === ab ? 'sel' : ''}" d="${US_MAP[ab].d}" fill="${fill}"
+      data-ab="${ab}" ${s ? `data-act="mapsel" data-val="${ab}"` : ''}
+      ><title>${esc(STATE_NAME[ab])}${s ? ` — ${s.n} deals, ${num(s.mw, 0)} MW, ${usdC(s.ask)}` : ' — no deals'}</title></path>`;
+  }).join('');
+
+  const labels = Object.keys(US_MAP).filter(ab => agg[ab] && !CALLOUTS.includes(ab)).map(ab => {
+    const [x, y] = US_MAP[ab].c, i = shadeIdx(agg[ab].n, maxN);
+    const ink = i >= 3 ? '#fff' : 'var(--cs-ink)';
+    return `<text class="lbl" x="${x}" y="${y - 1}" fill="${ink}">${ab}</text>
+            <text class="lbl" x="${x}" y="${y + 11}" fill="${ink}" font-size="9.5" opacity=".85">${agg[ab].n}</text>`;
+  }).join('');
+
+  const callouts = CALLOUTS.map((ab, k) => {
+    const s = agg[ab], i = shadeIdx(s ? s.n : 0, maxN);
+    const fill = i < 0 ? '#EDF1F5' : RAMP[i];
+    const ink = i >= 3 ? '#fff' : 'var(--cs-ink)';
+    const y = 74 + k * 31, [cx, cy] = US_MAP[ab].c;
+    return `<g class="callout">
+      <line x1="${cx}" y1="${cy}" x2="1002" y2="${y + 13}"/>
+      <rect x="1002" y="${y}" width="62" height="26" rx="5" fill="${fill}"
+        class="${mapSel === ab ? 'sel' : ''}" ${s ? `data-act="mapsel" data-val="${ab}"` : ''} data-ab="${ab}">
+        <title>${esc(STATE_NAME[ab])}${s ? ` — ${s.n} deals, ${num(s.mw, 0)} MW` : ' — no deals'}</title></rect>
+      <text x="1033" y="${y + 17}" fill="${ink}">${ab}${s ? '  ' + s.n : ''}</text>
+    </g>`;
+  }).join('');
+
+  const step = Math.ceil(maxN / 5);
   return `<div class="card">
     <div class="card-head">
       <div><h3>Where the deals are</h3>
-        <div class="ch-sub">${esc(caption)} Tile shade is capital sought; the number is the deal count. Click a state to filter everything below it.</div></div>
+        <div class="ch-sub">${esc(caption)} Darker states carry more deals. Click one for its count, capacity and capital — it filters everything below too.</div></div>
       <div class="ch-act">${S.f.state ? `<button class="link-btn" data-act="clearstate">Clear ${S.f.state}</button>` : ''}
         <button class="link-btn" data-act="export-states">Export CSV</button></div>
     </div>
-    <div style="display:grid;grid-template-columns:minmax(0,1fr) 216px;gap:24px;align-items:start" class="tg-layout">
-      <div>
-        <div class="tilewrap"><div class="tilegrid">${rows}</div></div>
-        <div class="tile-legend">
-          <span>Less capital</span>
-          <span class="ramp"><i style="background:rgba(0,137,189,.18)"></i><i style="background:rgba(0,137,189,.4)"></i><i style="background:rgba(0,137,189,.62)"></i><i style="background:rgba(0,137,189,.82)"></i><i style="background:rgba(0,137,189,1)"></i></span>
+    <div class="map-shell">
+      <div class="map-box">
+        <svg class="usmap" viewBox="0 0 1080 620" role="img" aria-label="United States choropleth of deal count by state">
+          <g>${paths}</g><g>${labels}</g>${callouts}
+        </svg>
+        <div class="map-tip" id="mapTip"></div>
+        <div class="map-legend">
+          <span>Fewer deals</span>
+          <span class="buckets">${RAMP.map(c => `<i style="background:${c}"></i>`).join('')}</span>
           <span>More</span>
-          <span style="margin-left:auto">${Object.keys(agg).length} states active</span>
+          <span style="margin-left:auto;font-family:var(--mono);font-size:11px">1${maxN > 1 ? '–' + maxN : ''} deals per state · ${list.length} total</span>
         </div>
       </div>
-      <div>
-        <h4 style="font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--cs-muted-2);margin-bottom:11px">Top markets</h4>
-        ${top.map(s => `<div class="chartrow click" data-act="state" data-val="${s.state}" style="gap:8px">
-          <div class="cr-lab" style="width:34px;font-weight:700;color:var(--cs-ink)">${s.state}</div>
-          <div class="cr-bar" style="height:16px"><div class="cr-fill" style="width:${(s.ask / top[0].ask * 100).toFixed(0)}%;background:var(--cs-blue)"></div></div>
-          <div class="cr-val" style="width:52px">${usdC(s.ask)}</div>
-        </div>`).join('')}
-      </div>
+      ${statePanel(agg, list)}
     </div>
   </div>`;
 }
@@ -960,7 +1219,7 @@ function devOverview() {
     ${kpi('Days to close', Math.round(stAll.avgCycle || 0), 'days', `declines land in ${Math.round(stAll.avgScreen || 0)}`, '', sparkline(cycleSpark, 118, 34, 'var(--cs-blue)'))}
   </div>
 
-  ${tileGrid(list, 'Your book of business.')}
+  ${usMap(filtered('state'), 'Your book of business.')}
 
   <div class="grid" style="grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);margin-top:14px">
     <div class="card">
@@ -1226,7 +1485,7 @@ function partnerCoverage() {
   return `
   ${filterBar(false)}
   ${filterChips()}
-  ${tileGrid(list, 'Everything currently on the marketplace.')}
+  ${usMap(filtered('state'), 'Everything currently on the marketplace.')}
   <div class="grid" style="grid-template-columns:minmax(0,1fr) minmax(0,1fr);margin-top:14px">
     <div class="card">
       <div class="card-head">
@@ -1753,7 +2012,7 @@ function saveDeal() {
   const d = {
     id: 'CS-' + (2400 + DEALS.length + S.uploaded.length),
     name, state, city: $('#nfCity').value.trim() || MARKETS[state].cities[0],
-    developer: ME.org, originator: ME.name,
+    developer: SESSION.org, originator: SESSION.name,
     tech: tech.id, techName: tech.name, techColor: tech.color,
     mw, mwh, ask, ppw: ask / (mw * 1e6),
     stage:'Submitted', status:'active', declineReason:null,
@@ -1789,18 +2048,18 @@ const TABS = {
 };
 
 function render() {
+  if (!SESSION) return;
+  tipAgg = null; tipAb = null;
   const isDev = S.role === 'dev';
-  const who = isDev ? ME : ME_PARTNER;
-  $('#userAvatar').textContent = who.initials;
-  $('#userName').textContent = who.name;
 
   const valid = TABS[S.role].map(t => t[0]);
   if (!valid.includes(S.tab)) S.tab = valid[0];
 
+  const book = myBook();
   $('#pageTitle').textContent = isDev ? 'Deal intelligence' : 'Capital marketplace';
   $('#pageSub').textContent = isDev
-    ? `${ME.org} · ${myBook().length} deals submitted. Where they are, how big they are, what came back, and how long it took.`
-    : `${ME_PARTNER.org} · ${allDeals().length} deals from ${new Set(allDeals().map(d => d.originator)).size} originators across ${Object.keys(stateAgg(allDeals())).length} states.`;
+    ? `${SESSION.org} · ${book.length} deal${book.length === 1 ? '' : 's'} ${SESSION.role === 'originator' ? 'originated' : 'submitted'}. Where they are, how big they are, what came back, and how long it took.`
+    : `${SESSION.org} · ${allDeals().length} deals from ${new Set(allDeals().map(d => d.originator)).size} originators across ${Object.keys(stateAgg(allDeals())).length} states.`;
 
   $('#headActions').innerHTML = isDev
     ? `<button class="btn btn-ghost btn-sm" data-act="export-deals">Export my book</button>
@@ -1816,6 +2075,15 @@ function render() {
   }).join('');
 
   const view = $('#view');
+  if (isDev && !myBook().length) {
+    $('#tabs').innerHTML = '';
+    view.innerHTML = `<div class="empty">
+      <div class="e-ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14"/><path d="M9 21v-6h6v6"/></svg></div>
+      <h3>No deals filed yet</h3>
+      <p>Submit your first project and this fills in — where it sits, what capital partners came back with, and how long each stage took. Attach 12 months of utility bills and it screens roughly twice as fast.</p>
+      <button class="btn btn-primary" data-act="new-deal">Submit a deal</button></div>`;
+    return;
+  }
   if (isDev) {
     view.innerHTML = S.tab === 'overview' ? devOverview()
                    : S.tab === 'timelines' ? devTimelines()
@@ -1840,13 +2108,15 @@ document.addEventListener('click', e => {
   switch (act) {
     case 'tab':        S.tab = val; render(); window.scrollTo({top:0, behavior:'smooth'}); break;
     case 'go-reports': S.tab = 'reports'; render(); break;
-    case 'state':      setFilter('state', val); break;
+    case 'state':      setFilter('state', val); mapSel = S.f.state || null; break;
     case 'tech':       setFilter('tech', val); break;
     case 'status':     setFilter('status', val); break;
     case 'stage':      setFilter('stage', val); break;
     case 'dev':        setFilter('dev', val); if (S.role === 'partner') { S.tab = 'market'; render(); } closeDeal(); break;
     case 'orig':       setFilter('orig', val); if (S.role === 'partner') { S.tab = 'market'; render(); } closeDeal(); break;
-    case 'clearstate': S.f.state = ''; render(); break;
+    case 'clearstate': S.f.state = ''; mapSel = null; render(); break;
+    case 'mapsel':     mapSel = (mapSel === val ? null : val); S.f.state = mapSel || ''; render(); break;
+    case 'mapclear':   mapSel = null; S.f.state = ''; render(); break;
     case 'clearall':   clearFilters(); break;
     case 'unfilter':   S.f[val] = (val === 'minMw' ? 0 : ''); render(); break;
     case 'group-mode': S.group = val; S.openGroups.clear(); render(); break;
@@ -1911,6 +2181,7 @@ $('#roleSwitch').addEventListener('click', e => {
   S.role = b.dataset.role;
   S.tab = TABS[S.role][0][0];
   S.group = 'state';
+  mapSel = null;
   clearFilters();
 });
 
@@ -1926,7 +2197,168 @@ document.addEventListener('keydown', e => {
   }
 });
 
-render();
+/* ═══════════════════════════════════════════════════════════════════════════
+   15. MAP TOOLTIP
+   ═══════════════════════════════════════════════════════════════════════════ */
+let tipAb = null, tipAgg = null;
+document.addEventListener('mousemove', e => {
+  const t = e.target.closest && e.target.closest('[data-ab]');
+  const tip = $('#mapTip');
+  if (!tip) return;
+  if (!t) { tip.classList.remove('on'); tipAb = null; return; }
+  const box = tip.parentNode;
+  const ab = t.dataset.ab;
+  if (ab !== tipAb) {
+    tipAb = ab;
+    if (!tipAgg) tipAgg = stateAgg(filtered('state'));
+    const a = tipAgg[ab];
+    tip.innerHTML = `<b>${esc(STATE_NAME[ab])}</b>` + (a
+      ? `<span>${a.n} deal${a.n === 1 ? '' : 's'} · ${num(a.mw, 1)} MW · ${usdC(a.ask)}</span>`
+      : `<span>No deals here yet</span>`);
+  }
+  const r = box.getBoundingClientRect();
+  tip.style.left = Math.max(0, Math.min(r.width - 200, e.clientX - r.left + 14)) + 'px';
+  tip.style.top  = (e.clientY - r.top + 14) + 'px';
+  tip.classList.add('on');
+});
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   16. ACCOUNTS, ROLES AND SIGN-IN
+   ═══════════════════════════════════════════════════════════════════════════ */
+const ROLE_META = {
+  developer:  {side:'dev',     chip:'dev',     label:'Developer'},
+  originator: {side:'dev',     chip:'orig',    label:'Deal originator'},
+  partner:    {side:'partner', chip:'partner', label:'Financing partner'},
+  admin:      {side:'both',    chip:'admin',   label:'Platform admin'}
+};
+const DEMO_ACCOUNTS = {
+  originator: {name:'Marta Quintero',  org:'Ridgeline Renewables',              email:'marta@ridgeline.dev',      role:'originator'},
+  developer:  {name:'Dana Reyes',      org:'Ridgeline Renewables',              email:'ops@ridgeline.dev',        role:'developer'},
+  partner:    {name:'Alan Petrossian', org:'Coastline Infrastructure Capital',  email:'alan@coastlinecap.com',    role:'partner'},
+  admin:      {name:'Tommy Gilmer',    org:'ClearSky Energy Solutions',         email:'admin@clearsky.energy',    role:'admin'}
+};
+let SESSION = null;
+let regRole = 'developer';
+
+const initialsOf = n => n.trim().split(/\s+/).slice(0, 2).map(x => x[0]).join('').toUpperCase();
+const hasFirebase = () => typeof firebase !== 'undefined' && !!window.CLEARSKY_CONFIG;
+
+function authErr(msg) {
+  const el = $('#authErr');
+  if (!msg) { el.classList.remove('show'); return; }
+  el.textContent = msg; el.classList.add('show');
+}
+
+function signIn(acct) {
+  SESSION = Object.assign({}, acct, {initials: initialsOf(acct.name)});
+  const meta = ROLE_META[SESSION.role] || ROLE_META.developer;
+  S.role = meta.side === 'partner' ? 'partner' : 'dev';
+  S.tab = TABS[S.role][0][0];
+  S.group = 'state';
+  mapSel = null;
+  S.f = {q:'', state:'', tech:'', status:'', stage:'', dev:'', orig:'', minMw:0};
+
+  $('#authView').style.display = 'none';
+  $('#appView').style.display = 'block';
+  $('#roleSwitch').style.display = meta.side === 'both' ? 'flex' : 'none';
+  $('#roleChip').textContent = meta.label;
+  $('#roleChip').className = 'role-chip ' + meta.chip;
+  $('#userAvatar').textContent = SESSION.initials;
+  $('#userName').textContent = SESSION.name;
+  $$('#roleSwitch button').forEach(b => b.classList.toggle('on', b.dataset.role === S.role));
+  authErr('');
+  render();
+  window.scrollTo(0, 0);
+}
+
+function signOut() {
+  if (hasFirebase()) { try { firebase.auth().signOut(); } catch (e) {} }
+  SESSION = null; S.uploaded = [];
+  $('#appView').style.display = 'none';
+  $('#authView').style.display = 'flex';
+  $('#loginPass').value = '';
+  closeDeal(); closeModal();
+}
+
+/* demo shortcuts */
+$$('.demo-key').forEach(b => b.addEventListener('click', () => signIn(DEMO_ACCOUNTS[b.dataset.demo])));
+
+/* register — role picker */
+$('#rolePick').addEventListener('click', e => {
+  const b = e.target.closest('.role-opt'); if (!b) return;
+  $$('#rolePick .role-opt').forEach(x => x.classList.toggle('sel', x === b));
+  regRole = b.dataset.role;
+  $('#regRoleHint').textContent = regRole === 'developer'
+    ? 'Developers see every deal filed under their organization.'
+    : regRole === 'originator'
+    ? 'Originators see the deals they personally brought to market.'
+    : 'Financing partners see the whole marketplace, across every sponsor and state.';
+});
+
+$('#toRegister').addEventListener('click', () => { authErr(''); $('#loginForm').style.display = 'none'; $('#registerForm').style.display = 'block'; });
+$('#toLogin').addEventListener('click', () => { authErr(''); $('#registerForm').style.display = 'none'; $('#loginForm').style.display = 'block'; });
+$('#signOutBtn').addEventListener('click', signOut);
+
+/* sign in — Firebase when it's configured, demo accounts otherwise */
+$('#loginBtn').addEventListener('click', async () => {
+  const email = $('#loginEmail').value.trim().toLowerCase(), pass = $('#loginPass').value;
+  if (!email || !pass) return authErr('Enter your email and password.');
+  if (hasFirebase()) {
+    const btn = $('#loginBtn'); btn.disabled = true; btn.textContent = 'Signing in…';
+    try {
+      const cred = await firebase.auth().signInWithEmailAndPassword(email, pass);
+      const doc = await firebase.firestore().collection('marketplace_users').doc(cred.user.uid).get();
+      const prof = doc.exists ? doc.data() : {};
+      signIn({name: prof.name || email.split('@')[0], org: prof.org || '—', email, role: prof.role || 'developer'});
+    } catch (err) {
+      authErr(err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential' || err.code === 'auth/user-not-found'
+        ? 'That email and password don\'t match an account.' : (err.message || 'Could not sign in.'));
+    }
+    btn.disabled = false; btn.textContent = 'Sign in';
+    return;
+  }
+  const acct = Object.values(DEMO_ACCOUNTS).find(a => a.email === email);
+  if (acct) return signIn(acct);
+  authErr('No account matches that email. Use one of the demo accounts below, or create an account.');
+});
+
+$('#registerBtn').addEventListener('click', async () => {
+  const name = $('#regName').value.trim(), org = $('#regOrg').value.trim();
+  const email = $('#regEmail').value.trim().toLowerCase(), pass = $('#regPass').value;
+  if (!name) return authErr('Enter your full name.');
+  if (!org) return authErr('Enter your organization.');
+  if (!email.includes('@')) return authErr('That email address looks invalid.');
+  if (pass.length < 6) return authErr('Use a password of at least 6 characters.');
+  if (hasFirebase()) {
+    const btn = $('#registerBtn'); btn.disabled = true; btn.textContent = 'Creating…';
+    try {
+      const cred = await firebase.auth().createUserWithEmailAndPassword(email, pass);
+      await firebase.firestore().collection('marketplace_users').doc(cred.user.uid)
+        .set({name, org, email, role: regRole, createdAt: Date.now()});
+      signIn({name, org, email, role: regRole});
+    } catch (err) {
+      authErr(err.code === 'auth/email-already-in-use' ? 'That email already has an account — try signing in.' : (err.message || 'Could not create the account.'));
+    }
+    btn.disabled = false; btn.textContent = 'Create account';
+    return;
+  }
+  signIn({name, org, email, role: regRole});
+});
+
+[$('#loginPass'), $('#loginEmail')].forEach(el => el.addEventListener('keydown', e => { if (e.key === 'Enter') $('#loginBtn').click(); }));
+
+/* if Firebase is wired up, restore an existing session on load */
+if (hasFirebase()) {
+  try {
+    if (!firebase.apps.length) firebase.initializeApp(window.CLEARSKY_CONFIG);
+    firebase.auth().onAuthStateChanged(async u => {
+      if (!u || SESSION) return;
+      const doc = await firebase.firestore().collection('marketplace_users').doc(u.uid).get();
+      const prof = doc.exists ? doc.data() : {};
+      signIn({name: prof.name || u.email.split('@')[0], org: prof.org || '—', email: u.email, role: prof.role || 'developer'});
+    });
+  } catch (e) { console.warn('Firebase init skipped:', e.message); }
+}
 </script>
 </body>
 </html>
