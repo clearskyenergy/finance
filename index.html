@@ -455,6 +455,34 @@ code{font-family:var(--mono);font-size:11.5px;background:var(--cs-card-2);paddin
 .sample-banner .sb-x{background:none;border:none;color:var(--cs-amber);font-size:19px;line-height:1;padding:0 3px;flex:none}
 .sample-banner .sb-x:hover{opacity:.65}
 
+/* offers */
+.offer-card{border:1px solid var(--cs-border);border-radius:12px;padding:16px 18px;margin-bottom:12px;background:var(--cs-card)}
+.offer-card.won{border-color:rgba(18,128,92,.4);background:var(--cs-green-dim)}
+.oc-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:13px}
+.oc-top h5{font-family:'Syne',sans-serif;font-size:15px;font-weight:700}
+.oc-top span{display:block;font-size:11.5px;color:var(--cs-muted);margin-top:2px}
+.oc-nums{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:12px}
+.oc-nums .k{font-size:9.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--cs-muted-2)}
+.oc-nums .v{font-family:'Syne',sans-serif;font-size:16px;font-weight:700;margin-top:2px}
+.oc-nums .v.sm{font-family:'Inter',sans-serif;font-size:12px;font-weight:600;line-height:1.3}
+.oc-sec{border-top:1px solid var(--cs-border);padding-top:11px;margin-top:11px}
+.oc-sec h6{font-size:9.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--cs-muted-2);margin-bottom:7px}
+.oc-sec ul{margin:0;padding-left:16px;font-size:12.5px;line-height:1.65;color:var(--cs-muted)}
+.oc-sec p{font-size:12.5px;line-height:1.6;color:var(--cs-muted)}
+.oc-act{display:flex;gap:8px;margin-top:14px;padding-top:13px;border-top:1px solid var(--cs-border)}
+.cond-grid{display:grid;gap:7px}
+.cond{display:flex;align-items:flex-start;gap:9px;font-size:12.5px;line-height:1.45;cursor:pointer}
+.cond input{margin-top:2px;flex:none}
+.exec{margin-top:20px;padding-top:18px;border-top:1px solid var(--cs-border)}
+.exec-row{display:flex;align-items:center;gap:12px;padding:11px 13px;border:1px solid var(--cs-border);border-radius:10px;margin-bottom:8px}
+.exec-row.done{border-color:rgba(18,128,92,.35);background:var(--cs-green-dim)}
+.exec-row .ex-ic{width:24px;height:24px;border-radius:50%;background:var(--cs-card-2);color:var(--cs-muted);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex:none}
+.exec-row.done .ex-ic{background:var(--cs-green);color:#fff}
+.exec-row div{flex:1}
+.exec-row b{display:block;font-size:13px;font-weight:600}
+.exec-row span{display:block;font-size:11.5px;color:var(--cs-muted);margin-top:2px}
+.dr-tab .cnt{font-size:10px;background:var(--cs-blue-dim);color:var(--cs-blue);border-radius:9px;padding:1px 6px}
+
 /* shared cloud links */
 .link-row{display:grid;grid-template-columns:158px 1fr 30px;gap:8px;align-items:center;margin-bottom:8px}
 .link-row input{padding:10px 12px;border:1px solid var(--cs-border);border-radius:8px;background:var(--cs-card-2);color:var(--cs-ink);width:100%;font-size:13px;transition:border-color .18s,background .18s}
@@ -1845,18 +1873,296 @@ function providerIcon(url) {
 /* ═══════════════════════════════════════════════════════════════════════════
    10. DEAL DRAWER
    ═══════════════════════════════════════════════════════════════════════════ */
-const DR_TABS = [['overview','Overview'],['energy','Energy'],['docs','Documents'],['bill','Utility bill'],['activity','Activity']];
+/* ═══════════════════════════════════════════════════════════════════════════
+   OFFERS, AWARD AND EXECUTION
+   One offer per capital partner per deal, stored at
+   fin_projects/{dealId}/offers/{partnerUid} — the document id IS the partner's
+   uid, which is what the rules key on. The sponsor accepts one, which awards
+   the deal; from there both sides work a shared execution checklist.
+   ═══════════════════════════════════════════════════════════════════════════ */
+const INSTRUMENTS = [
+  'Term debt', 'Construction + term debt', 'Tax equity', 'Sponsor equity',
+  'Bridge / pre-construction', 'Preferred equity', 'Sale-leaseback', 'PPA / offtake purchase'
+];
+const STD_CONDITIONS = [
+  'Executed interconnection agreement',
+  'Final engineering and independent engineer report',
+  'Site control through COD',
+  'Offtaker credit confirmation',
+  'All permits in hand',
+  'Satisfactory title and survey',
+  'Insurance certificates'
+];
+
+let OFFERS = [];            // offers on the deal currently open in the drawer
+let offersUnsub = null;
+let offersErr = null;
+
+function stopOffers() { if (offersUnsub) { try { offersUnsub(); } catch (e) {} offersUnsub = null; } }
+
+function watchOffers(deal) {
+  stopOffers();
+  OFFERS = []; offersErr = null;
+  if (!FB.ready || !deal || !deal.docId) return;
+  offersUnsub = FB.db.collection('fin_projects').doc(deal.docId).collection('offers')
+    .onSnapshot(
+      snap => { OFFERS = snap.docs.map(d => Object.assign({uid: d.id}, d.data()));
+                if (S.drawerDeal && S.drawerDeal.docId === deal.docId) renderDrawer(); },
+      err => { console.error('[OMEGA] offers listener failed:', err);
+               offersErr = explain(err)[0]; OFFERS = [];
+               if (S.drawerDeal) renderDrawer(); }
+    );
+}
+
+const myOffer = () => FB.ready && FB.auth.currentUser
+  ? OFFERS.find(o => o.uid === FB.auth.currentUser.uid) : null;
+const acceptedOffer = () => OFFERS.find(o => o.status === 'accepted');
+const canOffer = d => S.role === 'partner' && !isPlatformAdmin() && d && d.docId && d.status !== 'won';
+
+const OFFER_PILL = {
+  submitted: ['p-active', 'Submitted'],
+  accepted:  ['p-won', 'Accepted'],
+  declined:  ['p-declined', 'Declined'],
+  withdrawn: ['p-withdrawn', 'Withdrawn']
+};
+
+/* ── the builder ─────────────────────────────────────────────────────────── */
+function offerModal(dealId) {
+  const d = allDeals().find(x => x.id === dealId); if (!d) return;
+  const o = myOffer() || {};
+  const v = x => x == null ? '' : esc(String(x));
+  const chosen = Array.isArray(o.conditions) ? o.conditions : [];
+
+  openModal(`
+  <div class="modal-head">
+    <div><h2>${o.uid ? 'Update your offer' : 'Make an offer'}</h2>
+      <div class="mh-sub">${esc(d.name)} · ${esc(d.city)}, ${d.state} · seeking ${usd(d.ask)}. The sponsor sees this the moment you send it.</div></div>
+    <button class="dr-x" data-act="close-modal" aria-label="Close">&times;</button>
+  </div>
+  <div class="modal-body">
+    <div class="auth-err" id="modalErr"></div>
+
+    <div class="field-row">
+      <div class="field"><label for="ofAmount">Amount offered (USD)</label>
+        <input id="ofAmount" type="number" step="50000" min="0" value="${v(o.amount || d.ask)}"></div>
+      <div class="field"><label for="ofInstrument">Instrument</label>
+        <select id="ofInstrument">${INSTRUMENTS.map(i => `<option${o.instrument === i ? ' selected' : ''}>${i}</option>`).join('')}</select></div>
+    </div>
+    <div class="field-row three">
+      <div class="field"><label for="ofRate">Rate / cost of capital (%)</label>
+        <input id="ofRate" type="number" step="0.01" min="0" placeholder="7.25" value="${v(o.rate)}"></div>
+      <div class="field"><label for="ofTerm">Term (years)</label>
+        <input id="ofTerm" type="number" step="1" min="1" placeholder="18" value="${v(o.termYears)}"></div>
+      <div class="field"><label for="ofExpires">Offer valid until</label>
+        <input id="ofExpires" type="date" value="${v(o.expires || iso(addDays(TODAY, 30)))}"></div>
+    </div>
+
+    <div class="form-rule"></div>
+    <h4 class="set-h">Conditions precedent</h4>
+    <div class="cond-grid">${STD_CONDITIONS.map((c, i) => `
+      <label class="cond"><input type="checkbox" class="of-cond" value="${esc(c)}"${chosen.indexOf(c) !== -1 ? ' checked' : ''}><span>${esc(c)}</span></label>`).join('')}</div>
+    <div class="field" style="margin-top:12px"><label for="ofExtra">Anything further</label>
+      <textarea id="ofExtra" placeholder="Additional conditions, one per line">${v((o.extraConditions || []).join('\n'))}</textarea></div>
+
+    <div class="form-rule"></div>
+    <h4 class="set-h">Term sheet and supporting documents</h4>
+    <p class="field-note" style="margin:0 0 12px">Link a term sheet or credit memo from your own storage. The sponsor can open it; nothing is copied onto the platform.</p>
+    <div id="linkRows"></div>
+    <button class="link-btn" data-act="add-link" style="margin-top:4px">+ Add another link</button>
+    <datalist id="linkPresets">
+      <option value="Term sheet"></option><option value="Credit memo"></option>
+      <option value="Indicative pricing"></option><option value="Due diligence list"></option>
+    </datalist>
+
+    <div class="field" style="margin-top:16px"><label for="ofNotes">Message to the sponsor</label>
+      <textarea id="ofNotes" placeholder="Context, timing, what you need next">${v(o.notes)}</textarea></div>
+  </div>
+  <div class="modal-foot">
+    ${o.uid && o.status === 'submitted' ? `<button class="btn btn-ghost btn-danger-ghost" style="margin-right:auto" data-act="withdraw-offer" data-val="${esc(dealId)}">Withdraw offer</button>` : ''}
+    <button class="btn btn-ghost" data-act="close-modal">Cancel</button>
+    <button class="btn btn-primary" data-act="send-offer" data-val="${esc(dealId)}">${o.uid ? 'Update offer' : 'Send offer'}</button>
+  </div>`);
+
+  const links = (o.docs && o.docs.length) ? o.docs : [{label: 'Term sheet', url: ''}];
+  links.forEach(l => addLinkRow(l.label, l.url));
+}
+
+async function sendOffer(dealId) {
+  const d = allDeals().find(x => x.id === dealId); if (!d) return;
+  const amount = parseFloat($('#ofAmount').value);
+  if (!amount || amount <= 0) return modalErr('Enter the amount you are offering.');
+  const {links, bad} = collectLinks();
+  if (bad.length) return modalErr('Links need to start with https:// — check "' + bad[0] + '".');
+
+  const btn = $('[data-act="send-offer"]'), label = btn.textContent;
+  btn.disabled = true; btn.textContent = 'Sending…'; modalErr('');
+
+  const body = {
+    partnerUid: FB.auth.currentUser.uid,
+    partnerName: SESSION.name, partnerOrg: SESSION.org, partnerEmail: SESSION.email || null,
+    amount,
+    instrument: $('#ofInstrument').value,
+    rate: parseFloat($('#ofRate').value) || null,
+    termYears: parseInt($('#ofTerm').value, 10) || null,
+    expires: $('#ofExpires').value || null,
+    conditions: $$('.of-cond').filter(c => c.checked).map(c => c.value),
+    extraConditions: $('#ofExtra').value.split('\n').map(x => x.trim()).filter(Boolean),
+    notes: $('#ofNotes').value.trim(),
+    docs: links,
+    status: 'submitted',
+    updatedAt: Date.now()
+  };
+  if (!myOffer()) body.createdAt = Date.now();
+
+  try {
+    await FB.db.collection('fin_projects').doc(d.docId)
+      .collection('offers').doc(FB.auth.currentUser.uid).set(body, {merge: true});
+  } catch (err) {
+    console.error('[OMEGA] offer write failed:', err);
+    btn.disabled = false; btn.textContent = label;
+    const [h, t] = explain(err);
+    return modalErr(err.code === 'permission-denied'
+      ? 'This deal is no longer accepting offers.' : h + (t ? ' ' + t : ''));
+  }
+  btn.disabled = false; btn.textContent = label;
+  closeModal();
+  toast(`Offer sent to ${esc(d.developer)} — ${usdC(amount)}.`);
+}
+
+async function setOfferStatus(dealId, partnerUid, status) {
+  const d = allDeals().find(x => x.id === dealId); if (!d) return;
+  try {
+    await FB.db.collection('fin_projects').doc(d.docId)
+      .collection('offers').doc(partnerUid).update({status, decidedAt: Date.now()});
+    if (status === 'accepted') {
+      /* Awarding closes the deal to further browsing; the rules keep it
+         readable for the winning partner through isAwardee(). */
+      await FB.db.collection('fin_projects').doc(d.docId)
+        .update({status: 'awarded', awardedTo: partnerUid, outcome: 'won', decided: iso(TODAY)});
+      await Promise.all(OFFERS.filter(o => o.uid !== partnerUid && o.status === 'submitted')
+        .map(o => FB.db.collection('fin_projects').doc(d.docId)
+          .collection('offers').doc(o.uid).update({status: 'declined', decidedAt: Date.now()})));
+      toast('Deal awarded. Both sides can now work the execution checklist.');
+    } else {
+      toast('Offer declined.');
+    }
+  } catch (err) {
+    console.error('[OMEGA] offer decision failed:', err);
+    const [h, t] = explain(err);
+    toast(h + (t ? ' ' + t : ''), true);
+  }
+}
+
+async function signOff(dealId, side) {
+  const d = allDeals().find(x => x.id === dealId), o = acceptedOffer();
+  if (!d || !o) return;
+  const patch = {};
+  patch[side + 'Signed'] = true;
+  patch[side + 'SignedAt'] = Date.now();
+  patch[side + 'SignedBy'] = SESSION.name;
+  try {
+    await FB.db.collection('fin_projects').doc(d.docId)
+      .collection('offers').doc(o.uid).update(patch);
+    toast('Recorded. The other side sees this straight away.');
+  } catch (err) {
+    console.error('[OMEGA] signature record failed:', err);
+    toast(explain(err)[0], true);
+  }
+}
+
+/* ── the drawer tab ──────────────────────────────────────────────────────── */
+function offersTab(d) {
+  if (!d.docId) return `<p class="note">Offers open up once the deal is saved to the marketplace.</p>`;
+  if (offersErr) return `<div class="empty"><h3>Offers could not be loaded</h3><p>${esc(offersErr)}</p></div>`;
+
+  const mine = myOffer(), won = acceptedOffer();
+  const isSponsor = isOwnerOf(d) || isOrgMate(d) || isPlatformAdmin();
+
+  const card = o => {
+    const [cls, lab] = OFFER_PILL[o.status] || OFFER_PILL.submitted;
+    const conds = (o.conditions || []).concat(o.extraConditions || []);
+    return `<div class="offer-card ${o.status === 'accepted' ? 'won' : ''}">
+      <div class="oc-top">
+        <div><h5>${esc(o.partnerOrg || o.partnerName || 'Capital partner')}</h5>
+          <span>${esc(o.partnerName || '')}${o.expires ? ` · valid until ${dt(o.expires)}` : ''}</span></div>
+        <span class="pill ${cls}">${lab}</span>
+      </div>
+      <div class="oc-nums">
+        <div><div class="k">Amount</div><div class="v">${usdC(o.amount || 0)}</div></div>
+        <div><div class="k">Instrument</div><div class="v sm">${esc(o.instrument || '—')}</div></div>
+        <div><div class="k">Rate</div><div class="v">${o.rate ? o.rate.toFixed(2) + '%' : '—'}</div></div>
+        <div><div class="k">Term</div><div class="v">${o.termYears ? o.termYears + ' yr' : '—'}</div></div>
+      </div>
+      ${conds.length ? `<div class="oc-sec"><h6>Conditions precedent</h6><ul>${conds.map(c => `<li>${esc(c)}</li>`).join('')}</ul></div>` : ''}
+      ${(o.docs || []).filter(x => x.url).length ? `<div class="oc-sec"><h6>Documents</h6>
+        ${o.docs.filter(x => x.url).map(l => `<a class="doc-link" href="${esc(l.url)}" target="_blank" rel="noopener noreferrer" data-act="doc-open">
+          ${providerIcon(l.url)}<span class="dl-name">${esc(l.label)}<span>${esc(providerName(l.url))}</span></span><span class="dl-go">Open ›</span></a>`).join('')}</div>` : ''}
+      ${o.notes ? `<div class="oc-sec"><h6>Message</h6><p>${esc(o.notes)}</p></div>` : ''}
+      ${isSponsor && o.status === 'submitted' && !won ? `<div class="oc-act">
+        <button class="btn btn-green btn-sm" data-act="accept-offer" data-val="${esc(d.id)}|${esc(o.uid)}">Accept and award</button>
+        <button class="btn btn-ghost btn-sm btn-danger-ghost" data-act="decline-offer" data-val="${esc(d.id)}|${esc(o.uid)}">Decline</button>
+      </div>` : ''}
+    </div>`;
+  };
+
+  /* execution checklist, once one offer has been accepted */
+  const execution = won ? `
+    <div class="exec">
+      <h4 class="set-h" style="margin-bottom:10px">Execution</h4>
+      <div class="exec-row ${won.sponsorSigned ? 'done' : ''}">
+        <span class="ex-ic">${won.sponsorSigned ? '✓' : '1'}</span>
+        <div><b>Sponsor signs</b><span>${won.sponsorSigned
+          ? `${esc(won.sponsorSignedBy || '')} · ${new Date(won.sponsorSignedAt).toLocaleDateString('en-US')}`
+          : 'Awaiting signature'}</span></div>
+        ${!won.sponsorSigned && isSponsor ? `<button class="btn btn-primary btn-xs" data-act="sign" data-val="${esc(d.id)}|sponsor">Mark signed</button>` : ''}
+      </div>
+      <div class="exec-row ${won.partnerSigned ? 'done' : ''}">
+        <span class="ex-ic">${won.partnerSigned ? '✓' : '2'}</span>
+        <div><b>Capital partner signs</b><span>${won.partnerSigned
+          ? `${esc(won.partnerSignedBy || '')} · ${new Date(won.partnerSignedAt).toLocaleDateString('en-US')}`
+          : 'Awaiting signature'}</span></div>
+        ${!won.partnerSigned && mine && mine.uid === won.uid ? `<button class="btn btn-primary btn-xs" data-act="sign" data-val="${esc(d.id)}|partner">Mark signed</button>` : ''}
+      </div>
+      <div class="exec-row ${won.sponsorSigned && won.partnerSigned ? 'done' : ''}">
+        <span class="ex-ic">${won.sponsorSigned && won.partnerSigned ? '✓' : '3'}</span>
+        <div><b>Fully executed</b><span>${won.sponsorSigned && won.partnerSigned
+          ? 'Both parties have signed.' : 'Both signatures required.'}</span></div>
+      </div>
+      <p class="note" style="margin-top:12px">Signatures are recorded here against the executed document you both hold. Link the signed copy above so there is one agreed source.</p>
+    </div>` : '';
+
+  if (S.role === 'partner' && !isPlatformAdmin()) {
+    return `${mine ? card(mine) : `<div class="empty" style="padding:36px 20px">
+        <h3>No offer from you yet</h3>
+        <p>Set out your amount, instrument, pricing and conditions. The sponsor sees it immediately and can accept, decline, or come back to you.</p>
+        ${canOffer(d) ? `<button class="btn btn-primary" data-act="offer" data-val="${esc(d.id)}">Make an offer</button>` : ''}
+      </div>`}
+      ${mine && mine.status === 'submitted' ? `<button class="btn btn-ghost btn-sm" style="margin-top:12px" data-act="offer" data-val="${esc(d.id)}">Revise offer</button>` : ''}
+      ${execution}`;
+  }
+
+  const live = OFFERS.filter(o => o.status !== 'withdrawn');
+  return `${live.length
+    ? `<p class="note" style="margin-bottom:14px">${plural(live.length, 'offer')} received.</p>${live.map(card).join('')}`
+    : `<div class="empty" style="padding:36px 20px"><h3>No offers yet</h3>
+        <p>Capital partners browsing the marketplace can send terms against this deal. They appear here the moment they do.</p></div>`}
+    ${execution}`;
+}
+
+const DR_TABS = [['overview','Overview'],['offers','Offers'],['energy','Energy'],['docs','Documents'],['bill','Utility bill'],['activity','Activity']];
 
 function openDeal(id) {
   const d = allDeals().find(x => x.id === id);
   if (!d) return;
   S.drawerDeal = d; S.drawerTab = 'overview';
+  watchOffers(d);
   renderDrawer();
   $('#drawerBack').classList.add('show');
   $('#drawer').classList.add('show');
   $('#drClose').focus();
 }
 function closeDeal() {
+  stopOffers(); OFFERS = []; offersErr = null;
   $('#drawerBack').classList.remove('show');
   $('#drawer').classList.remove('show');
   S.drawerDeal = null;
@@ -1946,6 +2252,8 @@ function drawerBody(d) {
       </div>
     </div>`;
   }
+
+  if (S.drawerTab === 'offers') return offersTab(d);
 
   if (S.drawerTab === 'energy') {
     const annualMwh = d.bill ? d.bill.totalKwh / 1000 : d.mw * 1900;
@@ -2074,12 +2382,16 @@ function renderDrawer() {
   $('#drTitle').textContent = d.name;
   $('#drSub').innerHTML = `${esc(d.ref)} · ${esc(d.city)}, ${d.state} · ${usd(d.ask)} · ${num(d.mw)} MW`
     + (d.sample ? ' <span class="sample-tag">Sample record</span>' : '');
+  const nOffers = OFFERS.filter(o => o.status !== 'withdrawn').length;
   $('#drTabs').innerHTML = DR_TABS.map(([k, l]) =>
-    `<button class="dr-tab ${S.drawerTab === k ? 'on' : ''}" data-act="drtab" data-val="${k}">${l}${k === 'bill' && d.bill ? ' •' : ''}</button>`).join('');
+    `<button class="dr-tab ${S.drawerTab === k ? 'on' : ''}" data-act="drtab" data-val="${k}">${l}${
+      k === 'bill' && d.bill ? ' •' : ''}${
+      k === 'offers' && nOffers ? ` <span class="cnt">${nOffers}</span>` : ''}</button>`).join('');
   $('#drBody').innerHTML = drawerBody(d);
   $('#drBody').scrollTop = 0;
   const actions = [];
-  if (S.role === 'partner' && !isPlatformAdmin()) actions.push(`<button class="btn btn-primary btn-sm" data-act="offer">Make an offer</button>`);
+  if (canOffer(d) && !myOffer()) actions.push(`<button class="btn btn-primary btn-sm" data-act="offer" data-val="${esc(d.id)}">Make an offer</button>`);
+  else if (myOffer()) actions.push(`<button class="btn btn-ghost btn-sm" data-act="drtab" data-val="offers">View your offer</button>`);
   if (canEdit(d))   actions.push(`<button class="btn btn-ghost btn-sm" data-act="edit-deal" data-val="${d.id}">Edit</button>`);
   actions.push(`<button class="btn btn-ghost btn-sm" data-act="export-onedeal">Export this deal</button>`);
   if (S.role !== 'partner' && isOwnerOf(d)) actions.push(`<button class="btn btn-ghost btn-sm" data-act="upload-bill">${d.bill ? 'Replace utility bills' : 'Upload utility bills'}</button>`);
@@ -2612,7 +2924,12 @@ document.addEventListener('click', e => {
 
     case 'doc-open':   toast('Opening in ' + providerName(el.getAttribute('href')) + ' — access logged to the audit trail.'); break;
     case 'request-docs': toast('Request sent to ' + (S.drawerDeal ? S.drawerDeal.originator : 'the originator') + '.'); break;
-    case 'offer':      toast('Offer builder opens here — terms, structure and conditions precedent.'); break;
+    case 'offer':        offerModal(val || (S.drawerDeal && S.drawerDeal.id)); break;
+    case 'send-offer':   sendOffer(val); break;
+    case 'withdraw-offer': setOfferStatus(val, FB.auth.currentUser.uid, 'withdrawn').then(closeModal); break;
+    case 'accept-offer': { const [dl, pu] = val.split('|'); setOfferStatus(dl, pu, 'accepted'); break; }
+    case 'decline-offer':{ const [dl, pu] = val.split('|'); setOfferStatus(dl, pu, 'declined'); break; }
+    case 'sign':         { const [dl, side] = val.split('|'); signOff(dl, side); break; }
     case 'watch':      toast('Added to your watchlist. You\'ll get a note when the stage changes.'); break;
     case 'upload-bill':closeDeal(); submitModal(); break;
   }
@@ -2693,7 +3010,7 @@ document.addEventListener('mousemove', e => {
 /* ═══════════════════════════════════════════════════════════════════════════
    16. ACCOUNTS, ROLES AND SIGN-IN
    ═══════════════════════════════════════════════════════════════════════════ */
-const BUILD = '2026-07-31 · build 23';
+const BUILD = '2026-07-31 · build 24';
 
 const ROLE_META = {
   developer:  {side:'dev',     chip:'dev',     label:'Developer'},
@@ -2878,7 +3195,8 @@ function watchDeals() {
      id, so a deal matched by both appears once. Administrators read the whole
      collection; capital partners read what is open. */
   const queries = SESSION.role === 'admin'   ? [['all',  col]]
-                : SESSION.role === 'partner' ? [['open', col.where('status', '==', 'open')]]
+                : SESSION.role === 'partner' ? [['open',  col.where('status', '==', 'open')],
+                                               ['mine', col.where('awardedTo', '==', uid)]]
                 : [['org', col.where('orgKey', '==', myOrgKey())],
                    ['own', col.where('developerUid', '==', uid)]];
 
