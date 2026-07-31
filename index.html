@@ -59,7 +59,19 @@ input,select,textarea{font-family:inherit;font-size:14px}
 .auth-split div{border-left:2px solid rgba(0,174,239,.5);padding-left:14px}
 .auth-split h5{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;margin-bottom:5px}
 .auth-split p{font-size:12px;line-height:1.55;color:rgba(255,255,255,.6)}
-.auth-foot{position:relative;font-size:12px;color:rgba(255,255,255,.5)}
+.auth-foot{position:relative;font-size:12px;color:rgba(255,255,255,.5);display:flex;align-items:center;flex-wrap:wrap}
+.conn{display:inline-flex;align-items:center;gap:7px;font-size:11px;font-weight:600;letter-spacing:.04em;padding:4px 10px;border-radius:12px;border:1px solid rgba(255,255,255,.14)}
+.conn i{width:6px;height:6px;border-radius:50%;background:currentColor;flex:none}
+.conn.on{color:#4FD1A5;background:rgba(18,128,92,.18)}
+.conn.off{color:#F0B45C;background:rgba(199,122,0,.18)}
+.setup-panel{display:none;background:var(--cs-amber-dim);border:1px solid rgba(199,122,0,.32);border-radius:11px;padding:15px 17px;margin-bottom:18px}
+.setup-panel h4{display:flex;align-items:center;gap:8px;font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:var(--cs-amber);margin-bottom:10px}
+.setup-panel ul{list-style:none;margin:0 0 10px;padding:0}
+.setup-panel li{font-size:12px;padding:3px 0 3px 20px;position:relative;color:var(--cs-ink)}
+.setup-panel li::before{position:absolute;left:0;font-weight:700}
+.setup-panel li.y::before{content:'✓';color:var(--cs-green)}
+.setup-panel li.n::before{content:'✕';color:var(--cs-red)}
+.setup-panel p{font-size:12px;line-height:1.55;color:var(--cs-muted)}
 .auth-right{width:490px;max-width:46%;background:var(--cs-card);padding:56px 50px;display:flex;flex-direction:column;justify-content:center;overflow-y:auto}
 .auth-card h2{font-family:'Syne',sans-serif;font-size:25px;font-weight:700;letter-spacing:-.5px;margin-bottom:6px}
 .auth-card .sub{font-size:13.5px;color:var(--cs-muted);margin-bottom:26px;line-height:1.55}
@@ -487,11 +499,16 @@ input,select,textarea{font-family:inherit;font-size:14px}
         <div><h5>If you deploy capital</h5><p>Filter by state, sponsor or technology. Pull extracted bill data and check the deal is fair before committee.</p></div>
       </div>
     </div>
-    <div class="auth-foot">© 2025 ClearSky Energy Solutions LLC · Proprietary</div>
+    <div class="auth-foot">
+      <span class="conn" id="connBadge"><i></i>checking…</span>
+      <span style="margin-left:14px">© 2025 ClearSky Energy Solutions LLC · Proprietary</span>
+      <span style="margin-left:14px;opacity:.65;font-family:var(--mono);font-size:10.5px" id="buildStamp"></span>
+    </div>
   </div>
 
   <div class="auth-right">
     <div class="auth-card">
+      <div class="setup-panel" id="setupPanel"></div>
       <div class="auth-err" id="authErr"></div>
 
       <div id="loginForm">
@@ -504,8 +521,8 @@ input,select,textarea{font-family:inherit;font-size:14px}
       </div>
 
       <div id="registerForm" style="display:none">
-        <h2>Create an account</h2>
-        <p class="sub">Pick the role that matches how you work — it sets your permissions and your dashboard. Your workspace opens with a sample project so nothing starts blank; clear it in one click when you're ready.</p>
+        <h2 id="regTitle">Create an account</h2>
+        <p class="sub" id="regSub">Pick the role that matches how you work — it sets your permissions and your dashboard. Your workspace opens with a sample project so nothing starts blank; clear it in one click when you're ready.</p>
         <div class="role-pick" id="rolePick">
           <button type="button" class="role-opt sel" data-role="developer">
             <svg class="r-ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14"/><path d="M9 21v-6h6v6"/></svg>
@@ -520,10 +537,12 @@ input,select,textarea{font-family:inherit;font-size:14px}
         <p class="role-hint" id="regRoleHint">Developers see every deal filed under their organization.</p>
         <div class="field"><label for="regName">Full name</label><input type="text" id="regName" placeholder="Jane Sponsor" autocomplete="name"></div>
         <div class="field"><label for="regOrg">Organization</label><input type="text" id="regOrg" placeholder="Company or fund name" autocomplete="organization"></div>
-        <div class="field"><label for="regEmail">Work email</label><input type="email" id="regEmail" placeholder="you@company.com" autocomplete="email"></div>
-        <div class="field"><label for="regPass">Password</label><input type="password" id="regPass" placeholder="At least 6 characters" autocomplete="new-password"></div>
+        <div id="regCreds">
+          <div class="field"><label for="regEmail">Work email</label><input type="email" id="regEmail" placeholder="you@company.com" autocomplete="email"></div>
+          <div class="field"><label for="regPass">Password</label><input type="password" id="regPass" placeholder="At least 6 characters" autocomplete="new-password"></div>
+        </div>
         <button class="btn btn-primary btn-block" id="registerBtn">Create account</button>
-        <p class="auth-switch">Already a member? <button id="toLogin">Sign in</button></p>
+        <p class="auth-switch" id="regBackRow">Already a member? <button id="toLogin">Sign in</button></p>
       </div>
     </div>
   </div>
@@ -589,17 +608,35 @@ input,select,textarea{font-family:inherit;font-size:14px}
 
 <div id="toast" role="status" aria-live="polite"></div>
 
-<!--
-  To run against real accounts, uncomment these three tags and drop in your
-  firebase-config.js (the same one the rest of OMEGA uses). The app detects
-  window.CLEARSKY_CONFIG at boot: present = real auth against Firebase and the
-  `marketplace_users` collection; absent = the demo accounts on the sign-in card.
+<!-- Firebase (compat build, same version the rest of OMEGA uses).
+     firebase-config.js must define window.CLEARSKY_CONFIG. If it is missing
+     the page still runs, backed by local accounts, and says so on screen. -->
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+<script src="/firebase-config.js" onerror="console.warn('[OMEGA] /firebase-config.js not found — falling back to the inline block below')"></script>
+<script>
+/* ─────────────────────────────────────────────────────────────────────────
+   FIREBASE CONFIG — two ways to supply it, pick either one.
 
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-  <script src="/firebase-config.js"></script>
--->
+   A)  Serve /firebase-config.js at this site's root (the tag above).
+   B)  Or just paste your values here. This block only applies when the
+       file above did not load, so A always wins if both are present.
+
+   Values come from: Firebase console → Project settings → General
+   → Your apps → Web app → Config.  They are not secrets; firestore.rules
+   is what actually controls access.
+   ───────────────────────────────────────────────────────────────────────── */
+if (!window.CLEARSKY_CONFIG) window.CLEARSKY_CONFIG = {
+  apiKey:            "PASTE_API_KEY",
+  authDomain:        "clearsky-portal.firebaseapp.com",
+  projectId:         "clearsky-portal",
+  storageBucket:     "clearsky-portal.appspot.com",
+  messagingSenderId: "PASTE_SENDER_ID",
+  appId:             "PASTE_APP_ID"
+};
+</script>
+
 <script>
 /* ═══════════════════════════════════════════════════════════════════════════
    1. UTILITIES
@@ -1249,7 +1286,7 @@ function devOverview() {
   ${samples && !S.bannerOff ? `<div class="sample-banner">
     <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
     <div><b>${plural(samples, 'sample project')} to show you around.</b>
-      Everything here is wired to it — the map, the utility-bill extraction, the document links. Clear it whenever you're ready to work with only your own deals.</div>
+      Everything here is wired to it — the map, the utility-bill extraction, the document links. It lives in this browser only and is never written to Firestore. Clear it whenever you're ready.</div>
     <button class="btn btn-ghost btn-xs" data-act="clear-samples">Clear sample data</button>
     <button class="sb-x" data-act="hide-banner" aria-label="Dismiss">&times;</button>
   </div>` : ''}
@@ -2158,6 +2195,11 @@ function saveDeal() {
   closeModal();
   render();
   toast(`${name} is live on the marketplace — ${usdC(ask)} sought.`);
+  if (hasFirebase()) {
+    persistDeal(d)
+      .then(() => toast(`${name} saved to fin_projects.`))
+      .catch(err => { console.error('[OMEGA] fin_projects write failed:', err); toast(explain(err), true); });
+  }
   setTimeout(() => openDeal(d.id), 400);
 }
 
@@ -2353,6 +2395,8 @@ document.addEventListener('mousemove', e => {
 /* ═══════════════════════════════════════════════════════════════════════════
    16. ACCOUNTS, ROLES AND SIGN-IN
    ═══════════════════════════════════════════════════════════════════════════ */
+const BUILD = '2026-07-31 · build 4';
+
 const ROLE_META = {
   developer:  {side:'dev',     chip:'dev',     label:'Developer'},
   originator: {side:'dev',     chip:'orig',    label:'Deal originator'},
@@ -2361,25 +2405,133 @@ const ROLE_META = {
 };
 let SESSION = null;
 let regRole = 'developer';
+let pendingUser = null;        // authenticated, but no fin_profiles doc yet
 
-const initialsOf = n => n.trim().split(/\s+/).slice(0, 2).map(x => x[0]).join('').toUpperCase();
-const hasFirebase = () => typeof firebase !== 'undefined' && !!window.CLEARSKY_CONFIG;
+const initialsOf = n => (n || '?').trim().split(/\s+/).slice(0, 2).map(x => x[0]).join('').toUpperCase();
+
+/* ── Firebase. Uses the collections the OMEGA firestore.rules already
+   define — fin_profiles and fin_projects — so no rules change is needed. ── */
+const FB = {ready:false, auth:null, db:null, projectId:null, err:null};
+
+function initFirebase() {
+  if (typeof firebase === 'undefined') { FB.err = 'sdk'; return false; }
+  const c = window.CLEARSKY_CONFIG;
+  if (!c) { FB.err = 'config'; return false; }
+  if (Object.values(c).some(v => typeof v === 'string' && v.indexOf('PASTE_') === 0)) {
+    FB.err = 'placeholder'; return false;
+  }
+  try {
+    if (!firebase.apps.length) firebase.initializeApp(window.CLEARSKY_CONFIG);
+    FB.auth = firebase.auth();
+    FB.db = firebase.firestore();
+    FB.projectId = window.CLEARSKY_CONFIG.projectId || '—';
+    FB.ready = true;
+  } catch (e) {
+    FB.err = e.message;
+    console.error('[OMEGA] Firebase init failed:', e);
+  }
+  return FB.ready;
+}
+const hasFirebase = () => FB.ready;
+
+/* Turn Firebase error codes into something actionable rather than a code dump. */
+const AUTH_HELP = {
+  'auth/operation-not-allowed': 'Email/password sign-in is switched off for this project. Firebase console → Authentication → Sign-in method → enable Email/Password.',
+  'auth/unauthorized-domain':   'This domain is not on the authorised list. Firebase console → Authentication → Settings → Authorized domains → add ' + location.hostname + '.',
+  'auth/invalid-credential':    'That email and password do not match an account.',
+  'auth/invalid-login-credentials': 'That email and password do not match an account.',
+  'auth/wrong-password':        'That password is not right for this account.',
+  'auth/user-not-found':        'No account exists with that email. Create one instead.',
+  'auth/invalid-email':         'That email address is not formatted correctly.',
+  'auth/email-already-in-use':  'That email already has an account — sign in instead.',
+  'auth/weak-password':         'Firebase needs a password of at least 6 characters.',
+  'auth/network-request-failed':'Could not reach Firebase. Check the connection and that firebase-config.js holds the right project.',
+  'auth/too-many-requests':     'Too many attempts. Wait a minute and try again.',
+  'permission-denied':          'Signed in, but Firestore refused the fin_profiles read or write. Confirm the deployed rules include the fin_profiles block and that the role is developer, originator or partner.',
+  'unavailable':                'Firestore is unreachable. Check that Firestore is enabled on this project and that the browser is online.',
+  'failed-precondition':        'Firestore rejected the query. If the console log names a missing index, follow the link it prints to create it.'
+};
+const explain = e => AUTH_HELP[e && e.code] || (e && e.message) || 'Something went wrong.';
 
 function authErr(msg) {
   const el = $('#authErr');
   if (!msg) { el.classList.remove('show'); return; }
   el.textContent = msg; el.classList.add('show');
 }
+function authBusy(btn, on, label) {
+  btn.disabled = on;
+  btn.textContent = on ? '…' : label;
+}
 
-function signIn(acct) {
+/* ── Firestore mapping ────────────────────────────────────────────────────
+   fin_projects carries fields the rules read (developerUid, status,
+   awardedTo). The marketplace's own outcome lives in `outcome` so that
+   `status` can stay 'open' / 'awarded' exactly as the rules expect. */
+function dealToDoc(d, uid) {
+  return {
+    developerUid: uid,
+    status: 'open',
+    awardedTo: null,
+    outcome: d.status || 'active',
+    dealId: d.id, name: d.name, state: d.state, city: d.city,
+    tech: d.tech, mw: d.mw, mwh: d.mwh || 0, ask: d.ask, ppaRate: d.ppaRate,
+    stage: d.stage, submitted: d.submitted, decided: d.decided || null,
+    offtake: d.offtake, interconnect: d.interconnect, permits: d.permits,
+    siteControl: d.siteControl, cod: d.cod,
+    developer: d.developer, originator: d.originator,
+    irr: d.irr, dscr: d.dscr, bidders: d.bidders || 0, offers: d.offers || 0,
+    links: d.links || [], bill: d.bill || null,
+    createdAt: Date.now()
+  };
+}
+function docToDeal(doc) {
+  const x = doc.data();
+  return buildDeal(Object.assign({}, x, {
+    id: x.dealId || ('CS-' + doc.id.slice(0, 4).toUpperCase()),
+    status: x.outcome || 'active',
+    docId: doc.id,
+    sample: false
+  }));
+}
+
+async function loadDeals() {
+  if (!FB.ready || !FB.auth.currentUser) return false;
+  const col = FB.db.collection('fin_projects');
+  const isCapital = SESSION.role === 'partner' || SESSION.role === 'admin';
+  /* Single-field filters only — no composite index needed. Sorting is done
+     client-side by the table, so no orderBy here on purpose. */
+  const q = isCapital
+    ? col.where('status', '==', 'open')
+    : col.where('developerUid', '==', FB.auth.currentUser.uid);
+  const snap = await q.get();
+  DEALS = snap.docs.map(docToDeal);
+  return true;
+}
+
+async function persistDeal(d) {
+  if (!FB.ready || !FB.auth.currentUser) return;
+  const ref = await FB.db.collection('fin_projects').add(dealToDoc(d, FB.auth.currentUser.uid));
+  d.docId = ref.id;
+}
+
+/* ── Session ──────────────────────────────────────────────────────────── */
+async function signIn(acct) {
   SESSION = Object.assign({}, acct, {initials: initialsOf(acct.name)});
-  if (!DEALS.length) DEALS = seedSamples(SESSION);
   const meta = ROLE_META[SESSION.role] || ROLE_META.developer;
   S.role = meta.side === 'partner' ? 'partner' : 'dev';
   S.tab = TABS[S.role][0][0];
   S.group = 'state';
   mapSel = null;
   S.f = {q:'', state:'', tech:'', status:'', stage:'', dev:'', orig:'', minMw:0};
+
+  DEALS = [];
+  if (FB.ready) {
+    try { await loadDeals(); }
+    catch (e) { console.error('[OMEGA] fin_projects read failed:', e); toast(explain(e), true); }
+  }
+  /* Nothing to look at yet? Seed local, clearly-labelled sample records.
+     These are never written to Firestore. */
+  if (!DEALS.length) DEALS = seedSamples(SESSION);
 
   $('#authView').style.display = 'none';
   $('#appView').style.display = 'block';
@@ -2395,15 +2547,54 @@ function signIn(acct) {
 }
 
 function signOut() {
-  if (hasFirebase()) { try { firebase.auth().signOut(); } catch (e) {} }
-  SESSION = null; S.uploaded = []; DEALS = []; S.bannerOff = false;
+  if (FB.ready) { try { FB.auth.signOut(); } catch (e) {} }
+  SESSION = null; pendingUser = null;
+  S.uploaded = []; DEALS = []; S.bannerOff = false;
   $('#appView').style.display = 'none';
   $('#authView').style.display = 'flex';
   $('#loginPass').value = '';
+  showLogin();
   closeDeal(); closeModal();
 }
 
-/* register — role picker */
+/* ── Form switching ───────────────────────────────────────────────────── */
+function showLogin() {
+  authErr('');
+  $('#registerForm').style.display = 'none';
+  $('#loginForm').style.display = 'block';
+  $('#regTitle').textContent = 'Create an account';
+  $('#regCreds').style.display = 'block';
+  $('#registerBtn').textContent = 'Create account';
+  $('#regBackRow').style.display = 'block';
+}
+function showRegister() {
+  authErr('');
+  $('#loginForm').style.display = 'none';
+  $('#registerForm').style.display = 'block';
+}
+/* Authenticated with Firebase but no fin_profiles doc — finish setup. */
+function showProfileSetup(user) {
+  pendingUser = user;
+  showRegister();
+  $('#regTitle').textContent = 'Finish setting up';
+  $('#regSub').textContent = 'Your sign-in works. Pick the role this account should have and we\'ll create your marketplace profile.';
+  $('#regCreds').style.display = 'none';
+  $('#regBackRow').style.display = 'none';
+  $('#registerBtn').textContent = 'Create my profile';
+  $('#regEmail').value = user.email || '';
+  if (!$('#regName').value) $('#regName').value = (user.displayName || (user.email || '').split('@')[0]);
+  if (!$('#regOrg').value)  $('#regOrg').value  = (user.email || '').split('@')[1] || '';
+}
+
+async function writeProfile(uid, prof) {
+  await FB.db.collection('fin_profiles').doc(uid).set({
+    name: prof.name, org: prof.org,
+    email: prof.email, emailLower: (prof.email || '').toLowerCase(),
+    role: prof.role, createdAt: Date.now()
+  });
+}
+
+/* ── Handlers ─────────────────────────────────────────────────────────── */
 $('#rolePick').addEventListener('click', e => {
   const b = e.target.closest('.role-opt'); if (!b) return;
   $$('#rolePick .role-opt').forEach(x => x.classList.toggle('sel', x === b));
@@ -2415,68 +2606,124 @@ $('#rolePick').addEventListener('click', e => {
     : 'Financing partners see the whole marketplace, across every sponsor and state.';
 });
 
-$('#toRegister').addEventListener('click', () => { authErr(''); $('#loginForm').style.display = 'none'; $('#registerForm').style.display = 'block'; });
-$('#toLogin').addEventListener('click', () => { authErr(''); $('#registerForm').style.display = 'none'; $('#loginForm').style.display = 'block'; });
+$('#toRegister').addEventListener('click', showRegister);
+$('#toLogin').addEventListener('click', showLogin);
 $('#signOutBtn').addEventListener('click', signOut);
 
-/* sign in — Firebase when it's configured, demo accounts otherwise */
 $('#loginBtn').addEventListener('click', async () => {
-  const email = $('#loginEmail').value.trim().toLowerCase(), pass = $('#loginPass').value;
+  const email = $('#loginEmail').value.trim(), pass = $('#loginPass').value;
   if (!email || !pass) return authErr('Enter your email and password.');
-  if (hasFirebase()) {
-    const btn = $('#loginBtn'); btn.disabled = true; btn.textContent = 'Signing in…';
-    try {
-      const cred = await firebase.auth().signInWithEmailAndPassword(email, pass);
-      const doc = await firebase.firestore().collection('marketplace_users').doc(cred.user.uid).get();
-      const prof = doc.exists ? doc.data() : {};
-      signIn({name: prof.name || email.split('@')[0], org: prof.org || '—', email, role: prof.role || 'developer'});
-    } catch (err) {
-      authErr(err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential' || err.code === 'auth/user-not-found'
-        ? 'That email and password don\'t match an account.' : (err.message || 'Could not sign in.'));
-    }
-    btn.disabled = false; btn.textContent = 'Sign in';
-    return;
+  if (!FB.ready) {
+    return authErr(FB.err === 'config'
+      ? 'No Firebase config found. Add firebase-config.js next to this page, or create a local account to try the app out.'
+      : 'The Firebase SDK did not load. Check the script tags at the top of this page, or create a local account to try the app out.');
   }
-  authErr('Email sign-in needs Firebase connected. Create an account to get started.');
+  const btn = $('#loginBtn');
+  authBusy(btn, true, 'Sign in');
+  try {
+    const cred = await FB.auth.signInWithEmailAndPassword(email, pass);
+    const snap = await FB.db.collection('fin_profiles').doc(cred.user.uid).get();
+    if (!snap.exists) { authBusy(btn, false, 'Sign in'); return showProfileSetup(cred.user); }
+    const p = snap.data();
+    await signIn({name: p.name || email.split('@')[0], org: p.org || '—', email, role: p.role || 'developer'});
+  } catch (err) {
+    console.error('[OMEGA] sign-in failed:', err);
+    authErr(explain(err));
+  }
+  authBusy(btn, false, 'Sign in');
 });
 
 $('#registerBtn').addEventListener('click', async () => {
   const name = $('#regName').value.trim(), org = $('#regOrg').value.trim();
-  const email = $('#regEmail').value.trim().toLowerCase(), pass = $('#regPass').value;
+  const email = $('#regEmail').value.trim(), pass = $('#regPass').value;
   if (!name) return authErr('Enter your full name.');
-  if (!org) return authErr('Enter your organization.');
-  if (!email.includes('@')) return authErr('That email address looks invalid.');
-  if (pass.length < 6) return authErr('Use a password of at least 6 characters.');
-  if (hasFirebase()) {
-    const btn = $('#registerBtn'); btn.disabled = true; btn.textContent = 'Creating…';
+  if (!org)  return authErr('Enter your organization.');
+
+  const btn = $('#registerBtn'), label = btn.textContent;
+
+  /* Case 1: already authenticated, just missing the profile document. */
+  if (pendingUser) {
+    authBusy(btn, true, label);
     try {
-      const cred = await firebase.auth().createUserWithEmailAndPassword(email, pass);
-      await firebase.firestore().collection('marketplace_users').doc(cred.user.uid)
-        .set({name, org, email, role: regRole, createdAt: Date.now()});
-      signIn({name, org, email, role: regRole});
+      await writeProfile(pendingUser.uid, {name, org, email: pendingUser.email, role: regRole});
+      const u = pendingUser; pendingUser = null;
+      await signIn({name, org, email: u.email, role: regRole});
     } catch (err) {
-      authErr(err.code === 'auth/email-already-in-use' ? 'That email already has an account — try signing in.' : (err.message || 'Could not create the account.'));
+      console.error('[OMEGA] fin_profiles write failed:', err);
+      authErr(explain(err));
     }
-    btn.disabled = false; btn.textContent = 'Create account';
+    authBusy(btn, false, label);
     return;
   }
-  signIn({name, org, email, role: regRole});
+
+  if (!email.includes('@')) return authErr('That email address looks invalid.');
+  if (pass.length < 6)      return authErr('Use a password of at least 6 characters.');
+
+  /* Case 2: no backend — local account so the app is still explorable. */
+  if (!FB.ready) return signIn({name, org, email, role: regRole});
+
+  /* Case 3: real Firebase sign-up. */
+  authBusy(btn, true, label);
+  try {
+    const cred = await FB.auth.createUserWithEmailAndPassword(email, pass);
+    await writeProfile(cred.user.uid, {name, org, email, role: regRole});
+    await signIn({name, org, email, role: regRole});
+  } catch (err) {
+    console.error('[OMEGA] sign-up failed:', err);
+    authErr(explain(err));
+  }
+  authBusy(btn, false, label);
 });
 
-[$('#loginPass'), $('#loginEmail')].forEach(el => el.addEventListener('keydown', e => { if (e.key === 'Enter') $('#loginBtn').click(); }));
+[$('#loginPass'), $('#loginEmail')].forEach(el =>
+  el.addEventListener('keydown', e => { if (e.key === 'Enter') $('#loginBtn').click(); }));
 
-/* if Firebase is wired up, restore an existing session on load */
-if (hasFirebase()) {
-  try {
-    if (!firebase.apps.length) firebase.initializeApp(window.CLEARSKY_CONFIG);
-    firebase.auth().onAuthStateChanged(async u => {
-      if (!u || SESSION) return;
-      const doc = await firebase.firestore().collection('marketplace_users').doc(u.uid).get();
-      const prof = doc.exists ? doc.data() : {};
-      signIn({name: prof.name || u.email.split('@')[0], org: prof.org || '—', email: u.email, role: prof.role || 'developer'});
+/* ── Boot ─────────────────────────────────────────────────────────────── */
+(function boot() {
+  $('#buildStamp').textContent = BUILD;
+  const ok = initFirebase();
+  const badge = $('#connBadge');
+  if (ok) {
+    badge.className = 'conn on';
+    badge.innerHTML = '<i></i>Connected · ' + esc(FB.projectId);
+    $('#setupPanel').style.display = 'none';
+    FB.auth.onAuthStateChanged(async u => {
+      if (!u || SESSION || pendingUser) return;
+      try {
+        const snap = await FB.db.collection('fin_profiles').doc(u.uid).get();
+        if (!snap.exists) return showProfileSetup(u);
+        const p = snap.data();
+        await signIn({name: p.name || (u.email || '').split('@')[0], org: p.org || '—', email: u.email, role: p.role || 'developer'});
+      } catch (e) {
+        console.error('[OMEGA] profile read failed:', e);
+        authErr(explain(e));
+      }
     });
-  } catch (e) { console.warn('Firebase init skipped:', e.message); }
-}
+  } else {
+    badge.className = 'conn off';
+    badge.innerHTML = '<i></i>Not connected — running locally';
+    const sdkOk = typeof firebase !== 'undefined';
+    const cfgOk = !!window.CLEARSKY_CONFIG;
+    const reason = FB.err === 'sdk'
+      ? 'The Firebase SDK did not load. Something is blocking gstatic.com — check for a Content-Security-Policy header or a network filter.'
+      : FB.err === 'placeholder'
+      ? 'The config still has PASTE_ placeholders. Fill them in — either in /firebase-config.js, or in the inline block near the top of this file.'
+      : FB.err === 'config'
+      ? 'No config was found. Serve /firebase-config.js from this site\'s root, or paste your values into the inline block near the top of this file.'
+      : 'Firebase failed to start: ' + FB.err;
+    $('#setupPanel').innerHTML = `
+      <h4><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>
+        Not connected to Firebase</h4>
+      <ul>
+        <li class="${sdkOk ? 'y' : 'n'}">Firebase SDK ${sdkOk ? 'loaded' : 'did not load'}</li>
+        <li class="${cfgOk ? 'y' : 'n'}">Config ${cfgOk ? (FB.err === 'placeholder' ? 'found, but not filled in' : 'found') : 'not found'}</li>
+        <li class="${'n'}">Authentication unavailable</li>
+      </ul>
+      <p>${reason}</p>
+      <p style="margin-top:8px">You can still create a local account below to use the app without a backend.</p>`;
+    $('#setupPanel').style.display = 'block';
+  }
+})();
 </script>
 </body>
 </html>
