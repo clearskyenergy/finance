@@ -75,12 +75,6 @@ input,select,textarea{font-family:inherit;font-size:14px}
 .auth-switch button{background:none;border:none;color:var(--cs-blue);font-weight:600;font-size:13px}
 .auth-err{background:var(--cs-red-dim);color:var(--cs-red);font-size:13px;padding:11px 14px;border-radius:8px;margin-bottom:16px;line-height:1.45;display:none}
 .auth-err.show{display:block}
-.demo-keys{margin-top:22px;padding-top:18px;border-top:1px solid var(--cs-border)}
-.demo-keys h5{font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--cs-muted-2);margin-bottom:10px}
-.demo-key{display:flex;align-items:center;gap:11px;width:100%;text-align:left;background:var(--cs-card-2);border:1px solid var(--cs-border);border-radius:9px;padding:10px 13px;margin-bottom:7px;transition:border-color .16s,background .16s}
-.demo-key:hover{border-color:var(--cs-blue);background:var(--cs-blue-dim)}
-.demo-key .dk-role{font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:3px 8px;border-radius:11px;flex:none}
-.demo-key .dk-mail{flex:1;font-size:12px;color:var(--cs-muted);font-family:var(--mono);overflow:hidden;text-overflow:ellipsis}
 .role-chip{font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:5px 12px;border-radius:20px}
 .role-chip.dev{background:rgba(0,174,239,.18);color:var(--cs-blue-bright)}
 .role-chip.orig{background:rgba(199,122,0,.22);color:#F0B45C}
@@ -398,6 +392,15 @@ input,select,textarea{font-family:inherit;font-size:14px}
 .extract-bar{height:3px;background:var(--cs-border);border-radius:2px;overflow:hidden;margin-top:9px}
 .extract-bar i{display:block;height:100%;width:0;background:var(--cs-blue);transition:width .4s linear}
 
+.sample-tag{display:inline-block;font-size:9.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--cs-amber);background:var(--cs-amber-dim);padding:2px 7px;border-radius:10px;vertical-align:middle;margin-left:6px}
+.sample-banner{display:flex;align-items:flex-start;gap:12px;background:var(--cs-amber-dim);border:1px solid rgba(199,122,0,.3);border-radius:12px;padding:14px 16px;margin-bottom:16px;font-size:12.5px;line-height:1.55;color:var(--cs-ink)}
+.sample-banner svg{color:var(--cs-amber);flex:none;margin-top:1px}
+.sample-banner div{flex:1}
+.sample-banner b{font-weight:700}
+.sample-banner .btn{flex:none;background:#fff}
+.sample-banner .sb-x{background:none;border:none;color:var(--cs-amber);font-size:19px;line-height:1;padding:0 3px;flex:none}
+.sample-banner .sb-x:hover{opacity:.65}
+
 /* shared cloud links */
 .link-row{display:grid;grid-template-columns:158px 1fr 30px;gap:8px;align-items:center;margin-bottom:8px}
 .link-row input{padding:10px 12px;border:1px solid var(--cs-border);border-radius:8px;background:var(--cs-card-2);color:var(--cs-ink);width:100%;font-size:13px;transition:border-color .18s,background .18s}
@@ -498,26 +501,11 @@ input,select,textarea{font-family:inherit;font-size:14px}
         <div class="field"><label for="loginPass">Password</label><input type="password" id="loginPass" placeholder="Your password" autocomplete="current-password"></div>
         <button class="btn btn-primary btn-block" id="loginBtn">Sign in</button>
         <p class="auth-switch">New here? <button id="toRegister">Create an account</button></p>
-        <div class="demo-keys">
-          <h5>Or open a sample workspace</h5>
-          <button class="demo-key" data-demo="originator">
-            <span class="dk-role" style="background:var(--cs-amber-dim);color:var(--cs-amber)">Originator</span>
-            <span class="dk-mail">Marta Quintero · Ridgeline Renewables</span></button>
-          <button class="demo-key" data-demo="developer">
-            <span class="dk-role" style="background:var(--cs-blue-dim);color:var(--cs-blue)">Developer</span>
-            <span class="dk-mail">Dana Reyes · Northgate Clean Assets</span></button>
-          <button class="demo-key" data-demo="partner">
-            <span class="dk-role" style="background:var(--cs-green-dim);color:var(--cs-green)">Financing partner</span>
-            <span class="dk-mail">Alan Petrossian · Coastline Capital</span></button>
-          <button class="demo-key" data-demo="admin">
-            <span class="dk-role" style="background:rgba(14,26,36,.08);color:var(--cs-muted)">Admin</span>
-            <span class="dk-mail">Platform administrator</span></button>
-        </div>
       </div>
 
       <div id="registerForm" style="display:none">
         <h2>Create an account</h2>
-        <p class="sub">Pick the role that matches how you work. It sets your permissions and your dashboard.</p>
+        <p class="sub">Pick the role that matches how you work — it sets your permissions and your dashboard. Your workspace opens with a sample project so nothing starts blank; clear it in one click when you're ready.</p>
         <div class="role-pick" id="rolePick">
           <button type="button" class="role-opt sel" data-role="developer">
             <svg class="r-ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14"/><path d="M9 21v-6h6v6"/></svg>
@@ -826,7 +814,10 @@ function buildDeal(spec) {
   return d;
 }
 
-const SAMPLES = [
+/* Sample records. Nothing exists on the platform until an account is created;
+   at that point the templates below are instantiated into the new workspace so
+   it isn't empty. Every seeded deal carries sample:true and can be cleared. */
+const SAMPLE_TEMPLATES = [
   {
     id:'CS-2401', name:'Cedar Hollow Solar + Storage',
     developer:'Ridgeline Renewables', originator:'Marta Quintero',
@@ -890,19 +881,39 @@ const SAMPLES = [
   }
 ];
 
-const DEALS = SAMPLES.map(spec => {
+/* the platform starts empty */
+let DEALS = [];
+
+function instantiate(tpl, overrides) {
+  const spec = Object.assign(JSON.parse(JSON.stringify(tpl)), overrides || {});
   if (spec.billDiscount) {
     spec.bill = makeBill(spec.state, spec.mw);
     spec.ppaRate = spec.bill.blended * spec.billDiscount;
     delete spec.billDiscount;
   }
+  spec.sample = true;
   return buildDeal(spec);
-});
+}
+
+/* A sponsor gets one live project of their own. A capital partner gets a
+   marketplace to screen — several deals, several sponsors, several states. */
+function seedSamples(session) {
+  const role = session.role;
+  if (role === 'partner' || role === 'admin') {
+    return SAMPLE_TEMPLATES.map(t => instantiate(t));
+  }
+  return [instantiate(SAMPLE_TEMPLATES[0], {
+    id: 'CS-2401',
+    developer: session.org,
+    originator: session.name
+  })];
+}
 
 /* ═══════════════════════════════════════════════════════════════════════════
    4. APP STATE + FILTERING
    ═══════════════════════════════════════════════════════════════════════════ */
 const S = {
+  bannerOff: false,
   role: 'dev',
   tab: 'overview',
   f: {q:'', state:'', tech:'', status:'', stage:'', dev:'', orig:'', minMw:0},
@@ -1232,7 +1243,16 @@ function devOverview() {
   const nDecided = st.won + st.declined;
   const cycleSpark = all.filter(d => d.cycleDays).sort((a, b) => a.submitted.localeCompare(b.submitted)).slice(-14).map(d => d.cycleDays);
 
+  const samples = all.filter(d => d.sample).length;
+
   return `
+  ${samples && !S.bannerOff ? `<div class="sample-banner">
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+    <div><b>${plural(samples, 'sample project')} to show you around.</b>
+      Everything here is wired to it — the map, the utility-bill extraction, the document links. Clear it whenever you're ready to work with only your own deals.</div>
+    <button class="btn btn-ghost btn-xs" data-act="clear-samples">Clear sample data</button>
+    <button class="sb-x" data-act="hide-banner" aria-label="Dismiss">&times;</button>
+  </div>` : ''}
   ${filterChips()}
   <div class="kpi-strip">
     ${kpi('Deals submitted', st.n, '', st.active ? `${st.active} still in market` : 'none open right now', '')}
@@ -1417,7 +1437,7 @@ const STATUS_PILL = {active:['p-active','In market'], won:['p-won','Funded'], de
 const STAGE_PILL = {'Submitted':'p-active','Screening':'p-screening','Diligence':'p-diligence','Term sheet':'p-term','Closed':'p-won'};
 
 function cellHTML(d, c) {
-  if (c.key === 'name') return `<div>${esc(d.name)}<span>${d.id} · ${esc(d.city)}, ${d.state}</span></div>`;
+  if (c.key === 'name') return `<div>${esc(d.name)}${d.sample ? ' <span class="sample-tag">Sample</span>' : ''}<span>${d.id} · ${esc(d.city)}, ${d.state}</span></div>`;
   if (c.key === 'status') { const [cls, lab] = STATUS_PILL[d.status]; return `<span class="pill ${cls}">${lab}</span>`; }
   if (c.key === 'stage') return `<span class="pill ${STAGE_PILL[d.stage]}">${d.stage}</span>`;
   if (c.key === 'techName') return `<span class="tag" style="color:${d.techColor};background:${d.techColor}18">${esc(d.techName)}</span>`;
@@ -1873,7 +1893,8 @@ function drawerBody(d) {
 function renderDrawer() {
   const d = S.drawerDeal; if (!d) return;
   $('#drTitle').textContent = d.name;
-  $('#drSub').innerHTML = `${d.id} · ${esc(d.city)}, ${d.state} · ${usd(d.ask)} · ${num(d.mw)} MW`;
+  $('#drSub').innerHTML = `${d.id} · ${esc(d.city)}, ${d.state} · ${usd(d.ask)} · ${num(d.mw)} MW`
+    + (d.sample ? ' <span class="sample-tag">Sample record</span>' : '');
   $('#drTabs').innerHTML = DR_TABS.map(([k, l]) =>
     `<button class="dr-tab ${S.drawerTab === k ? 'on' : ''}" data-act="drtab" data-val="${k}">${l}${k === 'bill' && d.bill ? ' •' : ''}</button>`).join('');
   $('#drBody').innerHTML = drawerBody(d);
@@ -2225,6 +2246,13 @@ document.addEventListener('click', e => {
     case 'sort':       S.sort = {key: val, dir: S.sort.key === val ? -S.sort.dir : -1}; render(); break;
     case 'open':       openDeal(val); break;
     case 'drtab':      S.drawerTab = val; renderDrawer(); break;
+    case 'hide-banner':  S.bannerOff = true; render(); break;
+    case 'clear-samples':
+      DEALS = DEALS.filter(x => !x.sample);
+      S.uploaded = S.uploaded.filter(x => !x.sample);
+      mapSel = null; clearFilters();
+      toast('Sample data cleared. Your workspace is now empty.');
+      break;
     case 'new-deal':   submitModal(); break;
     case 'add-link':   addLinkRow(); break;
     case 'rm-link':    el.closest('.link-row').remove(); break;
@@ -2331,14 +2359,6 @@ const ROLE_META = {
   partner:    {side:'partner', chip:'partner', label:'Financing partner'},
   admin:      {side:'both',    chip:'admin',   label:'Platform admin'}
 };
-/* Sample workspaces. No email addresses — these open directly, and none of
-   them correspond to a real account until Firebase is connected. */
-const DEMO_ACCOUNTS = {
-  originator: {name:'Marta Quintero',  org:'Ridgeline Renewables',             role:'originator'},
-  developer:  {name:'Dana Reyes',      org:'Northgate Clean Assets',           role:'developer'},
-  partner:    {name:'Alan Petrossian', org:'Coastline Infrastructure Capital', role:'partner'},
-  admin:      {name:'Tommy Gilmer',    org:'ClearSky Energy Solutions',        role:'admin'}
-};
 let SESSION = null;
 let regRole = 'developer';
 
@@ -2353,6 +2373,7 @@ function authErr(msg) {
 
 function signIn(acct) {
   SESSION = Object.assign({}, acct, {initials: initialsOf(acct.name)});
+  if (!DEALS.length) DEALS = seedSamples(SESSION);
   const meta = ROLE_META[SESSION.role] || ROLE_META.developer;
   S.role = meta.side === 'partner' ? 'partner' : 'dev';
   S.tab = TABS[S.role][0][0];
@@ -2375,15 +2396,12 @@ function signIn(acct) {
 
 function signOut() {
   if (hasFirebase()) { try { firebase.auth().signOut(); } catch (e) {} }
-  SESSION = null; S.uploaded = [];
+  SESSION = null; S.uploaded = []; DEALS = []; S.bannerOff = false;
   $('#appView').style.display = 'none';
   $('#authView').style.display = 'flex';
   $('#loginPass').value = '';
   closeDeal(); closeModal();
 }
-
-/* demo shortcuts */
-$$('.demo-key').forEach(b => b.addEventListener('click', () => signIn(DEMO_ACCOUNTS[b.dataset.demo])));
 
 /* register — role picker */
 $('#rolePick').addEventListener('click', e => {
@@ -2419,7 +2437,7 @@ $('#loginBtn').addEventListener('click', async () => {
     btn.disabled = false; btn.textContent = 'Sign in';
     return;
   }
-  authErr('Email sign-in needs Firebase connected. Open a sample workspace below, or create an account.');
+  authErr('Email sign-in needs Firebase connected. Create an account to get started.');
 });
 
 $('#registerBtn').addEventListener('click', async () => {
