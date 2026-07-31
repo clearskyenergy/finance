@@ -899,7 +899,7 @@ const addDays = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); r
 /* The extractor: turns 12 statements into structured monthly data. Swap the
    body for your OCR pipeline — the returned shape is what the UI reads. */
 function makeBill(state, mw) {
-  const m = MARKETS[state];
+  const m = marketOf(state);
   const annualKwh = Math.round(mw * 1000 * between(2400, 3600));
   const shape = m.summer === 1
     ? [.070,.066,.070,.074,.086,.100,.113,.112,.098,.081,.068,.062]
@@ -2547,7 +2547,7 @@ function submitModal(dealId) {
   <div class="modal-body">
     <div class="field"><label for="nfName">Project name</label><input id="nfName" placeholder="Cedar Hollow Solar" value="${ed ? val(ed.name) : ''}"></div>
     <div class="field-row three">
-      <div class="field"><label for="nfState">State</label><select id="nfState">${Object.keys(MARKETS).sort().map(s => `<option value="${s}"${ed ? sel(s, ed.state) : ''}>${STATE_NAME[s]}</option>`).join('')}</select></div>
+      <div class="field"><label for="nfState">State</label><select id="nfState">${ALL_STATES.map(s => `<option value="${s}"${ed ? sel(s, ed.state) : ''}>${STATE_NAME[s]}</option>`).join('')}</select></div>
       <div class="field"><label for="nfCity">City</label><input id="nfCity" placeholder="Abilene" value="${ed ? val(ed.city) : ''}"></div>
       <div class="field"><label for="nfTech">Technology</label><select id="nfTech">${TECHS.map(t => `<option value="${t.id}"${ed ? sel(t.id, ed.tech) : ''}>${t.name}</option>`).join('')}</select></div>
     </div>
@@ -2658,7 +2658,7 @@ async function saveDeal() {
   if (editingId) {
     const existing = allDeals().find(x => x.id === editingId);
     const patch = {
-      name, state, city: $('#nfCity').value.trim() || (existing ? existing.city : ''),
+      name, state, city: $('#nfCity').value.trim() || (existing ? existing.city : '—'),
       tech: tech.id, mw, mwh: parseFloat($('#nfMwh').value) || 0, ask,
       ppaRate: parseFloat($('#nfRate').value) || (existing ? existing.ppaRate : 0),
       offtake: $('#nfOfftake').value, links
@@ -2693,7 +2693,7 @@ async function saveDeal() {
 
   const d = buildDeal({
     ref: newRef(),
-    name, state, city: $('#nfCity').value.trim() || MARKETS[state].cities[0],
+    name, state, city: $('#nfCity').value.trim() || (marketOf(state).cities[0] || '—'),
     developer: SESSION.org, originator: SESSION.name,
     submittedBy: SESSION.name, orgKey: myOrgKey(),
     tech: tech.id, mw, mwh: parseFloat($('#nfMwh').value) || 0, ask,
@@ -2701,7 +2701,7 @@ async function saveDeal() {
     offtake: $('#nfOfftake').value,
     interconnect:'Feasibility only', permits:'Pre-application', siteControl:'Letter of intent',
     cod: iso(addDays(TODAY, 540)),
-    ppaRate: parseFloat($('#nfRate').value) || (pendingBill ? pendingBill.blended * .82 : MARKETS[state].rate * .8),
+    ppaRate: parseFloat($('#nfRate').value) || (pendingBill ? pendingBill.blended * .82 : marketOf(state).rate * .8),
     bill: pendingBill, links
   });
 
@@ -2717,8 +2717,14 @@ async function saveDeal() {
     } catch (err) {
       console.error('[OMEGA] fin_projects write failed:', err);
       btn.disabled = false; btn.textContent = label;
-      const [h, t] = explain(err);
-      modalErr(h + (t ? ' ' + t : ''));
+      if (err.code === 'permission-denied') {
+        modalErr(SESSION.approved === false
+          ? 'Your account is still awaiting approval, so it cannot file deals yet.'
+          : 'This deal was refused. Check that your organisation is set on your profile, then try again.');
+      } else {
+        const [h, t] = explain(err);
+        modalErr(h + (t ? ' ' + t : ''));
+      }
       return;
     }
     btn.disabled = false; btn.textContent = label;
@@ -3010,7 +3016,7 @@ document.addEventListener('mousemove', e => {
 /* ═══════════════════════════════════════════════════════════════════════════
    16. ACCOUNTS, ROLES AND SIGN-IN
    ═══════════════════════════════════════════════════════════════════════════ */
-const BUILD = '2026-07-31 · build 24';
+const BUILD = '2026-07-31 · build 25';
 
 const ROLE_META = {
   developer:  {side:'dev',     chip:'dev',     label:'Developer'},
@@ -3687,6 +3693,13 @@ const awaitingApproval = () => !!SESSION && SESSION.approved === false;
 
    Because a typed name is not proof of anything, joining an organisation is
    gated by administrator approval rather than by the string alone. */
+/* MARKETS carries utility and tariff context for the states we have researched.
+   A project may be anywhere, so every state is selectable and anything without
+   a researched market falls back to a neutral profile. */
+const DEFAULT_MARKET = {util:'Local utility', rate:0.1150, summer:1, cities:[]};
+const marketOf = st => MARKETS[st] || DEFAULT_MARKET;
+const ALL_STATES = Object.keys(STATE_NAME).sort((a, b) => STATE_NAME[a].localeCompare(STATE_NAME[b]));
+
 const orgKeyOf = name => String(name || '')
   .toLowerCase()
   .replace(/[^a-z0-9]+/g, ' ')
@@ -3876,6 +3889,22 @@ async function writeProfile(uid, prof) {
   });
 }
 
+/* A profile written before orgKey existed has none, so the rule's myOrgKey()
+   returns '' while the client derives one from the organisation name — and
+   every write is refused for the mismatch. Fill it in once, on sign-in. The
+   rules permit that first assignment but not a later change. */
+async function backfillOrgKey(uid, prof) {
+  const want = orgKeyOf(prof.org);
+  if (!want || prof.orgKey === want) return prof.orgKey || want;
+  try {
+    await FB.db.collection('fin_profiles').doc(uid).update({orgKey: want});
+    console.info('[OMEGA] orgKey set to', want, 'for', prof.email || uid);
+  } catch (e) {
+    console.warn('[OMEGA] could not set orgKey:', e.code || e.message);
+  }
+  return want;
+}
+
 /* An existing profile created before this rule, or with the wrong role,
    is corrected on sign-in. */
 /* The rules grant admin purely by email domain, so the client can decide the
@@ -3926,6 +3955,7 @@ async function afterFirebaseUser(user) {
     return authErr('This account has been suspended.',
                    'Contact your ClearSky administrator to have it restored.', '');
   }
+  const orgKey = await backfillOrgKey(user.uid, p);
   const stored = p.role || 'developer';
   const role = effectiveRole(user.email, stored);
   roleOutOfSync = (role !== stored) ? {stored, effective: role} : null;
@@ -3934,7 +3964,7 @@ async function afterFirebaseUser(user) {
     name: p.name || user.displayName || (user.email || '').split('@')[0],
     org:  p.org  || '—',
     email: user.email,
-    orgKey: p.orgKey || orgKeyOf(p.org),
+    orgKey,
     role,
     approved: isApproved(p)
   });
