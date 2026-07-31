@@ -77,6 +77,15 @@ input,select,textarea{font-family:inherit;font-size:14px}
 .src.on{color:var(--cs-green);background:var(--cs-green-dim)}
 .src.warn{color:var(--cs-amber);background:var(--cs-amber-dim)}
 .src.bad{color:var(--cs-red);background:var(--cs-red-dim)}
+.diag{width:100%;border-collapse:collapse;font-size:12.5px}
+.diag td{padding:8px 10px;border-bottom:1px solid var(--cs-border);vertical-align:top}
+.diag td:first-child{width:20px;font-weight:700}
+.diag td:nth-child(2){white-space:nowrap;font-weight:600}
+.diag td:last-child{font-family:var(--mono);font-size:11.5px;color:var(--cs-muted);word-break:break-word}
+.diag tr.y td:first-child{color:var(--cs-green)}
+.diag tr.n td:first-child{color:var(--cs-red)}
+.diag tr.n td:last-child{color:var(--cs-red)}
+code{font-family:var(--mono);font-size:11.5px;background:var(--cs-card-2);padding:1px 5px;border-radius:4px}
 .auth-or{display:flex;align-items:center;gap:12px;margin:16px 0;color:var(--cs-muted-2);font-size:11.5px}
 .auth-or::before,.auth-or::after{content:'';flex:1;height:1px;background:var(--cs-border)}
 .btn-google{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:11px 18px;
@@ -1609,7 +1618,8 @@ function partnerMarketplace() {
     <p>${DATA_SOURCE === 'error'
         ? 'The marketplace is reachable but refused to return deals for this account. An administrator may need to review its permissions.'
         : 'As soon as a developer or originator submits a project, it appears here automatically — no refresh needed.'}</p>
-    ${DATA_SOURCE === 'live' ? '<button class="btn btn-ghost" data-act="load-samples">Show sample data</button>' : ''}
+    ${DATA_SOURCE === 'live' ? `<button class="btn btn-primary" data-act="diagnostics">Run diagnostics</button>
+      <button class="btn btn-ghost" style="margin-left:8px" data-act="load-samples">Show sample data</button>` : ''}
   </div>`;
 
   return `
@@ -2300,7 +2310,9 @@ function render() {
                  : DATA_SOURCE === 'sample' ? `<span class="src warn"><i></i>Sample data · not saved</span>`
                  : DATA_SOURCE === 'error'  ? `<span class="src bad"><i></i>Couldn't load deals</span>` : '';
   $('#srcBadge').innerHTML = srcLabel + (DATA_SOURCE === 'live'
-    ? ` <button class="link-btn" data-act="refresh" style="margin-left:8px">Refresh</button>` : '');
+    ? ` <button class="link-btn" data-act="refresh" style="margin-left:8px">Refresh</button>`
+      + (allDeals().length ? '' : ` <button class="link-btn" data-act="diagnostics" style="margin-left:10px">Diagnostics</button>`)
+    : '');
   $('#pageTitle').textContent = isDev ? 'Deal intelligence' : 'Capital marketplace';
   $('#pageSub').textContent = isDev
     ? `${SESSION.org} · ${book.length} deal${book.length === 1 ? '' : 's'} ${SESSION.role === 'originator' ? 'originated' : 'submitted'}. Where they are, how big they are, what came back, and how long it took.`
@@ -2382,6 +2394,9 @@ document.addEventListener('click', e => {
       toast('Sample data cleared. Your workspace is now empty.');
       break;
     case 'refresh':    watchDeals(); toast('Refreshed.'); break;
+    case 'diagnostics': diagnosticsModal(); break;
+    case 'copy-diag':  navigator.clipboard && navigator.clipboard.writeText(window.__diag || '')
+                         .then(() => toast('Diagnostics copied.'), () => toast('Could not copy.', true)); break;
     case 'load-samples': DEALS = DEALS.concat(seedSamples(SESSION)); render();
                          toast('Sample data added to this browser only — it is never saved.'); break;
     case 'new-deal':   submitModal(); break;
@@ -2484,7 +2499,7 @@ document.addEventListener('mousemove', e => {
 /* ═══════════════════════════════════════════════════════════════════════════
    16. ACCOUNTS, ROLES AND SIGN-IN
    ═══════════════════════════════════════════════════════════════════════════ */
-const BUILD = '2026-07-31 · build 9';
+const BUILD = '2026-07-31 · build 10';
 
 const ROLE_META = {
   developer:  {side:'dev',     chip:'dev',     label:'Developer'},
@@ -2662,6 +2677,77 @@ async function persistDeal(d) {
   if (!FB.ready || !FB.auth.currentUser) return;
   const ref = await FB.db.collection('fin_projects').add(dealToDoc(d, FB.auth.currentUser.uid));
   d.docId = ref.id;
+}
+
+/* ── Diagnostics ──────────────────────────────────────────────────────────
+   When a marketplace looks empty but shouldn't be, guessing is expensive.
+   This runs the same reads the app runs and reports the raw outcome of each,
+   including any documents whose fields don't match what the query expects. */
+async function runDiagnostics() {
+  const out = [];
+  const push = (label, ok, detail) => out.push({label, ok, detail});
+  const uid = FB.auth && FB.auth.currentUser ? FB.auth.currentUser.uid : null;
+
+  push('Project', !!FB.projectId, FB.projectId || 'not connected');
+  push('Signed in', !!uid, uid ? (FB.auth.currentUser.email || '(no email)') + '  ·  ' + uid : 'no user');
+  if (!uid) return out;
+
+  try {
+    const snap = await FB.db.collection('fin_profiles').doc(uid).get();
+    push('Profile document', snap.exists,
+         snap.exists ? 'role = ' + (snap.data().role || '(none)') + '  ·  org = ' + (snap.data().org || '(none)')
+                     : 'fin_profiles/' + uid + ' does not exist');
+  } catch (e) { push('Profile document', false, (e.code || 'error') + ' — ' + e.message); }
+
+  /* the exact query a capital partner runs */
+  try {
+    const snap = await FB.db.collection('fin_projects').where('status', '==', 'open').get();
+    push('Query: status == "open"', snap.size > 0, plural(snap.size, 'document') + ' returned');
+  } catch (e) { push('Query: status == "open"', false, (e.code || 'error') + ' — ' + e.message); }
+
+  /* the exact query a sponsor runs */
+  try {
+    const snap = await FB.db.collection('fin_projects').where('developerUid', '==', uid).get();
+    push('Query: my own deals', true, plural(snap.size, 'document') + ' returned');
+  } catch (e) { push('Query: my own deals', false, (e.code || 'error') + ' — ' + e.message); }
+
+  /* unfiltered probe — the one that actually explains a mismatch */
+  try {
+    const snap = await FB.db.collection('fin_projects').limit(20).get();
+    push('Collection contents', true, plural(snap.size, 'document') + ' visible to this account');
+    snap.docs.forEach(doc => {
+      const x = doc.data();
+      const ok = x.status === 'open';
+      push('  · ' + (x.dealId || doc.id), ok,
+           'status = ' + JSON.stringify(x.status) + (ok ? '' : '  ← not "open", so partners cannot see it')
+           + '   ·   owner = ' + (x.developerUid || '(missing)')
+           + '   ·   ' + (x.name || '(unnamed)'));
+    });
+  } catch (e) {
+    push('Collection contents', false, (e.code || 'error') + ' — ' + e.message
+         + (e.code === 'permission-denied' ? '  (expected for non-admin accounts; not a fault on its own)' : ''));
+  }
+  return out;
+}
+
+function diagnosticsModal() {
+  openModal(`
+  <div class="modal-head">
+    <div><h2>Connection diagnostics</h2>
+      <div class="mh-sub">Runs the same reads the app performs and reports exactly what the database returned.</div></div>
+    <button class="dr-x" data-act="close-modal" aria-label="Close">&times;</button>
+  </div>
+  <div class="modal-body" id="diagBody"><p class="note">Running checks…</p></div>
+  <div class="modal-foot">
+    <button class="btn btn-ghost" data-act="copy-diag">Copy results</button>
+    <button class="btn btn-primary" data-act="close-modal">Done</button>
+  </div>`);
+  runDiagnostics().then(rows => {
+    window.__diag = rows.map(r => (r.ok ? '[ok]   ' : '[FAIL] ') + r.label + ': ' + r.detail).join('\n');
+    $('#diagBody').innerHTML = `<table class="diag">${rows.map(r => `<tr class="${r.ok ? 'y' : 'n'}">
+      <td>${r.ok ? '✓' : '✕'}</td><td>${esc(r.label)}</td><td>${esc(r.detail)}</td></tr>`).join('')}</table>
+      <p class="note" style="margin-top:14px">A deal is only visible to capital partners when its <code>status</code> field is exactly <code>"open"</code>. Anything else is shown above.</p>`;
+  }).catch(e => { $('#diagBody').innerHTML = `<p class="note">Diagnostics failed: ${esc(e.message)}</p>`; });
 }
 
 /* ── Session ──────────────────────────────────────────────────────────── */
