@@ -398,6 +398,14 @@ input,select,textarea{font-family:inherit;font-size:14px}
 .extract-bar{height:3px;background:var(--cs-border);border-radius:2px;overflow:hidden;margin-top:9px}
 .extract-bar i{display:block;height:100%;width:0;background:var(--cs-blue);transition:width .4s linear}
 
+/* shared cloud links */
+.link-row{display:grid;grid-template-columns:158px 1fr 30px;gap:8px;align-items:center;margin-bottom:8px}
+.link-row input{padding:10px 12px;border:1px solid var(--cs-border);border-radius:8px;background:var(--cs-card-2);color:var(--cs-ink);width:100%;font-size:13px;transition:border-color .18s,background .18s}
+.link-row input:focus{outline:none;border-color:var(--cs-blue);background:#fff}
+.link-row input.bad{border-color:var(--cs-red);background:var(--cs-red-dim)}
+.link-row .lr-x{background:none;border:none;color:var(--cs-muted-2);font-size:19px;line-height:1;border-radius:6px;padding:4px 6px}
+.link-row .lr-x:hover{color:var(--cs-red);background:var(--cs-red-dim)}
+
 /* report */
 .report-sec{margin-bottom:22px}
 .report-sec h4{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--cs-border)}
@@ -440,6 +448,10 @@ input,select,textarea{font-family:inherit;font-size:14px}
   .auth-right{width:100%;max-width:100%;padding:36px 22px}
 }
 @media (max-width:760px){
+  .link-row{grid-template-columns:1fr 30px;grid-template-areas:"label x" "url url"}
+  .link-row .lr-label{grid-area:label}
+  .link-row .lr-x{grid-area:x}
+  .link-row .lr-url{grid-area:url}
   .app-body{padding:22px 14px 80px}
   .topbar{padding:0 14px;gap:10px}
   .topbar-brand .tag,.user-mini span:not(.avatar){display:none}
@@ -487,19 +499,19 @@ input,select,textarea{font-family:inherit;font-size:14px}
         <button class="btn btn-primary btn-block" id="loginBtn">Sign in</button>
         <p class="auth-switch">New here? <button id="toRegister">Create an account</button></p>
         <div class="demo-keys">
-          <h5>Or open a demo account</h5>
+          <h5>Or open a sample workspace</h5>
           <button class="demo-key" data-demo="originator">
             <span class="dk-role" style="background:var(--cs-amber-dim);color:var(--cs-amber)">Originator</span>
-            <span class="dk-mail">marta@ridgeline.dev</span></button>
+            <span class="dk-mail">Marta Quintero · Ridgeline Renewables</span></button>
           <button class="demo-key" data-demo="developer">
             <span class="dk-role" style="background:var(--cs-blue-dim);color:var(--cs-blue)">Developer</span>
-            <span class="dk-mail">ops@ridgeline.dev</span></button>
+            <span class="dk-mail">Dana Reyes · Northgate Clean Assets</span></button>
           <button class="demo-key" data-demo="partner">
             <span class="dk-role" style="background:var(--cs-green-dim);color:var(--cs-green)">Financing partner</span>
-            <span class="dk-mail">alan@coastlinecap.com</span></button>
+            <span class="dk-mail">Alan Petrossian · Coastline Capital</span></button>
           <button class="demo-key" data-demo="admin">
             <span class="dk-role" style="background:rgba(14,26,36,.08);color:var(--cs-muted)">Admin</span>
-            <span class="dk-mail">admin@clearsky.energy</span></button>
+            <span class="dk-mail">Platform administrator</span></button>
         </div>
       </div>
 
@@ -617,6 +629,7 @@ const pct = (n, d = 0) => n.toFixed(d) + '%';
 const dt = s => new Date(s + 'T12:00:00').toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'});
 const daysBetween = (a, b) => Math.round((new Date(b) - new Date(a)) / 86400000);
 const avg = a => a.length ? a.reduce((x,y)=>x+y,0) / a.length : 0;
+const plural = (n, one, many) => n + ' ' + (n === 1 ? one : (many || one + 's'));
 const sum = a => a.reduce((x,y)=>x+y,0);
 const median = a => { if(!a.length) return 0; const s=[...a].sort((x,y)=>x-y); const m=s.length>>1;
   return s.length % 2 ? s[m] : (s[m-1]+s[m])/2; };
@@ -716,168 +729,175 @@ const MARKETS = {
 };
 
 const TECHS = [
-  {id:'solar',   name:'Solar PV',          color:'#0089BD', ppw:[1.05,1.55], irr:[9.5,13.5]},
-  {id:'hybrid',  name:'Solar + Storage',   color:'#00AEEF', ppw:[1.55,2.35], irr:[10.5,15.0]},
-  {id:'bess',    name:'Standalone BESS',   color:'#5B4BC4', ppw:[1.85,2.80], irr:[11.0,16.5]},
-  {id:'ev',      name:'EV Charging Hub',   color:'#12805C', ppw:[2.40,4.10], irr:[8.5,14.0]},
-  {id:'micro',   name:'Microgrid',         color:'#C77A00', ppw:[2.10,3.30], irr:[10.0,14.5]},
-  {id:'chp',     name:'Fuel Cell / CHP',   color:'#8A98A6', ppw:[2.60,3.90], irr:[9.0,12.5]}
+  {id:'solar',   name:'Solar PV',        color:'#0089BD'},
+  {id:'hybrid',  name:'Solar + Storage', color:'#00AEEF'},
+  {id:'bess',    name:'Standalone BESS', color:'#5B4BC4'},
+  {id:'ev',      name:'EV Charging Hub', color:'#12805C'},
+  {id:'micro',   name:'Microgrid',       color:'#C77A00'},
+  {id:'chp',     name:'Fuel Cell / CHP', color:'#8A98A6'}
 ];
 const TECH_BY_ID = Object.fromEntries(TECHS.map(t => [t.id, t]));
 
 const STAGES = ['Submitted','Screening','Diligence','Term sheet','Closed'];
 const STAGE_COLOR = {'Submitted':'#8A98A6','Screening':'#5B4BC4','Diligence':'#00AEEF','Term sheet':'#C77A00','Closed':'#12805C'};
 
-const DEVELOPERS = ['Ridgeline Renewables','Callaway Power Partners','Kestrel Grid Development','Bluestem Energy Group','Marrow Creek Solar','Ironwood Distributed Power','Halcyon Site Works','Verdant Ridge Development','Palo Duro Energy','Northgate Clean Assets','Sixth Street Solar','Tallgrass Microgrid Co.'];
-const ORIGINATORS = ['Marta Quintero','Dev Raghunathan','Cora Whitfield','Julian Mbeki','Priya Anand','Ben Okafor','Sasha Ferrell','Tom Ridgway'];
-const PARTNERS = ['Coastline Infrastructure Capital','Meridian Tax Equity','Blackwater Yield Fund','Sunbelt Credit Partners','Anvil Green Debt','Harbor Point Capital','Cardinal Bridge Lending'];
-const DECLINE_REASONS = ['Interconnection queue risk','Offtaker credit below floor','Site control incomplete','Below minimum check size','Permitting timeline','Return threshold not met','Sponsor equity gap','Rate structure erodes savings'];
-const OFFTAKES = ['Investment-grade PPA · 20 yr','Municipal PPA · 25 yr','Merchant + hedge · 10 yr','Corporate PPA (BBB+) · 15 yr','Utility PPA · 20 yr','Behind-the-meter savings share · 15 yr'];
-const SITE_NOUNS = ['Hollow','Crossing','Ridge','Flats','Bend','Junction','Landing','Prairie','Basin','Gate','Fork','Mesa','Hollow','Reach','Bluff'];
-const SITE_ADJ = ['Cedar','Copper','Willow','Granite','Amber','Salt','Juniper','Elk','Sable','Hickory','Blue Rock','Prospect','Meridian','Foxglove','Windmere','Harlow','Quail','Sandstone'];
+const OFFTAKES = ['Behind-the-meter savings share · 15 yr','Investment-grade PPA · 20 yr','Municipal PPA · 25 yr',
+                  'Corporate PPA (BBB+) · 15 yr','Utility PPA · 20 yr','Merchant + hedge · 10 yr'];
+const DOC_PRESETS = ['Utility bills','Site details','Interconnection','Offtake / PPA','Permits','Diligence folder'];
 
-/* seed identity used only to give the demo dataset a coherent owner */
-const ME = {name:'Marta Quintero', org:'Ridgeline Renewables'};
+/* National medians, Q2 2026 — the yardstick a deal's $/W is measured against.
+   Reference data, not something derived from the deals on the platform. */
+const BENCH = {
+  solar: {median:1.28}, hybrid: {median:1.92}, bess: {median:2.31},
+  ev:    {median:3.05}, micro:  {median:2.64}, chp:  {median:3.18}
+};
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   3. DEAL GENERATION
+   3. DEALS
+   Four sample records so no workspace opens empty — one live deal per profile.
+   Swap this array for a Firestore read when the backend is wired up.
    ═══════════════════════════════════════════════════════════════════════════ */
 const TODAY = new Date('2026-07-30T12:00:00');
 const iso = d => d.toISOString().slice(0, 10);
 const addDays = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return x; };
 
-function makeBill(state, mw, tech) {
+/* The extractor: turns 12 statements into structured monthly data. Swap the
+   body for your OCR pipeline — the returned shape is what the UI reads. */
+function makeBill(state, mw) {
   const m = MARKETS[state];
   const annualKwh = Math.round(mw * 1000 * between(2400, 3600));
-  const summerPeaking = m.summer === 1;
-  // monthly load shape
-  const shape = summerPeaking
+  const shape = m.summer === 1
     ? [.070,.066,.070,.074,.086,.100,.113,.112,.098,.081,.068,.062]
     : [.098,.092,.086,.076,.070,.068,.072,.071,.070,.076,.088,.093];
   const labels = ['Aug 2025','Sep 2025','Oct 2025','Nov 2025','Dec 2025','Jan 2026','Feb 2026','Mar 2026','Apr 2026','May 2026','Jun 2026','Jul 2026'];
-  const order = summerPeaking ? [7,8,9,10,11,0,1,2,3,4,5,6] : [7,8,9,10,11,0,1,2,3,4,5,6];
+  const order = [7,8,9,10,11,0,1,2,3,4,5,6];
   const demandRate = between(11, 22);
   const energyRate = m.rate * between(0.58, 0.72);
   const months = labels.map((lab, i) => {
     const kwh = Math.round(annualKwh * shape[order[i]] * between(.96, 1.04));
-    const lf = between(.42, .62);
-    const kw = Math.round(kwh / (30.4 * 24 * lf));
-    const energy = kwh * energyRate;
-    const demand = kw * demandRate;
+    const kw = Math.round(kwh / (30.4 * 24 * between(.42, .62)));
+    const energy = kwh * energyRate, demand = kw * demandRate;
     const other = kwh * m.rate * between(.05, .11) + between(180, 620);
     return {label:lab, kwh, kw, energy, demand, other, total:energy + demand + other};
   });
   const totalKwh = sum(months.map(x => x.kwh));
   const totalCost = sum(months.map(x => x.total));
-  const peakIdx = months.reduce((best, x, i) => x.kw > months[best].kw ? i : best, 0);
   return {
     utility: m.util,
     account: 'ACCT-' + intBetween(100000, 999999),
     schedule: m.util.split(' ').slice(-1)[0],
     meter: 'MTR-' + state + intBetween(1000, 9999),
     period: 'Aug 2025 – Jul 2026',
-    months, peakIdx, totalKwh, totalCost,
+    months, totalKwh, totalCost,
+    peakIdx: months.reduce((b, x, i) => x.kw > months[b].kw ? i : b, 0),
     blended: totalCost / totalKwh,
     demandRate, energyRate,
     peakKw: Math.max(...months.map(x => x.kw)),
     loadFactor: totalKwh / (Math.max(...months.map(x => x.kw)) * 8760),
     source: 'PDF · 12 statements',
     confidence: between(.93, .995),
-    extractedOn: iso(addDays(TODAY, -intBetween(3, 60)))
+    extractedOn: iso(addDays(TODAY, -intBetween(3, 40)))
   };
 }
 
-function makeDeal(i) {
-  const state = pick(Object.keys(MARKETS));
-  const m = MARKETS[state];
-  const tech = pick(TECHS);
-  const mw = Number(between(...(tech.id === 'ev'    ? [0.6, 6]
-                              : tech.id === 'bess'  ? [4, 55]
-                              : tech.id === 'micro' ? [1, 14]
-                              : tech.id === 'chp'   ? [1.5, 18]
-                              : [1.5, 42])).toFixed(1));
-  const ppw = between(...tech.ppw);
-  const ask = Math.round(mw * 1e6 * ppw / 1e5) * 1e5;
-  const mwh = tech.id === 'bess' ? Number((mw * between(2, 4)).toFixed(1))
-            : tech.id === 'hybrid' ? Number((mw * between(.5, 2)).toFixed(1)) : 0;
+/* Fills in everything derivable, so a record only has to state what matters. */
+function buildDeal(spec) {
+  const t = TECH_BY_ID[spec.tech];
+  const d = Object.assign({
+    mwh:0, offers:0, bidders:0, wonBy:null, lead:null, declineReason:null,
+    decided:null, links:[], bill:null, irr:11.5, dscr:1.35,
+    cf: (t.id === 'solar' || t.id === 'hybrid') ? .245 : .44
+  }, spec);
+  d.techName = t.name; d.techColor = t.color;
+  d.ppw = d.ask / (d.mw * 1e6);
+  d.ageDays = daysBetween(d.submitted, iso(TODAY));
+  d.cycleDays = d.decided ? daysBetween(d.submitted, d.decided) : null;
 
-  const submitted = addDays(TODAY, -intBetween(12, 520));
-  const roll = rng();
-  let status, stage, decided = null, declineReason = null;
-  if (roll < .28)      { status = 'won';       stage = 'Closed'; }
-  else if (roll < .47) { status = 'declined';  stage = 'Screening'; declineReason = pick(DECLINE_REASONS); }
-  else if (roll < .53) { status = 'withdrawn'; stage = 'Diligence'; }
-  else                 { status = 'active';    stage = pick(['Submitted','Screening','Diligence','Term sheet']); }
-
-  const cycle = status === 'won' ? intBetween(74, 210)
-              : status === 'declined' ? intBetween(9, 48)
-              : status === 'withdrawn' ? intBetween(30, 120) : null;
-  if (cycle) decided = addDays(submitted, cycle);
-  if (decided && decided > TODAY) decided = addDays(TODAY, -intBetween(1, 10));
-
-  const bill = rng() < .72 ? makeBill(state, mw, tech) : null;
-  const ppaRate = bill ? bill.blended * between(.68, 1.02) : m.rate * between(.66, .95);
-
-  const stageIdx = STAGES.indexOf(stage);
-  const durations = [];
-  let acc = 0;
-  const totalElapsed = cycle || daysBetween(submitted, TODAY);
+  const stageIdx = Math.max(0, STAGES.indexOf(d.stage));
   const weights = [.12, .22, .38, .18, .10];
-  for (let s = 0; s <= Math.max(stageIdx, 0); s++) {
-    const d = Math.max(2, Math.round(totalElapsed * weights[s] / sum(weights.slice(0, stageIdx + 1))));
-    durations.push({stage: STAGES[s], days: d, start: acc}); acc += d;
-  }
-
-  return {
-    id: 'CS-' + (2400 + i),
-    name: pick(SITE_ADJ) + ' ' + pick(SITE_NOUNS) + ' ' + (tech.id === 'ev' ? 'Charging Hub' : tech.id === 'bess' ? 'Storage' : tech.id === 'chp' ? 'Energy Center' : tech.id === 'micro' ? 'Microgrid' : 'Solar'),
-    state, city: pick(m.cities),
-    developer: pick(DEVELOPERS),
-    originator: pick(ORIGINATORS),
-    tech: tech.id, techName: tech.name, techColor: tech.color,
-    mw, mwh, ask, ppw,
-    stage, status, declineReason,
-    submitted: iso(submitted),
-    decided: decided ? iso(decided) : null,
-    cycleDays: cycle,
-    ageDays: daysBetween(submitted, TODAY),
-    durations,
-    offers: status === 'declined' ? 0 : intBetween(0, 5),
-    bidders: status === 'declined' ? intBetween(1, 3) : intBetween(1, 6),
-    wonBy: status === 'won' ? pick(PARTNERS) : null,
-    lead: status === 'active' ? pick(PARTNERS) : null,
-    irr: Number(between(...tech.irr).toFixed(1)),
-    dscr: Number(between(1.15, 1.72).toFixed(2)),
-    offtake: pick(OFFTAKES),
-    interconnect: pick(['Study complete','In cluster study','Energization agreement signed','Feasibility only','Queue position held']),
-    permits: pick(['Fully permitted','CUP pending','Zoning approved','Pre-application']),
-    siteControl: pick(['Option to lease','Executed lease','Purchase option','Letter of intent']),
-    cod: iso(addDays(submitted, intBetween(400, 900))),
-    cf: Number(between(tech.id === 'solar' || tech.id === 'hybrid' ? .21 : .38,
-                       tech.id === 'solar' || tech.id === 'hybrid' ? .28 : .52).toFixed(3)),
-    ppaRate,
-    bill,
-    docs: [
-      {label:'Utility bills (12 mo)', kind:'bills', have: !!bill},
-      {label:'Site details & survey', kind:'site', have: rng() < .9},
-      {label:'Interconnection study', kind:'intc', have: rng() < .75},
-      {label:'Offtake / PPA draft', kind:'ppa', have: rng() < .68},
-      {label:'Permits & zoning', kind:'permit', have: rng() < .6},
-      {label:'Full diligence folder', kind:'folder', have: true}
-    ]
-  };
+  const span = d.cycleDays || d.ageDays;
+  const denom = sum(weights.slice(0, stageIdx + 1));
+  let acc = 0;
+  d.durations = STAGES.slice(0, stageIdx + 1).map((st, i) => {
+    const days = Math.max(1, Math.round(span * weights[i] / denom));
+    const seg = {stage:st, days, start:acc}; acc += days; return seg;
+  });
+  d.savings = d.bill ? (d.bill.blended - d.ppaRate) / d.bill.blended : null;
+  return d;
 }
 
-const DEALS = Array.from({length: 96}, (_, i) => makeDeal(i));
-/* make sure "my" originator has a solid book to look at */
-DEALS.slice(0, 34).forEach(d => { d.originator = ME.name; d.developer = ME.org; });
-DEALS.forEach(d => { d.savings = d.bill ? (d.bill.blended - d.ppaRate) / d.bill.blended : null; });
+const SAMPLES = [
+  {
+    id:'CS-2401', name:'Cedar Hollow Solar + Storage',
+    developer:'Ridgeline Renewables', originator:'Marta Quintero',
+    state:'TX', city:'Abilene', tech:'hybrid', mw:8.4, mwh:12.6, ask:16800000,
+    stage:'Diligence', status:'active', submitted:'2026-04-18',
+    bidders:4, offers:2, lead:'Coastline Infrastructure Capital',
+    irr:12.4, dscr:1.41, offtake:'Behind-the-meter savings share · 15 yr',
+    interconnect:'Study complete', permits:'CUP pending', siteControl:'Option to lease',
+    cod:'2027-09-15', billDiscount:.78,
+    links:[
+      {label:'Utility bills',    url:'https://drive.google.com/drive/folders/1cedar-hollow-utility-bills'},
+      {label:'Site details',     url:'https://drive.google.com/file/d/1cedar-hollow-site-survey/view'},
+      {label:'Interconnection',  url:'https://drive.google.com/file/d/1cedar-hollow-icx-study/view'},
+      {label:'Diligence folder', url:'https://drive.google.com/drive/folders/1cedar-hollow-diligence'}
+    ]
+  },
+  {
+    id:'CS-2402', name:'Prospect Mesa Storage',
+    developer:'Ridgeline Renewables', originator:'Marta Quintero',
+    state:'AZ', city:'Casa Grande', tech:'bess', mw:20, mwh:80, ask:46000000,
+    stage:'Closed', status:'won', submitted:'2025-09-08', decided:'2026-02-19',
+    bidders:6, offers:3, wonBy:'Coastline Infrastructure Capital',
+    irr:13.8, dscr:1.52, offtake:'Utility PPA · 20 yr',
+    interconnect:'Energization agreement signed', permits:'Fully permitted', siteControl:'Executed lease',
+    cod:'2027-04-01', billDiscount:.72,
+    links:[
+      {label:'Utility bills',    url:'https://www.dropbox.com/scl/fo/prospect-mesa-bills'},
+      {label:'Offtake / PPA',    url:'https://www.dropbox.com/scl/fi/prospect-mesa-ppa-executed.pdf'},
+      {label:'Permits',          url:'https://www.dropbox.com/scl/fo/prospect-mesa-permits'},
+      {label:'Diligence folder', url:'https://www.dropbox.com/scl/fo/prospect-mesa-diligence'}
+    ]
+  },
+  {
+    id:'CS-2403', name:'Salt Fork Microgrid',
+    developer:'Northgate Clean Assets', originator:'Dana Reyes',
+    state:'OH', city:'Lima', tech:'micro', mw:4.2, ask:11300000,
+    stage:'Term sheet', status:'active', submitted:'2026-05-27',
+    bidders:3, offers:1, lead:'Anvil Green Debt',
+    irr:11.6, dscr:1.33, offtake:'Corporate PPA (BBB+) · 15 yr',
+    interconnect:'In cluster study', permits:'Zoning approved', siteControl:'Purchase option',
+    cod:'2027-11-30', billDiscount:.86,
+    links:[
+      {label:'Utility bills',    url:'https://www.dropbox.com/scl/fo/salt-fork-utility-bills'},
+      {label:'Site details',     url:'https://drive.google.com/drive/folders/1salt-fork-site'},
+      {label:'Diligence folder', url:'https://www.dropbox.com/scl/fo/salt-fork-diligence'}
+    ]
+  },
+  {
+    id:'CS-2404', name:'Quail Ridge Solar',
+    developer:'Ironwood Distributed Power', originator:'Priya Anand',
+    state:'NC', city:'Rocky Mount', tech:'solar', mw:6.8, ask:8900000,
+    stage:'Screening', status:'declined', submitted:'2026-06-11', decided:'2026-07-03',
+    bidders:2, offers:0, declineReason:'Interconnection queue risk',
+    irr:10.2, dscr:1.24, offtake:'Municipal PPA · 25 yr',
+    interconnect:'Queue position held', permits:'Pre-application', siteControl:'Letter of intent',
+    cod:'2028-02-15', ppaRate:0.0785,
+    links:[
+      {label:'Site details',     url:'https://drive.google.com/drive/folders/1quail-ridge-site'},
+      {label:'Diligence folder', url:'https://drive.google.com/drive/folders/1quail-ridge-diligence'}
+    ]
+  }
+];
 
-/* market benchmarks — median $/W by technology, used for fairness scoring */
-const BENCH = Object.fromEntries(TECHS.map(t => {
-  const rows = DEALS.filter(d => d.tech === t.id).map(d => d.ppw);
-  return [t.id, {median: median(rows), p25: median(rows.filter(x => x < median(rows))), p75: median(rows.filter(x => x > median(rows)))}];
-}));
+const DEALS = SAMPLES.map(spec => {
+  if (spec.billDiscount) {
+    spec.bill = makeBill(spec.state, spec.mw);
+    spec.ppaRate = spec.bill.blended * spec.billDiscount;
+    delete spec.billDiscount;
+  }
+  return buildDeal(spec);
+});
 
 /* ═══════════════════════════════════════════════════════════════════════════
    4. APP STATE + FILTERING
@@ -1056,9 +1076,11 @@ const RAMP = ['#D6E9F2','#A3D0E5','#63AFD3','#2189BD','#0A5C86'];
 const CALLOUTS = ['NH','VT','MA','RI','CT','NJ','DE','MD','DC'];
 let mapSel = null;
 
+/* The ramp is scaled against at least four deals, so an early-stage book with
+   one deal per state reads as light rather than maxed out. */
 function shadeIdx(n, maxN) {
   if (!n) return -1;
-  return Math.max(0, Math.min(4, Math.ceil(n / maxN * 5) - 1));
+  return Math.max(0, Math.min(4, Math.ceil(n / Math.max(maxN, 4) * 5) - 1));
 }
 
 function statePanel(agg, list) {
@@ -1154,7 +1176,7 @@ function usMap(list, caption) {
           <span>Fewer deals</span>
           <span class="buckets">${RAMP.map(c => `<i style="background:${c}"></i>`).join('')}</span>
           <span>More</span>
-          <span style="margin-left:auto;font-family:var(--mono);font-size:11px">1${maxN > 1 ? '–' + maxN : ''} deals per state · ${list.length} total</span>
+          <span style="margin-left:auto;font-family:var(--mono);font-size:11px">${maxN > 1 ? '1–' + maxN + ' per state' : '1 deal per active state'} · ${list.length} total</span>
         </div>
       </div>
       ${statePanel(agg, list)}
@@ -1181,6 +1203,7 @@ function devOverview() {
   const market = stats(allDeals());
 
   /* quarterly win rate for me vs the whole marketplace */
+  const decided = all.filter(d => d.status === 'won' || d.status === 'declined');
   const quarters = ['2025 Q3','2025 Q4','2026 Q1','2026 Q2'];
   const qOf = d => { const x = new Date(d.decided || d.submitted); return x.getFullYear() + ' Q' + (Math.floor(x.getMonth() / 3) + 1); };
   const qSeries = quarters.map(q => {
@@ -1206,17 +1229,25 @@ function devOverview() {
   ];
   outcome.center = st.n; outcome.centerLabel = 'DEALS';
 
+  const nDecided = st.won + st.declined;
   const cycleSpark = all.filter(d => d.cycleDays).sort((a, b) => a.submitted.localeCompare(b.submitted)).slice(-14).map(d => d.cycleDays);
 
   return `
   ${filterChips()}
   <div class="kpi-strip">
-    ${kpi('Deals submitted', st.n, '', `${st.active} still in market`, '')}
-    ${kpi('Capital requested', usdC(st.ask), '', `${num(st.mw, 0)} MW across ${Object.keys(stateAgg(list)).length} states`, '')}
-    ${kpi('Approval rate', pct(st.approvalRate), '', `${st.won} funded / ${st.won + st.declined} decided`, st.approvalRate >= market.approvalRate ? 'up' : 'down')}
-    ${kpi('Win rate vs market', pct(stAll.winRate), '', `marketplace runs ${pct(market.winRate)}`, stAll.winRate >= market.winRate ? 'up' : 'down')}
+    ${kpi('Deals submitted', st.n, '', st.active ? `${st.active} still in market` : 'none open right now', '')}
+    ${kpi('Capital requested', usdC(st.ask), '', `${num(st.mw, 0)} MW across ${plural(Object.keys(stateAgg(list)).length, 'state')}`, '')}
+    ${kpi('Approval rate', nDecided ? pct(st.approvalRate) : '—', '',
+          nDecided ? `${st.won} funded / ${plural(nDecided, 'decision')}` : 'no decisions back yet',
+          nDecided && st.approvalRate >= market.approvalRate ? 'up' : nDecided ? 'down' : '')}
+    ${kpi('Win rate vs market', nDecided ? pct(stAll.winRate) : '—', '',
+          `marketplace runs ${pct(market.winRate)}`,
+          nDecided && stAll.winRate >= market.winRate ? 'up' : nDecided ? 'down' : '')}
     ${kpi('Average deal size', usdC(st.avgAsk), '', `median ${usdC(st.medAsk)} · ${num(st.avgMw)} MW avg`, '')}
-    ${kpi('Days to close', Math.round(stAll.avgCycle || 0), 'days', `declines land in ${Math.round(stAll.avgScreen || 0)}`, '', sparkline(cycleSpark, 118, 34, 'var(--cs-blue)'))}
+    ${kpi('Days to close', stAll.avgCycle ? Math.round(stAll.avgCycle) : '—', stAll.avgCycle ? 'days' : '',
+          stAll.avgScreen ? `declines land in ${Math.round(stAll.avgScreen)}`
+            : stAll.avgCycle ? 'submission to funding' : 'no closes on record yet', '',
+          cycleSpark.length > 2 ? sparkline(cycleSpark, 118, 34, 'var(--cs-blue)') : '')}
   </div>
 
   ${usMap(filtered('state'), 'Your book of business.')}
@@ -1235,7 +1266,8 @@ function devOverview() {
             <span class="lab">${o.label}</span>
             <span class="val">${o.v}</span></div>`).join('')}
           <div style="border-top:1px solid var(--cs-border);padding-top:10px;margin-top:4px;font-size:12px;color:var(--cs-muted);line-height:1.55">
-            Of the ${st.won + st.declined} decisions returned, <b style="color:var(--cs-ink)">${pct(st.approvalRate)}</b> came back approved.
+            ${nDecided ? `Of ${plural(nDecided, 'decision')} returned, <b style="color:var(--cs-ink)">${pct(st.approvalRate)}</b> came back approved.`
+                       : 'Nothing has come back from committee yet.'}
           </div>
         </div>
       </div>
@@ -1250,14 +1282,21 @@ function devOverview() {
         <div><h3>Win rate by quarter</h3>
           <div class="ch-sub">Share of your decided deals that got funded. The dashed line is the whole marketplace.</div></div>
       </div>
-      ${columns(qSeries, market.winRate, 'Market')}
+      ${decided.length >= 4 ? columns(qSeries, market.winRate, 'Market')
+        : `<div style="padding:34px 4px 26px;text-align:center">
+             <div style="font-family:Syne;font-size:34px;font-weight:700;letter-spacing:-1px">${decided.length ? pct(stAll.approvalRate) : '—'}</div>
+             <div style="font-size:12px;color:var(--cs-muted);margin-top:6px;line-height:1.6;max-width:34ch;margin-inline:auto">
+               ${decided.length
+                 ? `${st.won} of ${decided.length} decided deal${decided.length > 1 ? 's' : ''} came back funded. A quarter-by-quarter trend needs at least four decisions.`
+                 : 'Nothing has come back from committee yet. This fills in with your first decision.'}
+             </div></div>`}
       <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--cs-border);display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
         <div><div class="k" style="font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--cs-muted-2)">Bidders per deal</div>
-          <div style="font-family:Syne;font-size:19px;font-weight:700;margin-top:3px">${num(avg(all.map(d => d.bidders)))}</div></div>
+          <div style="font-family:Syne;font-size:19px;font-weight:700;margin-top:3px">${all.length ? num(avg(all.map(d => d.bidders))) : '—'}</div></div>
         <div><div class="k" style="font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--cs-muted-2)">Offers received</div>
           <div style="font-family:Syne;font-size:19px;font-weight:700;margin-top:3px">${sum(all.map(d => d.offers))}</div></div>
         <div><div class="k" style="font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--cs-muted-2)">Capital funded</div>
-          <div style="font-family:Syne;font-size:19px;font-weight:700;margin-top:3px">${usdC(stAll.wonAsk)}</div></div>
+          <div style="font-family:Syne;font-size:19px;font-weight:700;margin-top:3px">${stAll.wonAsk ? usdC(stAll.wonAsk) : '—'}</div></div>
       </div>
     </div>
   </div>
@@ -1290,13 +1329,24 @@ function devTimelines() {
   const won = all.filter(d => d.status === 'won');
   const wonDays = won.map(d => d.cycleDays).filter(Boolean);
 
+  const openDeals = all.filter(d => d.status === 'active');
+  const oldest = openDeals.length ? Math.max(...openDeals.map(d => d.ageDays)) : 0;
+  const declines = all.filter(d => d.status === 'declined').map(d => d.cycleDays).filter(Boolean);
+
   return `
   ${filterChips()}
   <div class="kpi-strip">
-    ${kpi('Median time to close', Math.round(median(won.map(d => d.cycleDays).filter(Boolean))), 'days', `${won.length} funded deals`, '')}
-    ${kpi('Fastest close', wonDays.length ? Math.min(...wonDays) : '—', wonDays.length ? 'days' : '', 'best case on record', 'up')}
-    ${kpi('Slowest close', wonDays.length ? Math.max(...wonDays) : '—', wonDays.length ? 'days' : '', 'usually interconnection', 'down')}
-    ${kpi('Still open', all.filter(d => d.status === 'active').length, '', `oldest is ${Math.max(...all.filter(d => d.status === 'active').map(d => d.ageDays).concat([0]))} days in`, '')}
+    ${wonDays.length >= 2
+      ? kpi('Median time to close', Math.round(median(wonDays)), 'days', `${won.length} funded deals`, '') +
+        kpi('Fastest close', Math.min(...wonDays), 'days', 'best case on record', 'up') +
+        kpi('Slowest close', Math.max(...wonDays), 'days', 'usually interconnection', 'down')
+      : kpi('Time to close', wonDays.length ? wonDays[0] : '—', wonDays.length ? 'days' : '',
+            wonDays.length ? 'submission to funding' : 'nothing funded yet', '') +
+        kpi('Longest open now', oldest || '—', oldest ? 'days' : '',
+            `${openDeals.length} deal${openDeals.length === 1 ? '' : 's'} in market`, '') +
+        kpi('Decline turnaround', declines.length ? Math.round(avg(declines)) : '—', declines.length ? 'days' : '',
+            declines.length ? 'committee comes back fast' : 'no declines yet', '')}
+    ${kpi('Still open', openDeals.length, '', openDeals.length ? `oldest is ${oldest} days in` : 'nothing pending', '')}
   </div>
 
   <div class="card">
@@ -1458,9 +1508,9 @@ function partnerMarketplace() {
   return `
   <div class="kpi-strip">
     ${kpi('Deals in market', inMarket.length, '', `${usdC(sum(inMarket.map(d => d.ask)))} seeking capital`, '')}
-    ${kpi('Total pipeline', usdC(st.ask), '', `${st.n} deals · ${num(st.mw, 0)} MW`, '')}
+    ${kpi('Total pipeline', usdC(st.ask), '', `${plural(st.n, 'deal')} · ${num(st.mw, 0)} MW`, '')}
     ${kpi('Median check', usdC(st.medAsk), '', `avg ${usdC(st.avgAsk)}`, '')}
-    ${kpi('Blended $/W', '$' + st.ppw.toFixed(2), '', `across ${Object.keys(stateAgg(list)).length} states`, '')}
+    ${kpi('Blended $/W', '$' + st.ppw.toFixed(2), '', `across ${plural(Object.keys(stateAgg(list)).length, 'state')}`, '')}
     ${kpi('Bills on file', withBills.length, '', `${equitable.length} clear the 12% savings bar`, equitable.length ? 'up' : '')}
     ${kpi('Avg sponsor IRR', pct(st.avgIrr, 1), '', `DSCR ${num(avg(list.map(d => d.dscr)), 2)} avg`, '')}
   </div>
@@ -1573,6 +1623,32 @@ function partnerReports() {
       </div>
     </div>
   </div>`;
+}
+
+/* ── Shared cloud links. Documents stay in the sponsor's own storage; the
+   platform holds only the URL and a record of who opened it. ── */
+function linkHost(url) {
+  try { return new URL(url).hostname.replace(/^www\./, ''); } catch (e) { return String(url).slice(0, 40); }
+}
+function providerName(url) {
+  const h = linkHost(url);
+  if (/drive\.google|docs\.google/.test(h)) return 'Google Drive';
+  if (/dropbox/.test(h))                     return 'Dropbox';
+  if (/onedrive|sharepoint|1drv/.test(h))    return 'OneDrive';
+  if (/box\.com/.test(h))                    return 'Box';
+  if (/sharefile|egnyte/.test(h))            return 'Managed share';
+  return 'External link';
+}
+function providerIcon(url) {
+  const paths = {
+    'Google Drive':'<path d="M8 3h8l6 10-4 8H6l-4-8z"/><path d="M8 3l6 10M16 3l-6 10M2 13h20"/>',
+    'Dropbox':'<path d="M7 3l5 3.2L7 9.4 2 6.2zM17 3l5 3.2-5 3.2-5-3.2zM2 12.6l5-3.2 5 3.2-5 3.2zM17 9.4l5 3.2-5 3.2-5-3.2zM7 17.6l5-3.2 5 3.2-5 3.2z"/>',
+    'OneDrive':'<path d="M7 18h11a3 3 0 0 0 .4-6A5 5 0 0 0 9 10a4 4 0 0 0-2 8z"/>',
+    'Box':'<rect x="3" y="6" width="18" height="14" rx="2"/><path d="M3 10h18"/>'
+  };
+  return '<svg class="dl-ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round">'
+    + (paths[providerName(url)] || '<path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1"/><path d="M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/>')
+    + '</svg>';
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -1710,23 +1786,22 @@ function drawerBody(d) {
   }
 
   if (S.drawerTab === 'docs') {
-    const icons = {bills:'M9 2h6l5 5v15H4V2h5z', site:'M12 2l9 5v10l-9 5-9-5V7z', intc:'M13 2L3 14h8l-1 8 10-12h-8z', ppa:'M4 4h16v16H4z', permit:'M12 2l7 4v6c0 5-3 8-7 10-4-2-7-5-7-10V6z', folder:'M3 6h6l2 3h10v11H3z'};
+    const links = d.links || [];
+    const missing = DOC_PRESETS.filter(x => !links.some(l => l.label.toLowerCase() === x.toLowerCase()));
     return `
-    <p class="note" style="margin-bottom:16px">Documents live in the sponsor's own storage. Opening one records an access entry on the deal's audit trail.</p>
-    ${d.docs.map(doc => doc.have
-      ? `<a class="doc-link" href="#" data-act="doc" data-val="${doc.kind}">
-          <svg class="dl-ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"><path d="${icons[doc.kind]}"/></svg>
-          <span class="dl-name">${esc(doc.label)}<span>${doc.kind === 'bills' && d.bill ? d.bill.period + ' · ' + d.bill.utility : 'Shared by ' + esc(d.originator)}</span></span>
-          <span class="dl-go">Open ›</span></a>`
-      : `<div class="doc-link" style="opacity:.5;border-style:dashed;cursor:default">
-          <svg class="dl-ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="${icons[doc.kind]}"/></svg>
-          <span class="dl-name">${esc(doc.label)}<span>Not provided yet</span></span>
-          <span class="dl-go">—</span></div>`).join('')}
-    <div class="sec" style="margin-top:24px">
-      <h4>Request a document</h4>
-      <p class="note" style="margin-bottom:11px">Sends a note to ${esc(d.originator)} listing exactly what's missing.</p>
-      <button class="btn btn-ghost btn-sm" data-act="request-docs">Request the ${d.docs.filter(x => !x.have).length} missing items</button>
-    </div>`;
+    <p class="note" style="margin-bottom:16px">Documents stay in the sponsor's own Drive, Dropbox or Box. Opening one records an entry on the audit trail — nothing is copied onto the platform.</p>
+    ${links.length ? links.map(l => `<a class="doc-link" href="${esc(l.url)}" target="_blank" rel="noopener noreferrer" data-act="doc-open">
+        ${providerIcon(l.url)}
+        <span class="dl-name">${esc(l.label)}<span>${esc(providerName(l.url))} · ${esc(linkHost(l.url))}</span></span>
+        <span class="dl-go">Open ›</span></a>`).join('')
+      : '<div class="doc-missing">No links shared yet.</div>'}
+    ${missing.length ? `<div class="sec" style="margin-top:24px">
+      <h4>Not shared yet</h4>
+      <div style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:13px">
+        ${missing.map(x => `<span class="pill p-withdrawn">${esc(x)}</span>`).join('')}</div>
+      <p class="note" style="margin-bottom:11px">Sends ${esc(d.originator)} a note naming exactly what's outstanding.</p>
+      <button class="btn btn-ghost btn-sm" data-act="request-docs">Request the ${missing.length} missing item${missing.length > 1 ? 's' : ''}</button>
+    </div>` : '<p class="note" style="margin-top:20px">Every standard diligence item has a link attached.</p>'}`;
   }
 
   if (S.drawerTab === 'bill') {
@@ -1817,10 +1892,11 @@ function renderDrawer() {
 const stamp = () => iso(TODAY).replace(/-/g, '');
 
 function exportDeals(list) {
-  const rows = [['Deal ID','Name','City','State','Technology','MW','MWh','Capital ask (USD)','$/W','Stage','Outcome','Decline reason','Developer','Originator','Bidders','Offers','Sponsor IRR %','DSCR','Offtake','Site control','Permits','Interconnection','Submitted','Decided','Days in process','Target COD']];
+  const rows = [['Deal ID','Name','City','State','Technology','MW','MWh','Capital ask (USD)','$/W','Stage','Outcome','Decline reason','Developer','Originator','Bidders','Offers','Sponsor IRR %','DSCR','Offtake','Site control','Permits','Interconnection','Submitted','Decided','Days in process','Target COD','Shared links']];
   list.forEach(d => rows.push([d.id, d.name, d.city, d.state, d.techName, d.mw, d.mwh || '', d.ask, d.ppw.toFixed(3), d.stage,
     STATUS_PILL[d.status][1], d.declineReason || '', d.developer, d.originator, d.bidders, d.offers, d.irr, d.dscr,
-    d.offtake, d.siteControl, d.permits, d.interconnect, d.submitted, d.decided || '', d.cycleDays || d.ageDays, d.cod]));
+    d.offtake, d.siteControl, d.permits, d.interconnect, d.submitted, d.decided || '', d.cycleDays || d.ageDays, d.cod,
+    (d.links || []).map(l => l.label + ': ' + l.url).join(' | ')]));
   downloadCSV(`omega-deal-details-${stamp()}.csv`, rows);
 }
 
@@ -1903,6 +1979,29 @@ function exportTech(list) {
    ═══════════════════════════════════════════════════════════════════════════ */
 let pendingBill = null;
 
+function addLinkRow(label) {
+  const box = $('#linkRows'); if (!box) return;
+  const row = document.createElement('div');
+  row.className = 'link-row';
+  row.innerHTML = `<input class="lr-label" list="linkPresets" placeholder="What is it?" value="${esc(typeof label === 'string' ? label : '')}">
+    <input class="lr-url" type="url" placeholder="https://drive.google.com/…  or  https://dropbox.com/…">
+    <button class="lr-x" data-act="rm-link" aria-label="Remove this link">&times;</button>`;
+  box.appendChild(row);
+}
+
+function collectLinks() {
+  const links = [], bad = [];
+  $$('#linkRows .link-row').forEach(row => {
+    const label = $('.lr-label', row).value.trim();
+    const urlEl = $('.lr-url', row), url = urlEl.value.trim();
+    urlEl.classList.remove('bad');
+    if (!url) return;
+    if (!/^https?:\/\/[^\s]+\.[^\s]+/i.test(url)) { urlEl.classList.add('bad'); bad.push(label || url); return; }
+    links.push({label: label || providerName(url), url});
+  });
+  return {links, bad};
+}
+
 function openModal(html) { $('#modalEl').innerHTML = html; $('#modalBack').classList.add('show'); }
 function closeModal() { $('#modalBack').classList.remove('show'); $('#modalEl').innerHTML = ''; pendingBill = null; }
 
@@ -1942,12 +2041,24 @@ function submitModal() {
     </div>
     <div id="billResult"></div>
     <p class="field-note">Set the state and nameplate first — the extractor uses them to validate the meter data it reads.</p>
+
+    <div class="form-rule"></div>
+    <h4 style="font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--cs-muted-2);margin-bottom:5px">Shared document links</h4>
+    <p class="field-note" style="margin:0 0 12px">Paste a Google Drive, Dropbox, OneDrive or Box link for anything a capital partner will ask to see. Files stay in your storage — the marketplace holds the link and logs who opened it.</p>
+    <div id="linkRows"></div>
+    <button class="link-btn" data-act="add-link" style="margin-top:4px">+ Add another link</button>
+    <datalist id="linkPresets">
+      <option value="Utility bills"></option><option value="Site details"></option>
+      <option value="Interconnection"></option><option value="Offtake / PPA"></option>
+      <option value="Permits"></option><option value="Diligence folder"></option>
+    </datalist>
   </div>
   <div class="modal-foot">
     <button class="btn btn-ghost" data-act="close-modal">Cancel</button>
     <button class="btn btn-primary" data-act="save-deal">Submit to marketplace</button>
   </div>`);
 
+  ['Utility bills', 'Site details', 'Diligence folder'].forEach(addLinkRow);
   const drop = $('#billDrop'), input = $('#billFile');
   ['dragenter','dragover'].forEach(e => drop.addEventListener(e, ev => { ev.preventDefault(); drop.classList.add('over'); }));
   ['dragleave','drop'].forEach(e => drop.addEventListener(e, ev => { ev.preventDefault(); drop.classList.remove('over'); }));
@@ -2007,31 +2118,21 @@ function saveDeal() {
   if (!mw || mw <= 0) return toast('Nameplate MW is required.', true);
   if (!ask || ask <= 0) return toast('Capital ask is required.', true);
 
-  const rate = parseFloat($('#nfRate').value) || (pendingBill ? pendingBill.blended * .82 : MARKETS[state].rate * .8);
-  const mwh = parseFloat($('#nfMwh').value) || 0;
-  const d = {
-    id: 'CS-' + (2400 + DEALS.length + S.uploaded.length),
+  const {links, bad} = collectLinks();
+  if (bad.length) return toast('Links need to start with https:// — check "' + bad[0] + '".', true);
+
+  const d = buildDeal({
+    id: 'CS-' + (2405 + S.uploaded.length),
     name, state, city: $('#nfCity').value.trim() || MARKETS[state].cities[0],
     developer: SESSION.org, originator: SESSION.name,
-    tech: tech.id, techName: tech.name, techColor: tech.color,
-    mw, mwh, ask, ppw: ask / (mw * 1e6),
-    stage:'Submitted', status:'active', declineReason:null,
-    submitted: iso(TODAY), decided:null, cycleDays:null, ageDays:0,
-    durations:[{stage:'Submitted', days:1, start:0}],
-    offers:0, bidders:0, wonBy:null, lead:null,
-    irr: Number(avg(tech.irr).toFixed(1)), dscr:1.35,
+    tech: tech.id, mw, mwh: parseFloat($('#nfMwh').value) || 0, ask,
+    stage:'Submitted', status:'active', submitted: iso(TODAY),
     offtake: $('#nfOfftake').value,
     interconnect:'Feasibility only', permits:'Pre-application', siteControl:'Letter of intent',
-    cod: iso(addDays(TODAY, 540)), cf: tech.id === 'solar' || tech.id === 'hybrid' ? .245 : .44,
-    ppaRate: rate, bill: pendingBill,
-    docs:[{label:'Utility bills (12 mo)', kind:'bills', have: !!pendingBill},
-          {label:'Site details & survey', kind:'site', have:false},
-          {label:'Interconnection study', kind:'intc', have:false},
-          {label:'Offtake / PPA draft', kind:'ppa', have:false},
-          {label:'Permits & zoning', kind:'permit', have:false},
-          {label:'Full diligence folder', kind:'folder', have:true}]
-  };
-  d.savings = d.bill ? (d.bill.blended - d.ppaRate) / d.bill.blended : null;
+    cod: iso(addDays(TODAY, 540)),
+    ppaRate: parseFloat($('#nfRate').value) || (pendingBill ? pendingBill.blended * .82 : MARKETS[state].rate * .8),
+    bill: pendingBill, links
+  });
   S.uploaded.unshift(d);
   closeModal();
   render();
@@ -2059,7 +2160,7 @@ function render() {
   $('#pageTitle').textContent = isDev ? 'Deal intelligence' : 'Capital marketplace';
   $('#pageSub').textContent = isDev
     ? `${SESSION.org} · ${book.length} deal${book.length === 1 ? '' : 's'} ${SESSION.role === 'originator' ? 'originated' : 'submitted'}. Where they are, how big they are, what came back, and how long it took.`
-    : `${SESSION.org} · ${allDeals().length} deals from ${new Set(allDeals().map(d => d.originator)).size} originators across ${Object.keys(stateAgg(allDeals())).length} states.`;
+    : `${SESSION.org} · ${allDeals().length} deals from ${plural(new Set(allDeals().map(d => d.originator)).size, 'originator')} across ${plural(Object.keys(stateAgg(allDeals())).length, 'state')}.`;
 
   $('#headActions').innerHTML = isDev
     ? `<button class="btn btn-ghost btn-sm" data-act="export-deals">Export my book</button>
@@ -2125,6 +2226,8 @@ document.addEventListener('click', e => {
     case 'open':       openDeal(val); break;
     case 'drtab':      S.drawerTab = val; renderDrawer(); break;
     case 'new-deal':   submitModal(); break;
+    case 'add-link':   addLinkRow(); break;
+    case 'rm-link':    el.closest('.link-row').remove(); break;
     case 'save-deal':  saveDeal(); break;
     case 'close-modal':closeModal(); break;
     case 'print':      window.print(); break;
@@ -2141,10 +2244,7 @@ document.addEventListener('click', e => {
     case 'export-onedeal':  if (S.drawerDeal) exportDeals([S.drawerDeal]); break;
     case 'export-onebill':  if (S.drawerDeal) exportBills([S.drawerDeal]); break;
 
-    case 'doc':        e.preventDefault();
-      if (val === 'bills' && S.drawerDeal && S.drawerDeal.bill) { S.drawerTab = 'bill'; renderDrawer(); }
-      else toast('Opening in the sponsor\'s document store — access logged to the audit trail.');
-      break;
+    case 'doc-open':   toast('Opening in ' + providerName(el.getAttribute('href')) + ' — access logged to the audit trail.'); break;
     case 'request-docs': toast('Request sent to ' + (S.drawerDeal ? S.drawerDeal.originator : 'the originator') + '.'); break;
     case 'offer':      toast('Offer builder opens here — terms, structure and conditions precedent.'); break;
     case 'watch':      toast('Added to your watchlist. You\'ll get a note when the stage changes.'); break;
@@ -2231,11 +2331,13 @@ const ROLE_META = {
   partner:    {side:'partner', chip:'partner', label:'Financing partner'},
   admin:      {side:'both',    chip:'admin',   label:'Platform admin'}
 };
+/* Sample workspaces. No email addresses — these open directly, and none of
+   them correspond to a real account until Firebase is connected. */
 const DEMO_ACCOUNTS = {
-  originator: {name:'Marta Quintero',  org:'Ridgeline Renewables',              email:'marta@ridgeline.dev',      role:'originator'},
-  developer:  {name:'Dana Reyes',      org:'Ridgeline Renewables',              email:'ops@ridgeline.dev',        role:'developer'},
-  partner:    {name:'Alan Petrossian', org:'Coastline Infrastructure Capital',  email:'alan@coastlinecap.com',    role:'partner'},
-  admin:      {name:'Tommy Gilmer',    org:'ClearSky Energy Solutions',         email:'admin@clearsky.energy',    role:'admin'}
+  originator: {name:'Marta Quintero',  org:'Ridgeline Renewables',             role:'originator'},
+  developer:  {name:'Dana Reyes',      org:'Northgate Clean Assets',           role:'developer'},
+  partner:    {name:'Alan Petrossian', org:'Coastline Infrastructure Capital', role:'partner'},
+  admin:      {name:'Tommy Gilmer',    org:'ClearSky Energy Solutions',        role:'admin'}
 };
 let SESSION = null;
 let regRole = 'developer';
@@ -2317,9 +2419,7 @@ $('#loginBtn').addEventListener('click', async () => {
     btn.disabled = false; btn.textContent = 'Sign in';
     return;
   }
-  const acct = Object.values(DEMO_ACCOUNTS).find(a => a.email === email);
-  if (acct) return signIn(acct);
-  authErr('No account matches that email. Use one of the demo accounts below, or create an account.');
+  authErr('Email sign-in needs Firebase connected. Open a sample workspace below, or create an account.');
 });
 
 $('#registerBtn').addEventListener('click', async () => {
