@@ -591,7 +591,8 @@ code{font-family:var(--mono);font-size:11.5px;background:var(--cs-card-2);paddin
         </div>
         <p class="role-hint" id="regRoleHint">Developers see every deal filed under their organization.</p>
         <div class="field"><label for="regName">Full name</label><input type="text" id="regName" placeholder="Jane Sponsor" autocomplete="name"></div>
-        <div class="field"><label for="regOrg">Organization</label><input type="text" id="regOrg" placeholder="Company or fund name" autocomplete="organization"></div>
+        <div class="field"><label for="regOrg">Organization</label><input type="text" id="regOrg" placeholder="Company or fund name" autocomplete="organization">
+          <p class="field-note" id="orgKeyHint" style="display:none"></p></div>
         <div id="regCreds">
           <div class="field"><label for="regEmail">Work email</label><input type="email" id="regEmail" placeholder="you@company.com" autocomplete="email"></div>
           <div class="field"><label for="regPass">Password</label><input type="password" id="regPass" placeholder="At least 6 characters" autocomplete="new-password"></div>
@@ -932,7 +933,7 @@ function buildDeal(spec) {
   const d = Object.assign({
     mwh:0, offers:0, bidders:0, wonBy:null, lead:null, declineReason:null,
     decided:null, links:[], bill:null, irr:11.5, dscr:1.35, fsStatus:null,
-    orgId:null, submittedBy:null,
+    orgKey:null, submittedBy:null,
     cf: (t.id === 'solar' || t.id === 'hybrid') ? .245 : .44
   }, spec);
   d.techName = t.name; d.techColor = t.color;
@@ -1924,7 +1925,7 @@ function drawerBody(d) {
     <div class="sec">
       <h4>Sponsor &amp; site</h4>
       <div class="kv-list">
-        <div class="kv"><span class="k">Organization</span><span class="v"><button class="link-btn" data-act="dev" data-val="${esc(d.developer)}">${esc(d.developer)}</button>${d.orgId ? ` <span style="font-weight:400;color:var(--cs-muted-2);font-family:var(--mono);font-size:11px">${esc(d.orgId)}</span>` : ''}</span></div>
+        <div class="kv"><span class="k">Organization</span><span class="v"><button class="link-btn" data-act="dev" data-val="${esc(d.developer)}">${esc(d.developer)}</button>${d.orgKey ? ` <span style="font-weight:400;color:var(--cs-muted-2);font-family:var(--mono);font-size:11px">${esc(d.orgKey)}</span>` : ''}</span></div>
         <div class="kv"><span class="k">Submitted by</span><span class="v"><button class="link-btn" data-act="orig" data-val="${esc(d.submittedBy)}">${esc(d.submittedBy)}</button></span></div>
         <div class="kv"><span class="k">Location</span><span class="v"><button class="link-btn" data-act="state" data-val="${d.state}">${esc(d.city)}, ${d.state}</button></span></div>
         <div class="kv"><span class="k">Site control</span><span class="v">${esc(d.siteControl)}</span></div>
@@ -2382,7 +2383,7 @@ async function saveDeal() {
     ref: newRef(),
     name, state, city: $('#nfCity').value.trim() || MARKETS[state].cities[0],
     developer: SESSION.org, originator: SESSION.name,
-    submittedBy: SESSION.name, orgId: myOrgId(),
+    submittedBy: SESSION.name, orgKey: myOrgKey(),
     tech: tech.id, mw, mwh: parseFloat($('#nfMwh').value) || 0, ask,
     stage:'Submitted', status:'active', submitted: iso(TODAY),
     offtake: $('#nfOfftake').value,
@@ -2446,7 +2447,7 @@ function render() {
     $('#view').innerHTML = `<div class="empty">
       <div class="e-ic" style="background:var(--cs-amber-dim);color:var(--cs-amber)"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
       <h3>Your account is pending approval</h3>
-      <p>Capital partners see deal flow from every sponsor on the platform, so a ClearSky administrator reviews each request before granting access. You'll be let straight in once that happens — this page updates on its own, no need to sign in again.</p>
+      <p>A ClearSky administrator reviews each new account before it reaches deal data — both to vet capital partners, and to confirm you belong to the organisation you named. You'll be let straight in once that happens; this page updates on its own, with no need to sign in again.</p>
       <p class="note" style="margin-top:14px">Signed in as <b>${esc(SESSION.email || SESSION.name)}</b> · ${esc(SESSION.org)}</p>
     </div>`;
     return;
@@ -2692,7 +2693,7 @@ document.addEventListener('mousemove', e => {
 /* ═══════════════════════════════════════════════════════════════════════════
    16. ACCOUNTS, ROLES AND SIGN-IN
    ═══════════════════════════════════════════════════════════════════════════ */
-const BUILD = '2026-07-31 · build 22';
+const BUILD = '2026-07-31 · build 23';
 
 const ROLE_META = {
   developer:  {side:'dev',     chip:'dev',     label:'Developer'},
@@ -2825,9 +2826,10 @@ function authBusy(btn, on, label) {
 function dealToDoc(d, uid) {
   return {
     developerUid: uid,
-    orgId: myOrgId(),                       // lets colleagues see it
+    orgKey: myOrgKey(),                     // lets colleagues see it
     submittedBy: SESSION.name,              // who in that org filed it
     submittedByEmail: SESSION.email || null,
+    org: SESSION.org,                       // display name, as they typed it
     status: 'open',
     awardedTo: null,
     outcome: d.status || 'active',
@@ -2877,7 +2879,7 @@ function watchDeals() {
      collection; capital partners read what is open. */
   const queries = SESSION.role === 'admin'   ? [['all',  col]]
                 : SESSION.role === 'partner' ? [['open', col.where('status', '==', 'open')]]
-                : [['org', col.where('orgId', '==', myOrgId())],
+                : [['org', col.where('orgKey', '==', myOrgKey())],
                    ['own', col.where('developerUid', '==', uid)]];
 
   const buckets = {}, failed = {};
@@ -3167,13 +3169,14 @@ function peopleView() {
   const rows = PEOPLE.slice().sort((a, b) =>
     (order[a.role] ?? 9) - (order[b.role] ?? 9) || String(a.name || '').localeCompare(String(b.name || '')));
 
-  const pending = rows.filter(p => p.role === 'partner' && p.approved === false);
+  const pending = rows.filter(p => p.approved === false);
 
   return `
   ${pending.length ? `<div class="sample-banner" style="background:var(--cs-amber-dim);border-color:rgba(199,122,0,.3)">
     <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="color:var(--cs-amber)"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
-    <div><b>${plural(pending.length, 'capital partner')} waiting for approval.</b>
-      ${pending.map(p => esc(p.name || p.email)).join(', ')} cannot see any deal flow until admitted.</div>
+    <div><b>${plural(pending.length, 'account')} waiting for approval.</b>
+      ${pending.map(p => `${esc(p.name || p.email)} <span style="font-family:var(--mono);font-size:11px">(${esc(p.orgKey || orgKeyOf(p.org))})</span>`).join(', ')}
+      — check the organisation is one they genuinely belong to before admitting them, since anyone can type any name.</div>
   </div>` : ''}
   <p class="note" style="margin-bottom:14px">${plural(PEOPLE.length, 'account')} on the platform.
   <b>Suspending</b> blocks every deal in the database for that person and is reversible.
@@ -3185,18 +3188,18 @@ function peopleView() {
       const theirs = allDeals().filter(d => d.developerUid === p.uid).length;
       return `<tr style="cursor:default">
         <td class="c-name"><div>${esc(p.name || '—')}${self ? ' <span class="tag">You</span>' : ''}<span>${esc(p.email || p.uid)}</span></div></td>
-        <td>${esc(p.org || '—')}</td>
+        <td>${esc(p.org || '—')}${p.orgKey ? `<span style="display:block;font-family:var(--mono);font-size:10.5px;color:var(--cs-muted-2);margin-top:2px">${esc(p.orgKey)}</span>` : ''}</td>
         <td>${self ? `<span class="pill p-active">${esc((ROLE_META[p.role] || {label:p.role}).label)}</span>`
           : `<select class="fb-sel" style="padding:5px 8px;font-size:12px" data-act="set-role" data-val="${p.uid}">
               ${['developer','originator','partner','admin'].map(r =>
                 `<option value="${r}"${p.role === r ? ' selected' : ''}>${ROLE_META[r].label}</option>`).join('')}
              </select>`}</td>
         <td>${p.suspended ? '<span class="pill p-declined">Suspended</span>'
-             : (p.role === 'partner' && p.approved === false) ? '<span class="pill p-diligence">Pending approval</span>'
+             : p.approved === false ? '<span class="pill p-diligence">Pending approval</span>'
              : '<span class="pill p-won">Active</span>'}</td>
         <td class="num">${theirs || '—'}</td>
         <td style="text-align:right;white-space:nowrap">${self ? '<span class="note">—</span>' : `
-          ${p.role === 'partner' ? `<button class="btn ${p.approved === false ? 'btn-green' : 'btn-ghost'} btn-xs" style="margin-right:6px" data-act="toggle-approve" data-val="${p.uid}">${p.approved === false ? 'Approve' : 'Revoke access'}</button>` : ''}
+          <button class="btn ${p.approved === false ? 'btn-green' : 'btn-ghost'} btn-xs" style="margin-right:6px" data-act="toggle-approve" data-val="${p.uid}">${p.approved === false ? 'Approve' : 'Revoke access'}</button>
           <button class="btn btn-ghost btn-xs" data-act="toggle-suspend" data-val="${p.uid}">${p.suspended ? 'Restore' : 'Suspend'}</button>
           <button class="btn btn-ghost btn-xs btn-danger-ghost" style="margin-left:6px" data-act="ask-delete-person" data-val="${p.uid}">Remove</button>`}
         </td></tr>`;
@@ -3231,7 +3234,11 @@ function settingsModal() {
 
     <h4 class="set-h">Profile</h4>
     <div class="field"><label for="setName">Full name</label><input id="setName" value="${esc(SESSION.name)}"></div>
-    <div class="field"><label for="setOrg">Organization</label><input id="setOrg" value="${esc(SESSION.org)}"></div>
+    <div class="field"><label for="setOrg">Organization</label>
+      <input id="setOrg" value="${esc(SESSION.org)}"${isPlatformAdmin() ? '' : ' disabled'}>
+      <p class="field-note">${isPlatformAdmin()
+        ? 'Changing this moves the account to a different workspace.'
+        : `You share deals with everyone matching <code>${esc(myOrgKey())}</code>. Ask an administrator to move you.`}</p></div>
     <div class="field-row">
       <div class="field"><label>Email</label><input value="${esc(SESSION.email || '—')}" disabled></div>
       <div class="field"><label>Role</label><input value="${esc(meta.label)}" disabled></div>
@@ -3265,7 +3272,8 @@ function settingsModal() {
 }
 
 async function saveProfile() {
-  const name = $('#setName').value.trim(), org = $('#setOrg').value.trim();
+  const name = $('#setName').value.trim();
+  const org = $('#setOrg').disabled ? SESSION.org : $('#setOrg').value.trim();
   if (!name) return modalErr('Enter your full name.');
   if (!org)  return modalErr('Enter your organization.');
   const btn = $('[data-act="save-profile"]'), label = btn.textContent;
@@ -3273,7 +3281,10 @@ async function saveProfile() {
 
   if (FB.ready && FB.auth.currentUser) {
     try {
-      await FB.db.collection('fin_profiles').doc(FB.auth.currentUser.uid).update({name, org});
+      const patch = {name};
+      if (org !== SESSION.org) { patch.org = org; patch.orgKey = orgKeyOf(org); }
+      await FB.db.collection('fin_profiles').doc(FB.auth.currentUser.uid).update(patch);
+      if (patch.orgKey) SESSION.orgKey = patch.orgKey;
     } catch (err) {
       console.error('[OMEGA] profile update failed:', err);
       btn.disabled = false; btn.textContent = label;
@@ -3346,14 +3357,24 @@ const isPlatformAdmin = () => !!SESSION &&
    written before this field are treated as approved, so nobody already
    working is locked out — only an explicit false holds an account back. */
 const isApproved = p => !p || p.approved !== false;
-const awaitingApproval = () =>
-  !!SESSION && SESSION.role === 'partner' && SESSION.approved === false;
+const awaitingApproval = () => !!SESSION && SESSION.approved === false;
 
-/* The platform keys organisations by email domain — the same convention
-   userOrg() uses in firestore.rules — so colleagues share a workspace
-   automatically without anyone maintaining a membership list. */
-const orgIdOf = email => String(email || '').split('@')[1] || '';
-const myOrgId = () => orgIdOf(SESSION && SESSION.email);
+/* Organisations are keyed off the organisation NAME the person types, folded
+   to a stable form, so colleagues match no matter how they capitalise or
+   punctuate it — and so people on personal addresses can still share a
+   workspace. Keying off the email domain would have put every gmail.com
+   account into one organisation together.
+
+     "MNT LLC"  "MNT Llc"  "  mnt llc. "   ->  mnt-llc
+
+   Because a typed name is not proof of anything, joining an organisation is
+   gated by administrator approval rather than by the string alone. */
+const orgKeyOf = name => String(name || '')
+  .toLowerCase()
+  .replace(/[^a-z0-9]+/g, ' ')
+  .trim()
+  .replace(/\s+/g, '-');
+const myOrgKey = () => (SESSION && SESSION.orgKey) || orgKeyOf(SESSION && SESSION.org);
 
 function isOwnerOf(d) {
   if (!d || !SESSION) return false;
@@ -3364,7 +3385,7 @@ function isOwnerOf(d) {
 /* Someone else at the same company. They can see the deal; whether they can
    change it is decided by the rules, so the UI only offers what will succeed. */
 function isOrgMate(d) {
-  return !!d && !!SESSION && !!d.orgId && d.orgId === myOrgId() && !isOwnerOf(d);
+  return !!d && !!SESSION && !!d.orgKey && d.orgKey === myOrgKey() && !isOwnerOf(d);
 }
 
 /* Mirrors the rules: the sponsor who filed it, or a platform administrator. */
@@ -3521,11 +3542,17 @@ const roleFor = (email, chosen) => ADMIN_DOMAINS.test(email || '') ? 'admin' : c
 
 async function writeProfile(uid, prof) {
   const role = roleFor(prof.email, prof.role);
+  /* Anyone can type any organisation name, so an administrator vets every
+     account before it reaches deal data — their own colleagues' or anyone
+     else's. ClearSky addresses are trusted by domain and skip the queue. */
+  const autoApprove = ADMIN_DOMAINS.test(prof.email || '');
   await FB.db.collection('fin_profiles').doc(uid).set({
-    name: prof.name, org: prof.org,
+    name: prof.name,
+    org: prof.org,                                  // as typed, for display
+    orgKey: orgKeyOf(prof.org),                     // folded, for matching
     email: prof.email, emailLower: (prof.email || '').toLowerCase(),
     role,
-    approved: role !== 'partner',        // capital partners await an admin
+    approved: autoApprove,
     suspended: false,
     createdAt: Date.now()
   });
@@ -3589,6 +3616,7 @@ async function afterFirebaseUser(user) {
     name: p.name || user.displayName || (user.email || '').split('@')[0],
     org:  p.org  || '—',
     email: user.email,
+    orgKey: p.orgKey || orgKeyOf(p.org),
     role,
     approved: isApproved(p)
   });
@@ -3619,6 +3647,14 @@ document.addEventListener('click', e => {
 });
 
 $('#regEmail').addEventListener('input', e => refreshAdminRoleOption(e.target.value));
+/* Colleagues match on the folded key, so show it — it makes a typo visible
+   before it becomes a separate workspace. */
+$('#regOrg').addEventListener('input', e => {
+  const hint = $('#orgKeyHint'), key = orgKeyOf(e.target.value);
+  if (!key) { hint.style.display = 'none'; return; }
+  hint.style.display = 'block';
+  hint.innerHTML = `Colleagues join you by matching <code>${esc(key)}</code> — capitals and punctuation don't matter.`;
+});
 $('#toRegister').addEventListener('click', showRegister);
 $('#toLogin').addEventListener('click', showLogin);
 $('#signOutBtn').addEventListener('click', signOut);
@@ -3681,7 +3717,8 @@ $('#registerBtn').addEventListener('click', async () => {
       await writeProfile(pendingUser.uid, {name, org, email: pendingUser.email, role: regRole});
       const u = pendingUser; pendingUser = null;
       const r = roleFor(u.email, regRole);
-      await signIn({name, org, email: u.email, role: r, approved: r !== 'partner'});
+      await signIn({name, org, orgKey: orgKeyOf(org), email: u.email, role: r,
+                    approved: ADMIN_DOMAINS.test(u.email || '')});
     } catch (err) {
       console.error('[OMEGA] fin_profiles write failed:', err);
       showErr(err);
@@ -3694,7 +3731,7 @@ $('#registerBtn').addEventListener('click', async () => {
   if (pass.length < 6)      return authErr('Use a password of at least 6 characters.');
 
   /* Case 2: no backend — local account so the app is still explorable. */
-  if (!FB.ready) return signIn({name, org, email, role: regRole, approved: true});
+  if (!FB.ready) return signIn({name, org, orgKey: orgKeyOf(org), email, role: regRole, approved: true});
 
   /* Case 3: real Firebase sign-up. */
   authBusy(btn, true, label);
@@ -3702,7 +3739,8 @@ $('#registerBtn').addEventListener('click', async () => {
     const cred = await FB.auth.createUserWithEmailAndPassword(email, pass);
     await writeProfile(cred.user.uid, {name, org, email, role: regRole});
     const r = roleFor(email, regRole);
-    await signIn({name, org, email, role: r, approved: r !== 'partner'});
+    await signIn({name, org, orgKey: orgKeyOf(org), email, role: r,
+                  approved: ADMIN_DOMAINS.test(email || '')});
   } catch (err) {
     console.error('[OMEGA] sign-up failed:', err);
     showErr(err);
