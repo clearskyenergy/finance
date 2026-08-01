@@ -444,6 +444,7 @@ code{font-family:var(--mono);font-size:11.5px;background:var(--cs-card-2);paddin
 .extract-bar{height:3px;background:var(--cs-border);border-radius:2px;overflow:hidden;margin-top:9px}
 .extract-bar i{display:block;height:100%;width:0;background:var(--cs-blue);transition:width .4s linear}
 
+.draft-tag{display:inline-block;font-size:9.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--cs-muted);background:rgba(14,26,36,.07);padding:2px 7px;border-radius:10px;vertical-align:middle;margin-left:6px}
 .mate-tag{display:inline-block;font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--cs-blue);background:var(--cs-blue-dim);padding:2px 6px;border-radius:9px;margin-left:5px}
 .hidden-tag{display:inline-block;font-size:9.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--cs-red);background:var(--cs-red-dim);padding:2px 7px;border-radius:10px;vertical-align:middle;margin-left:6px}
 .sample-tag{display:inline-block;font-size:9.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--cs-amber);background:var(--cs-amber-dim);padding:2px 7px;border-radius:10px;vertical-align:middle;margin-left:6px}
@@ -961,7 +962,7 @@ function buildDeal(spec) {
   const d = Object.assign({
     mwh:0, offers:0, bidders:0, wonBy:null, lead:null, declineReason:null,
     decided:null, links:[], bill:null, irr:11.5, dscr:1.35, fsStatus:null,
-    orgKey:null, submittedBy:null,
+    orgKey:null, submittedBy:null, draft:false,
     cf: (t.id === 'solar' || t.id === 'hybrid') ? .245 : .44
   }, spec);
   d.techName = t.name; d.techColor = t.color;
@@ -1145,6 +1146,7 @@ function activeFilterCount() { return Object.entries(S.f).filter(([k, v]) => v !
 
 /* rollup stats for any list of deals */
 function stats(list) {
+  list = list.filter(d => !isDraft(d));
   const closed  = list.filter(d => d.status === 'won' || d.status === 'declined');
   const won     = list.filter(d => d.status === 'won');
   const declined= list.filter(d => d.status === 'declined');
@@ -1623,7 +1625,7 @@ const STAGE_PILL = {'Submitted':'p-active','Screening':'p-screening','Diligence'
 
 function cellHTML(d, c) {
   if (c.key === 'name') return `<div>${esc(d.name)}${d.sample ? ' <span class="sample-tag">Sample</span>' : ''}${
-    isPublished(d) ? '' : ' <span class="hidden-tag">Not on marketplace</span>'}<span>${esc(d.ref)} · ${esc(d.city)}, ${d.state}</span></div>`;
+    isDraft(d) ? ' <span class="draft-tag">Draft</span>' : isPublished(d) ? '' : ' <span class="hidden-tag">Not on marketplace</span>'}<span>${esc(d.ref)} · ${esc(d.city)}, ${d.state}</span></div>`;
   if (c.key === 'submittedBy') return `${esc(d.submittedBy)}${isOrgMate(d) && S.role !== 'partner' ? ' <span class="mate-tag">colleague</span>' : ''}`;
   if (c.key === 'status') { const [cls, lab] = STATUS_PILL[d.status]; return `<span class="pill ${cls}">${lab}</span>`; }
   if (c.key === 'stage') return `<span class="pill ${STAGE_PILL[d.stage]}">${d.stage}</span>`;
@@ -2206,7 +2208,13 @@ function drawerBody(d) {
       <span class="pill ${STAGE_PILL[d.stage]}">${d.stage}</span>
       <span class="tag" style="color:${d.techColor};background:${d.techColor}18">${esc(d.techName)}</span>
     </div>
-    ${!isPublished(d) ? `<div class="verdict fair" style="margin-bottom:20px">
+    ${isDraft(d) ? `<div class="verdict fair" style="margin-bottom:20px">
+      <div class="vd-top"><span class="vd-badge">Draft</span><h5>Not yet sent to capital partners</h5></div>
+      <p>Only your organisation can see this. Fill in the nameplate and capital ask, then publish it when you're ready.</p>
+      ${canEdit(d) ? `<button class="btn btn-primary btn-sm" style="margin-top:12px" data-act="republish" data-val="${d.id}">Publish to marketplace</button>
+        <button class="btn btn-ghost btn-sm" style="margin-top:12px;margin-left:8px" data-act="edit-deal" data-val="${d.id}">Edit</button>` : ''}
+    </div>` : ''}
+    ${!isDraft(d) && !isPublished(d) ? `<div class="verdict fair" style="margin-bottom:20px">
       <div class="vd-top"><span class="vd-badge">Not visible</span><h5>Capital partners cannot see this deal</h5></div>
       <p>Its stored status is <code>${esc(String(d.fsStatus))}</code>. A deal only appears on the marketplace while that reads <code>open</code>.</p>
       ${canDelete(d) ? `<button class="btn btn-primary btn-sm" style="margin-top:12px" data-act="republish" data-val="${d.id}">Put it back on the marketplace</button>` : ''}
@@ -2587,6 +2595,7 @@ function submitModal(dealId) {
   <div class="modal-foot">
     <div class="auth-err" id="modalErr" style="margin:0 auto 0 0;max-width:60%"></div>
     <button class="btn btn-ghost" data-act="close-modal">Cancel</button>
+    <button class="btn btn-ghost" data-act="save-draft" title="Keep this without sending it to capital partners">Save draft</button>
     <button class="btn btn-primary" data-act="save-deal">${ed ? 'Save changes' : 'Submit to marketplace'}</button>
   </div>`);
 
@@ -2643,13 +2652,19 @@ function handleBills(files) {
   }, 340);
 }
 
-async function saveDeal() {
+async function saveDeal(asDraft) {
   const name = $('#nfName').value.trim(), state = $('#nfState').value, mw = parseFloat($('#nfMw').value);
   const tech = TECH_BY_ID[$('#nfTech').value];
   const ask = parseFloat($('#nfAsk').value);
-  if (!name) return toast('Give the project a name.', true);
-  if (!mw || mw <= 0) return toast('Nameplate MW is required.', true);
-  if (!ask || ask <= 0) return toast('Capital ask is required.', true);
+
+  /* A draft is a working note — only the name is needed, so a project can be
+     started before the sizing is known. Everything a capital partner screens
+     on is required to publish it. */
+  if (!name) return modalErr('Give the project a name.');
+  if (!asDraft) {
+    if (!mw || mw <= 0) return modalErr('Nameplate MW is needed before capital partners can see this. Save it as a draft if you do not have it yet.');
+    if (!ask || ask <= 0) return modalErr('Capital ask is needed before capital partners can see this. Save it as a draft if you do not have it yet.');
+  }
 
   const {links, bad} = collectLinks();
   if (bad.length) return toast('Links need to start with https:// — check "' + bad[0] + '".', true);
@@ -2698,6 +2713,7 @@ async function saveDeal() {
     submittedBy: SESSION.name, orgKey: myOrgKey(),
     tech: tech.id, mw, mwh: parseFloat($('#nfMwh').value) || 0, ask,
     stage:'Submitted', status:'active', submitted: iso(TODAY),
+    draft: !!asDraft,
     offtake: $('#nfOfftake').value,
     interconnect:'Feasibility only', permits:'Pre-application', siteControl:'Letter of intent',
     cod: iso(addDays(TODAY, 540)),
@@ -2912,7 +2928,8 @@ document.addEventListener('click', e => {
     case 'new-deal':   submitModal(); break;
     case 'add-link':   addLinkRow(); break;
     case 'rm-link':    el.closest('.link-row').remove(); break;
-    case 'save-deal':  saveDeal(); break;
+    case 'save-deal':  saveDeal(false); break;
+    case 'save-draft': saveDeal(true); break;
     case 'close-modal':closeModal(); break;
     case 'print':      window.print(); break;
 
@@ -3016,7 +3033,7 @@ document.addEventListener('mousemove', e => {
 /* ═══════════════════════════════════════════════════════════════════════════
    16. ACCOUNTS, ROLES AND SIGN-IN
    ═══════════════════════════════════════════════════════════════════════════ */
-const BUILD = '2026-07-31 · build 25';
+const BUILD = '2026-08-01 · build 26';
 
 const ROLE_META = {
   developer:  {side:'dev',     chip:'dev',     label:'Developer'},
@@ -3149,11 +3166,11 @@ function authBusy(btn, on, label) {
 function dealToDoc(d, uid) {
   return {
     developerUid: uid,
+    status: d.draft ? 'draft' : 'open',      // drafts never reach the marketplace
     orgKey: myOrgKey(),                     // lets colleagues see it
     submittedBy: SESSION.name,              // who in that org filed it
     submittedByEmail: SESSION.email || null,
     org: SESSION.org,                       // display name, as they typed it
-    status: 'open',
     awardedTo: null,
     outcome: d.status || 'active',
     dealId: d.ref, name: d.name, state: d.state, city: d.city,
@@ -3174,6 +3191,7 @@ function docToDeal(doc) {
     ref: x.dealId || newRef(doc.id),
     status: x.outcome || 'active',
     fsStatus: x.status || null,        // the field partners actually query on
+    draft: x.status === 'draft',
     docId: doc.id,
     sample: false
   }));
@@ -3657,15 +3675,20 @@ async function savePassword() {
 function isPublished(d) {
   if (!d || d.sample) return true;
   if (!d.docId) return true;                 // local-only, nothing to publish to
+  if (d.draft) return true;                  // deliberately unpublished, not a fault
   return d.fsStatus === 'open';
 }
+const isDraft = d => !!d && (d.draft || d.fsStatus === 'draft');
 
 async function republish(id) {
   const d = allDeals().find(x => x.id === id);
   if (!d || !d.docId || !FB.ready) return;
+  if (isDraft(d) && (!d.mw || d.mw <= 0.1 || !d.ask)) {
+    return toast('Add the nameplate and capital ask before publishing.', true);
+  }
   try {
     await FB.db.collection('fin_projects').doc(d.docId).update({status: 'open'});
-    toast(`${d.name} is back on the marketplace.`);
+    toast(`${d.name} is ${isDraft(d) ? 'now on the marketplace' : 'back on the marketplace'}.`);
   } catch (err) {
     console.error('[OMEGA] republish failed:', err);
     const [h, t] = explain(err);
