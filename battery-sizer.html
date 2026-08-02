@@ -1071,11 +1071,15 @@ var AI_CFG = {
   endpoint: (window.OMEGA_AI_ENDPOINT || '/api/omega-ai-extract'),
   model: (window.OMEGA_AI_MODEL || null),   /* null = server default */
   rasterScale: 1.6,       /* enough for 8-10pt bill type */
-  maxPages: 6,
+  /* A multi-meter site sends one statement per meter in a single file - the
+     330 Olde Roberts bill is five meters over ten pages. A cap of six silently
+     dropped the two largest meters, so this has to clear a realistic bundle. */
+  maxPages: 16,
   jpegQuality: 0.82
 };
 
 var AI_STATE = { ready: null, why: null };   /* ready: null unknown, true, false */
+var AI_TRUNCATED = 0;   /* pages a long bundle had to drop, surfaced not swallowed */
 
 /* ---- Firebase, loaded only if bill reading is actually used ---------- */
 function aiAuthToken(cb){
@@ -1155,6 +1159,7 @@ function _script(src, cb){
 /* ---- turn a page into an image, for bills with no text layer --------- */
 function aiRasterize(doc, cb){
   var out = [], n = Math.min(doc.numPages, AI_CFG.maxPages), i = 1;
+  if(doc.numPages > n) AI_TRUNCATED = doc.numPages - n;
   function next(){
     if(i > n){ cb(out); return; }
     doc.getPage(i++).then(function(page){
@@ -1612,6 +1617,10 @@ function pdfHandleFiles(files){
         AI_STATE.ready = true;
         if(resp.unreadable){
           aiSetStatus('<b>The AI could not read these.</b> ' + esc(resp.unreadable), 'bad');
+        } else if(AI_TRUNCATED){
+          aiSetStatus('<b>' + AI_TRUNCATED + ' page' + (AI_TRUNCATED>1?'s were':' was')
+            + ' not read.</b> The bundle is longer than the page limit, so anything after it was skipped. '
+            + 'Split the file and upload it in parts if a meter is missing below.', 'bad');
         } else {
           aiSetStatus('');
         }
