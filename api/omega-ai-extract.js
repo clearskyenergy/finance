@@ -1,53 +1,105 @@
 /* ══════════════════════════════════════════════════════════════════════
    /api/omega-ai-extract.js   ·  ClearSky-OMEGA
+   NO-SERVICE-ACCOUNT BUILD
 
    Reads utility bills with Claude and returns structured monthly data.
 
-   WHY THIS EXISTS AS A SERVER FUNCTION
-   An API key shipped to the browser is a published API key — anyone with
-   the portal open can read it out of devtools or the network tab and spend
-   the tenant's budget. Anthropic's own guidance is to route calls through a
-   backend. So the key lives here and never leaves the server.
+   WHY THIS VERSION EXISTS
+   Google Cloud can forbid service-account key creation at the org level
+   (iam.disableServiceAccountKeyCreation), which makes the Admin SDK route
+   impossible without changing policy. It is not actually needed here:
+   a Firebase ID token is an RS256 JWT signed by Google, so it can be
+   verified against Google's published public certificates. No private
+   key, no Admin SDK, no dependencies at all.
+
+   What that costs: Firestore cannot be read from here, so tenant API keys
+   come from environment variables instead of om_secrets.
 
    AUTH
-   Every request must carry a Firebase ID token. Without that check this
-   endpoint is an open relay for whoever finds the URL. The token also
-   decides which tenant's key gets used — the caller does NOT get to pick
-   an orgId, or one tenant could spend another's budget.
+   Every request carries a Firebase ID token, verified for signature,
+   expiry, issuer and audience. The org is taken from the verified email,
+   never from the request body — otherwise one tenant could spend another
+   tenant's budget.
 
    KEY RESOLUTION, most specific first
-     1. om_secrets/{orgId}.anthropicKey   — the tenant's own key
-     2. process.env.ANTHROPIC_API_KEY     — the platform's shared key
-   A tenant with neither gets a clear error, not a silent fallback.
+     1. AI_KEY_<ORG>            e.g. sunesol.com  ->  AI_KEY_SUNESOL_COM
+     2. ANTHROPIC_API_KEY       platform-wide fallback
 
    ENV
-     ANTHROPIC_API_KEY            optional platform-wide key
-     FIREBASE_SERVICE_ACCOUNT     service-account JSON (string) for Admin SDK
-     OMEGA_AI_MODEL               optional model override
+     ANTHROPIC_API_KEY       optional platform key
+     AI_KEY_SUNESOL_COM      optional per-tenant keys, one per org
+     FIREBASE_PROJECT_ID     defaults to clearsky-portal
+     OMEGA_AI_MODEL          optional model override
    ══════════════════════════════════════════════════════════════════════ */
 
-var admin = null;
-try { admin = require('firebase-admin'); } catch (e) { /* optional */ }
+var crypto = require('crypto');
 
+var PROJECT_ID    = process.env.FIREBASE_PROJECT_ID || 'clearsky-portal';
 var DEFAULT_MODEL = process.env.OMEGA_AI_MODEL || 'claude-sonnet-5';
-/* A multi-meter site is one statement per meter in one file, so a bundle of
-   ten to sixteen pages is normal, not an outlier. Too low a cap drops meters
-   silently, which is worse than a slower call. */
-var MAX_IMAGES = 16;
-var MAX_CHARS = 60000;       // per document, keeps one runaway file from blowing the request
+var CERT_URL      = 'https://www.googleapis.com/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com';
+var MAX_IMAGES    = 16;      // a multi-meter site is one statement per meter
+var MAX_CHARS     = 60000;
 
-function initAdmin() {
-  if (!admin) return null;
-  if (admin.apps && admin.apps.length) return admin;
-  var raw = process.env.FIREBASE_SERVICE_ACCOUNT;
-  if (!raw) return null;
+/* Google rotates these; the response carries a max-age, so honour it rather
+   than fetching on every call or caching forever. */
+var certCache = { at: 0, ttl: 0, data: null };
+
+async function getCerts() {
+  var now = Date.now();
+  if (certCache.data && now - certCache.at < certCache.ttl) return certCache.data;
+  var r = await fetch(CERT_URL);
+  if (!r.ok) throw new Error('Could not fetch Google signing certificates.');
+  var data = await r.json();
+  var cc = r.headers.get('cache-control') || '';
+  var m = /max-age=(\d+)/.exec(cc);
+  certCache = { at: now, ttl: (m ? parseInt(m[1], 10) : 3600) * 1000, data: data };
+  return data;
+}
+
+function b64urlJson(seg) {
+  return JSON.parse(Buffer.from(seg, 'base64url').toString('utf8'));
+}
+
+/* Full verification. Skipping any one of these checks turns the endpoint
+   into an open relay for anyone who can craft a JWT. */
+async function verifyIdToken(token) {
+  var parts = String(token).split('.');
+  if (parts.length !== 3) throw new Error('Malformed token.');
+
+  var header, payload;
   try {
-    admin.initializeApp({ credential: admin.credential.cert(JSON.parse(raw)) });
-    return admin;
-  } catch (e) {
-    console.error('[omega-ai] admin init failed:', e.message);
-    return null;
-  }
+    header = b64urlJson(parts[0]);
+    payload = b64urlJson(parts[1]);
+  } catch (e) { throw new Error('Malformed token.'); }
+
+  if (header.alg !== 'RS256') throw new Error('Unexpected token algorithm.');
+  if (!header.kid) throw new Error('Token has no key id.');
+
+  var certs = await getCerts();
+  var pem = certs[header.kid];
+  if (!pem) throw new Error('Token signed with an unknown key.');
+
+  var pub;
+  try { pub = new crypto.X509Certificate(pem).publicKey; }
+  catch (e) { throw new Error('Could not read the signing certificate.'); }
+
+  var ok = crypto.createVerify('RSA-SHA256')
+    .update(parts[0] + '.' + parts[1])
+    .verify(pub, Buffer.from(parts[2], 'base64url'));
+  if (!ok) throw new Error('Token signature does not verify.');
+
+  var now = Math.floor(Date.now() / 1000);
+  if (!payload.exp || payload.exp < now) throw new Error('Token expired.');
+  if (payload.iat && payload.iat > now + 300) throw new Error('Token issued in the future.');
+  if (payload.aud !== PROJECT_ID) throw new Error('Token is for a different project.');
+  if (payload.iss !== 'https://securetoken.google.com/' + PROJECT_ID) throw new Error('Token issuer is wrong.');
+  if (!payload.sub) throw new Error('Token has no subject.');
+
+  return payload;
+}
+
+function envNameFor(org) {
+  return 'AI_KEY_' + String(org).toUpperCase().replace(/[^A-Z0-9]+/g, '_');
 }
 
 var SYSTEM = [
@@ -57,6 +109,7 @@ var SYSTEM = [
   '',
   'Shape:',
   '{"periods":[{"label":"Jul 2025","kwh":391000,"kw":731,"rate":18.5,"days":31,',
+  '  "meter":"account or meter id if the file holds more than one",',
   '  "confidence":"high|medium|low","note":"short reason if not high"}],',
   ' "utility":"name if shown","account":"account number if shown",',
   ' "unreadable":"say why if you could not read it, else omit"}',
@@ -65,21 +118,27 @@ var SYSTEM = [
   '- kwh  = total energy for the billing period, in kWh.',
   '- kw   = the BILLED demand the demand charge is multiplied by. Prefer a value',
   '         labelled billing/billed demand over peak or maximum demand. Never use',
-  '         off-peak demand, reactive demand, kVAR or kVA.',
-  '- rate = the $/kW demand charge. If facilities, distribution and transmission',
-  '         demand charges are listed separately, ADD them together.',
+  '         off-peak demand, reactive demand, kVAR or kVA. Note that a bill may',
+  '         show a metered demand AND a lower billed demand; use the billed one',
+  '         and say so in note.',
+  '- rate = the $/kW demand charge. If transmission, distribution, delivery and',
+  '         capacity demand charges are listed separately, ADD them together and',
+  '         say in note which components you summed.',
   '- days = days in the billing period.',
   '- label= the month the period mostly falls in, as "Mon YYYY".',
-  '- If a bill carries a 12-month usage history table, return every row in it.',
+  '- A file may contain SEVERAL accounts or meters for one site. Return every',
+  '   period for every meter, and set "meter" so they can be told apart.',
+  '- If a bill carries a monthly usage history table, return every row in it.',
+  '   Those rows are usually kWh only, with no demand figure — return kwh alone',
+  '   and omit kw rather than reusing the current month\'s demand.',
   '- Omit any field you cannot find. Do NOT guess, estimate, or infer a number',
-  '  from another number. A missing field is useful; an invented one is not.',
+  '   from another number. A missing field is useful; an invented one is not.',
   '- If a page is illegible or is not a utility bill, set "unreadable" and return',
-  '  an empty periods array.'
+  '   an empty periods array.'
 ].join('\n');
 
 module.exports = async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
-
   if (req.method === 'OPTIONS') { res.status(204).end(); return; }
   if (req.method !== 'POST') { res.status(405).json({ error: 'POST only' }); return; }
 
@@ -87,80 +146,55 @@ module.exports = async function handler(req, res) {
   if (typeof body === 'string') { try { body = JSON.parse(body); } catch (e) { body = {}; } }
   body = body || {};
 
-  /* ── who is asking ─────────────────────────────────────────────────── */
   var auth = req.headers.authorization || '';
   var token = auth.indexOf('Bearer ') === 0 ? auth.slice(7) : null;
   if (!token) { res.status(401).json({ error: 'Sign in to use bill reading.' }); return; }
 
-  var app = initAdmin();
-  if (!app) {
-    /* Two very different causes, and guessing wrong costs an hour of hunting:
-       the package is missing from the deploy, or the credential env var is. */
-    res.status(500).json({
-      error: !admin
-        ? 'Server missing the firebase-admin package. Add it to package.json in this repo and redeploy.'
-        : 'Server missing FIREBASE_SERVICE_ACCOUNT. Add the service-account JSON as an environment variable in Vercel.'
-    });
-    return;
-  }
-
-  var decoded;
+  var claims;
   try {
-    decoded = await app.auth().verifyIdToken(token);
+    claims = await verifyIdToken(token);
   } catch (e) {
-    res.status(401).json({ error: 'Your session expired. Reload the tool and try again.' });
+    console.error('[omega-ai] token rejected:', e.message);
+    res.status(401).json({ error: 'Your session could not be verified. Reload the tool and sign in again.' });
     return;
   }
 
-  /* The org comes from the verified identity, never from the request body —
-     otherwise any signed-in user could spend another tenant's budget. */
-  var email = (decoded.email || '').toLowerCase();
+  var email = String(claims.email || '').toLowerCase();
+  if (!email || claims.email_verified === false) {
+    res.status(403).json({ error: 'This account has no verified email address.' });
+    return;
+  }
   var orgId = email.indexOf('@') > 0 ? email.split('@')[1] : null;
   if (!orgId) { res.status(403).json({ error: 'No organisation on this account.' }); return; }
 
-  /* ── whose key ─────────────────────────────────────────────────────── */
-  var key = null, keySource = null;
-  try {
-    var snap = await app.firestore().collection('om_secrets').doc(orgId).get();
-    if (snap.exists && snap.data() && snap.data().anthropicKey) {
-      key = snap.data().anthropicKey;
-      keySource = 'tenant';
-    }
-  } catch (e) {
-    console.error('[omega-ai] secret lookup failed for', orgId, e.message);
-  }
+  var envName = envNameFor(orgId);
+  var key = process.env[envName] || null;
+  var keySource = key ? 'tenant' : null;
   if (!key && process.env.ANTHROPIC_API_KEY) {
     key = process.env.ANTHROPIC_API_KEY;
     keySource = 'platform';
   }
   if (!key) {
     res.status(402).json({
-      error: 'No AI key is set for ' + orgId + '. Add one in OMEGA Signal under account settings, then try again.'
+      error: 'No AI key is set for ' + orgId + '. Add ' + envName +
+             ' (or ANTHROPIC_API_KEY for all tenants) to this project\'s environment variables, then redeploy.'
     });
     return;
   }
 
-  /* ── build the request ─────────────────────────────────────────────── */
   var docs = Array.isArray(body.docs) ? body.docs.slice(0, 12) : [];
   if (!docs.length) { res.status(400).json({ error: 'Nothing to read.' }); return; }
 
-  var content = [];
-  var imageCount = 0;
-
+  var content = [], imageCount = 0, dropped = 0;
   docs.forEach(function (d) {
     content.push({ type: 'text', text: '=== FILE: ' + String(d.name || 'bill').slice(0, 120) + ' ===' });
-    if (d.text) {
-      content.push({ type: 'text', text: String(d.text).slice(0, MAX_CHARS) });
-    }
+    if (d.text) content.push({ type: 'text', text: String(d.text).slice(0, MAX_CHARS) });
     (d.images || []).forEach(function (img) {
-      if (imageCount >= MAX_IMAGES) return;
+      if (imageCount >= MAX_IMAGES) { dropped++; return; }
       var m = /^data:(image\/(?:png|jpeg));base64,(.+)$/.exec(img);
       if (!m) return;
       imageCount++;
-      content.push({
-        type: 'image',
-        source: { type: 'base64', media_type: m[1], data: m[2] }
-      });
+      content.push({ type: 'image', source: { type: 'base64', media_type: m[1], data: m[2] } });
     });
   });
   content.push({ type: 'text', text: 'Return the JSON object now.' });
@@ -176,9 +210,7 @@ module.exports = async function handler(req, res) {
         'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify({
-        model: model,
-        max_tokens: 4000,
-        system: SYSTEM,
+        model: model, max_tokens: 8000, system: SYSTEM,
         messages: [{ role: 'user', content: content }]
       })
     });
@@ -187,7 +219,8 @@ module.exports = async function handler(req, res) {
     if (!r.ok) {
       console.error('[omega-ai] upstream', r.status, data && data.error);
       var msg = (data && data.error && data.error.message) || 'The AI service refused the request.';
-      if (r.status === 401) msg = 'The ' + (keySource === 'tenant' ? 'organisation' : 'platform') + ' AI key was rejected. Check it in account settings.';
+      if (r.status === 401) msg = 'The ' + (keySource === 'tenant' ? orgId : 'platform') +
+        ' AI key was rejected by Anthropic. Check ' + (keySource === 'tenant' ? envName : 'ANTHROPIC_API_KEY') + '.';
       if (r.status === 429) msg = 'Rate limited by the AI service. Wait a moment and try again.';
       res.status(r.status === 429 ? 429 : 502).json({ error: msg });
       return;
@@ -196,15 +229,11 @@ module.exports = async function handler(req, res) {
     var text = (data.content || [])
       .filter(function (b) { return b.type === 'text'; })
       .map(function (b) { return b.text; })
-      .join('\n')
-      .replace(/```json|```/g, '')
-      .trim();
+      .join('\n').replace(/```json|```/g, '').trim();
 
-    var parsed;
-    try {
-      parsed = JSON.parse(text);
-    } catch (e) {
-      /* salvage the outermost object if the model wrapped it in a sentence */
+    var parsed = null;
+    try { parsed = JSON.parse(text); }
+    catch (e) {
       var a = text.indexOf('{'), b2 = text.lastIndexOf('}');
       if (a >= 0 && b2 > a) { try { parsed = JSON.parse(text.slice(a, b2 + 1)); } catch (e2) { parsed = null; } }
     }
@@ -219,9 +248,8 @@ module.exports = async function handler(req, res) {
       account: parsed.account || null,
       unreadable: parsed.unreadable || null,
       meta: {
-        model: model,
-        keySource: keySource,
-        org: orgId,
+        model: model, keySource: keySource, org: orgId,
+        pagesSent: imageCount, pagesDropped: dropped,
         usage: data.usage || null
       }
     });
