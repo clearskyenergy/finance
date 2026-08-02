@@ -44,6 +44,15 @@ body{
 .tb-omega{height:24px;width:auto;display:block}
 .tb-logo-txt{font-size:15px;font-weight:700;letter-spacing:.4px;white-space:nowrap}
 .tb-logo-txt span{color:var(--teal)}
+.tb-back{
+  display:none;align-items:center;gap:5px;background:rgba(255,255,255,.09);color:#E7EEF4;
+  border:1px solid rgba(255,255,255,.16);border-radius:var(--radius);padding:6px 11px;
+  font-family:inherit;font-size:11.5px;font-weight:600;cursor:pointer;white-space:nowrap;
+  transition:background .12s;
+}
+.tb-back:hover{background:rgba(255,255,255,.18)}
+.tb-back:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
+.tb-back.on{display:inline-flex}
 .tb-tool{
   font-size:11px;font-weight:600;letter-spacing:1.2px;text-transform:uppercase;
   color:#9FB3C4;border-left:1px solid #33485C;padding-left:10px;margin-left:2px;white-space:nowrap;
@@ -239,6 +248,8 @@ body.nohelp .hb{display:none}
   <img src="/clearsky-omega-mark-white.png" alt="OMEGA" class="tb-omega" onerror="this.style.display='none'">
   <span class="tb-logo-txt">Clear<span>Sky</span> OMEGA</span>
   <span class="tb-tool">Battery Sizer</span>
+  <button class="tb-back" id="backBtn" onclick="goPortal()" aria-label="Return to your portal">
+    <span aria-hidden="true">&#8592;</span> <span id="backTxt">Portal</span></button>
   <span class="sp"></span>
   <button class="btn btn-ghost btn-sm" id="tipBtn" onclick="toggleTips()">Tips on</button>
   <button class="btn btn-ghost btn-sm" onclick="exportCSV()">Export CSV</button>
@@ -305,9 +316,13 @@ body.nohelp .hb{display:none}
 
     <!-- bill mode -->
     <div class="card-b" id="paneBill" style="display:none">
+      <label class="chk" style="margin:0 0 8px" data-help="aiRead">
+        <input type="checkbox" id="aiToggle" checked>
+        <span>Read bills with AI <span class="pill g">recommended</span></span></label>
+      <div id="aiStatus"></div>
       <div id="pdfDrop">
         <div class="big">Drop utility bill PDFs here</div>
-        <div class="sm">or tap to choose &middot; one file per month, or a bill with a usage-history table</div>
+        <div class="sm">or tap to choose &middot; one file per month, or a bill with a usage-history table<br>with AI on, scans and photos work too</div>
       </div>
       <input type="file" id="pdfFile" accept=".pdf,application/pdf" multiple style="display:none">
       <div id="pdfReport"></div>
@@ -461,6 +476,8 @@ var HELP = {
  'Read automatically from the gaps between timestamps. Only override it if your file has missing rows or duplicate stamps that throw off the detection.<p>Getting this wrong scales the energy sizing, so if you set it by hand, be sure.</p>'],
 
 /* --- bills --- */
+'aiRead':['Reading bills with AI',
+ 'With this on, the bill is sent to Claude and read properly instead of by pattern matching. It handles unusual layouts, and it is the only way to read a <b>scanned bill or a phone photo</b> \u2014 those have no text in them at all, so the pattern matcher gets nothing.<p>Your organisation\u0027s API key is used, and it stays on the server. The tool never holds it.</p><p><b>The bill contents leave your browser</b> and are sent to Anthropic to be read. If that is not acceptable for a customer, turn this off and use the pattern matcher, or type the four numbers in.</p><p>When both readers can see a bill, both run, and any row where they disagree by more than 2% is flagged for you to check.</p>'],
 'pdfDrop':['Reading bills from PDF',
  'Drop the statements the utility emails you. One PDF per month works, and so does a single bill that carries a twelve-month usage history table on the back page — that one file alone can fill the whole year.<p>What it pulls: the billing period, total kWh, billed demand in kW, and the demand rate. Everything lands in the table below, editable, with a report showing which file each number came from.</p><p><b>Check it against the paper.</b> There is no standard format for a utility bill, so this is pattern matching against common wording, not a parser written for your tariff. It will occasionally grab the wrong number, and the table is where you fix it.</p><p>A scanned bill or a photo has no text layer and cannot be read at all. Those need the four numbers typed in.</p>'],
 'nMonths':['How many bills you have',
@@ -639,6 +656,88 @@ function fmt(n,d){
 }
 function money(n,d){ return '$'+fmt(n,(d===undefined)?0:d); }
 function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+/* ============================================================
+   RETURN TO PORTAL
+
+   The tool is served once from the shared tool host and opened by
+   every tenant portal, so it has to work out on its own which
+   portal sent the person here.
+
+   Resolution order, most trustworthy first:
+     1. ?return=   set by OMEGATools.hrefFor when the portal builds
+                   the link. Explicit and survives a bookmark.
+     2. referrer   correct on a normal click-through, but empty on a
+                   refresh and stripped by rel="noreferrer".
+     3. ?org=      only via PORTAL_HOSTS below, because a tenant can
+                   live on either domain and a wrong guess sends the
+                   customer to a dead host.
+
+   Anything that resolves is checked against the allow-list first.
+   A return= pointing somewhere else is an open redirect, and this
+   link sits in a signed-in session.
+   ============================================================ */
+
+/* Optional per-tenant overrides, used only when no return= or referrer
+   is available (a bookmarked or refreshed tool page). orgId -> portal.
+     'sunesol.com': 'https://sunesol.clearskyomega.com/' */
+var PORTAL_HOSTS = {};
+
+function _portalOk(u){
+  if(!u) return null;
+  try{
+    var a = document.createElement('a');
+    a.href = u;
+    if(a.protocol !== 'http:' && a.protocol !== 'https:') return null;
+    var h = (a.hostname || '').toLowerCase();
+    if(!h) return null;
+    /* the tool host is not a portal - returning there is a loop */
+    if(h === String(location.hostname).toLowerCase()) return null;
+    if(!/(^|\.)csebuilders\.com$/.test(h) && !/(^|\.)clearskyomega\.com$/.test(h)) return null;
+    return a.protocol + '//' + a.host + (a.pathname || '/');
+  }catch(e){ return null; }
+}
+
+function _qs(k){
+  var m = String(location.search).match(new RegExp('[?&]' + k + '=([^&]+)'));
+  return m ? decodeURIComponent(m[1].replace(/\+/g,' ')) : null;
+}
+
+function _portalUrl(){
+  var u = _portalOk(_qs('return'));
+  if(u) return u;
+  u = _portalOk(document.referrer);
+  if(u) return u;
+  var org = _qs('org');
+  if(org){
+    org = org.toLowerCase();
+    if(PORTAL_HOSTS[org]) return _portalOk(PORTAL_HOSTS[org]);
+  }
+  /* a refresh drops the referrer, so remember what we resolved on arrival */
+  try{ return _portalOk(sessionStorage.getItem('omegaReturn')); }catch(e){ return null; }
+}
+
+var PORTAL_URL = null;
+(function(){
+  PORTAL_URL = _portalUrl();
+  if(!PORTAL_URL) return;
+  try{ sessionStorage.setItem('omegaReturn', PORTAL_URL); }catch(e){}
+  var b = $('backBtn');
+  if(!b) return;
+  b.className = 'tb-back on';
+  /* Deliberately not the tenant name: deriving it from the org domain
+     mis-capitalises brands (SunESol became "Sunesol"), and there is no
+     reliable source for the right casing from inside a shared tool. */
+})();
+
+function goPortal(){
+  if(!PORTAL_URL) return;
+  /* uploaded bills and interval files are not saved anywhere, so leaving
+     costs real work - only ask when there is some to lose */
+  var hasWork = !!(SERIES || RESULT || (typeof PDF_ROWS !== 'undefined' && PDF_ROWS.length));
+  if(hasWork && !confirm('Leave the sizer and return to your portal? The uploaded data and this sizing are not saved.')) return;
+  window.location.href = PORTAL_URL;
+}
 
 /* ---------- mode ---------- */
 function setMode(m){
@@ -948,6 +1047,231 @@ function fmtDate(d){
 }
 
 
+
+/* ============================================================
+   AI BILL READING
+
+   The pattern matcher below handles clean, text-layer bills. It
+   cannot handle a scan, and it guesses badly on unusual layouts.
+   This sends the bill to Claude instead and gets structured data
+   back.
+
+   The key is NEVER in this file. Calls go to a serverless proxy
+   on the tool host which holds the tenant's key and verifies the
+   caller's Firebase session first. A key shipped to the browser
+   is a published key.
+
+   Both readers run when both are available. Where they disagree
+   the row is flagged rather than silently resolved — two readers
+   agreeing is worth something, and two disagreeing is worth
+   knowing about.
+   ============================================================ */
+
+var AI_CFG = {
+  endpoint: (window.OMEGA_AI_ENDPOINT || '/api/omega-ai-extract'),
+  model: (window.OMEGA_AI_MODEL || null),   /* null = server default */
+  rasterScale: 1.6,       /* enough for 8-10pt bill type */
+  maxPages: 6,
+  jpegQuality: 0.82
+};
+
+var AI_STATE = { ready: null, why: null };   /* ready: null unknown, true, false */
+
+/* ---- Firebase, loaded only if bill reading is actually used ---------- */
+function aiAuthToken(cb){
+  if(window.firebase && firebase.apps && firebase.apps.length){ _tok(cb); return; }
+  _loadFb(function(ok, why){
+    if(!ok){ cb(null, why || 'Firebase did not load, so the tool cannot prove who you are.'); return; }
+    _tok(cb);
+  });
+}
+function _tok(cb){
+  try{
+    var u = firebase.auth().currentUser;
+    if(!u){
+      /* Auth may still be resolving a cached credential on first paint, so we
+         wait for the first state change. It can also fire SYNCHRONOUSLY when
+         state is already known, before the unsubscribe handle exists - calling
+         off() blind in that case throws, and the throw was being swallowed as
+         a generic session error, hiding the real "please sign in". */
+      var off = null, fired = false;
+      var onState = function(user){
+        if(fired) return;
+        fired = true;
+        if(off){ try{ off(); }catch(e){} }
+        if(!user){ cb(null, '__SIGNIN__'); return; }
+        user.getIdToken().then(function(t){ cb(t, null); }, function(){ cb(null, 'Could not read your session.'); });
+      };
+      off = firebase.auth().onAuthStateChanged(onState);
+      if(fired && off){ try{ off(); }catch(e){} }
+      return;
+    }
+    u.getIdToken().then(function(t){ cb(t, null); }, function(){ cb(null, 'Could not read your session.'); });
+  }catch(e){ cb(null, 'Could not read your session.'); }
+}
+/* The public web config. It ships to every browser anyway, and every OMEGA
+   surface points at the same project, so carrying a copy here means the tool
+   does not break just because /firebase-config.js is absent on the tool host.
+   A file at that path still wins if one exists. */
+var FB_FALLBACK = {
+  apiKey:            'AIzaSyABoM1lgOYUnd5ZadaoTMhYmA9cHa8Tyo0',
+  authDomain:        'clearsky-portal.firebaseapp.com',
+  projectId:         'clearsky-portal',
+  storageBucket:     'clearsky-portal.firebasestorage.app',
+  messagingSenderId: '742134484347',
+  appId:             '1:742134484347:web:ab0f95fd221536158481de'
+};
+
+function _loadFb(cb){
+  if(window.__fbLoading){ window.__fbLoading.push(cb); return; }
+  window.__fbLoading = [cb];
+  function done(ok, why){
+    var q = window.__fbLoading; window.__fbLoading = null;
+    for(var i=0;i<q.length;i++) q[i](ok, why);
+  }
+  _script('https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js', function(ok){
+    if(!ok) return done(false, 'The Firebase library was blocked \u2014 check for a Content-Security-Policy on this host that excludes www.gstatic.com.');
+    _script('https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js', function(ok2){
+      if(!ok2) return done(false, 'The Firebase auth library was blocked by this host.');
+      _script('/firebase-config.js', function(){
+        try{
+          var cfg = window.CLEARSKY_CONFIG || FB_FALLBACK;
+          if(!cfg || !cfg.apiKey) return done(false, 'No Firebase configuration was found.');
+          if(!firebase.apps.length) firebase.initializeApp(cfg);
+          done(true, null);
+        }catch(e){ done(false, 'Firebase would not start: ' + (e && e.message ? e.message : 'unknown error') + '.'); }
+      });
+    });
+  });
+}
+function _script(src, cb){
+  var s = document.createElement('script');
+  s.src = src;
+  s.onload = function(){ cb(true); };
+  s.onerror = function(){ cb(false); };
+  document.head.appendChild(s);
+}
+
+/* ---- turn a page into an image, for bills with no text layer --------- */
+function aiRasterize(doc, cb){
+  var out = [], n = Math.min(doc.numPages, AI_CFG.maxPages), i = 1;
+  function next(){
+    if(i > n){ cb(out); return; }
+    doc.getPage(i++).then(function(page){
+      var vp = page.getViewport({ scale: AI_CFG.rasterScale });
+      var c = document.createElement('canvas');
+      c.width = Math.round(vp.width); c.height = Math.round(vp.height);
+      var ctx = c.getContext('2d');
+      /* white base: a transparent PNG turns black once flattened */
+      ctx.fillStyle = '#fff'; ctx.fillRect(0,0,c.width,c.height);
+      return page.render({ canvasContext: ctx, viewport: vp }).promise.then(function(){
+        try { out.push(c.toDataURL('image/jpeg', AI_CFG.jpegQuality)); } catch(e){}
+        next();
+      });
+    })['catch'](function(){ next(); });
+  }
+  next();
+}
+
+/* ---- the call --------------------------------------------------------- */
+function aiExtract(docs, cb){
+  aiAuthToken(function(token, why){
+    if(!token){ cb(null, why || 'Not signed in.'); return; }
+    var payload = { docs: docs };
+    if(AI_CFG.model) payload.model = AI_CFG.model;
+
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', AI_CFG.endpoint, true);
+    xhr.setRequestHeader('Content-Type', 'application/json');
+    xhr.setRequestHeader('Authorization', 'Bearer ' + token);
+    xhr.timeout = 90000;
+    xhr.onload = function(){
+      var d = null;
+      try { d = JSON.parse(xhr.responseText); } catch(e){}
+      if(xhr.status >= 200 && xhr.status < 300 && d){ cb(d, null); return; }
+      cb(null, (d && d.error) || ('The bill reader returned ' + xhr.status + '.'));
+    };
+    xhr.onerror = function(){ cb(null, 'Could not reach the bill reader. It may not be deployed on this host.'); };
+    xhr.ontimeout = function(){ cb(null, 'The bill reader timed out. Try fewer files at once.'); };
+    xhr.send(JSON.stringify(payload));
+  });
+}
+
+/* ---- normalise what came back ---------------------------------------- */
+function aiRows(resp){
+  var out = [], ps = (resp && resp.periods) || [], i;
+  for(i=0;i<ps.length;i++){
+    var p = ps[i] || {};
+    var kwh = parseFloat(p.kwh), kw = parseFloat(p.kw);
+    var rate = parseFloat(p.rate), days = parseFloat(p.days);
+    if(!isFinite(kwh) && !isFinite(kw)) continue;
+    out.push({
+      label: p.label || null,
+      kwh: isFinite(kwh) && kwh > 0 ? kwh : null,
+      kw:  isFinite(kw)  && kw  > 0 ? kw  : null,
+      rate: isFinite(rate) && rate > 0 && rate < 200 ? rate : null,
+      days: isFinite(days) && days > 10 && days < 45 ? days : null,
+      conf: p.confidence || 'medium',
+      note: p.note || null,
+      from: 'AI'
+    });
+  }
+  return out;
+}
+
+/* ---- merge the two readers ------------------------------------------
+   AI wins on value, because it reads layout the regexes cannot. But a
+   disagreement is surfaced, not resolved: if the two readers differ by
+   more than 2% on a figure, the person is told which row to check. */
+function aiMerge(aiList, reList){
+  var byLabel = {}, i, r;
+  for(i=0;i<reList.length;i++){ if(reList[i].label) byLabel[reList[i].label] = reList[i]; }
+  var conflicts = [];
+  for(i=0;i<aiList.length;i++){
+    r = aiList[i];
+    var m = r.label ? byLabel[r.label] : null;
+    if(!m) continue;
+    var diffs = [];
+    ['kwh','kw','rate'].forEach(function(f){
+      if(r[f] == null || m[f] == null) return;
+      var d = Math.abs(r[f] - m[f]) / Math.max(Math.abs(r[f]), Math.abs(m[f]));
+      if(d > 0.02) diffs.push(f + ' ' + fmt(r[f],2) + ' vs ' + fmt(m[f],2));
+    });
+    if(diffs.length){ r.conflict = diffs.join(', '); conflicts.push(r.label); }
+    r.from = 'AI + pattern';
+  }
+  return { rows: aiList, conflicts: conflicts };
+}
+
+/* ---- the toggle ------------------------------------------------------- */
+function aiEnabled(){
+  var el = $('aiToggle');
+  return !!(el && el.checked);
+}
+/* Auth is per-origin. Signing in on the tenant portal does not sign you in
+   here, so the tool has to offer its own way in rather than send the person
+   away to a page that will not help. */
+function aiSignIn(){
+  aiSetStatus('Opening sign-in\u2026');
+  try{
+    var p = new firebase.auth.GoogleAuthProvider();
+    firebase.auth().signInWithPopup(p).then(function(){
+      aiSetStatus('Signed in. Drop the bills again.', 'ok');
+    }, function(e){
+      aiSetStatus('Sign-in failed: ' + esc((e && e.message) || 'unknown error') +
+        ' If your organisation does not use Google, open another OMEGA tool on this host, sign in there, then come back.', 'bad');
+    });
+  }catch(e){
+    aiSetStatus('Sign-in is unavailable on this host.', 'bad');
+  }
+}
+
+function aiSetStatus(msg, kind){
+  var el = $('aiStatus');
+  if(!el) return;
+  el.innerHTML = msg ? ('<div class="note' + (kind ? ' ' + kind : '') + '">' + msg + '</div>') : '';
+}
+
 /* ============================================================
    PDF BILL READING
 
@@ -1215,7 +1539,8 @@ function pdfHandleFiles(files){
         + 'kWh, peak kW and the demand rate are all the sizing needs.</div>';
       return;
     }
-    var done = 0, all = [], errs = [];
+    var done = 0, all = [], errs = [], aiDocs = [];
+    var useAi = aiEnabled();
     box.innerHTML = '<div class="note">Reading ' + list.length + ' file' + (list.length>1?'s':'') + '\u2026</div>';
 
     for(var n=0;n<list.length;n++) readOne(list[n]);
@@ -1229,7 +1554,12 @@ function pdfHandleFiles(files){
         task.promise.then(function(doc){
           var lines = [], p = 1;
           function nextPage(){
-            if(p > doc.numPages){ finish(file.name, lines, null); return; }
+            if(p > doc.numPages){
+              /* no text layer: a scan or a photo. Only the AI can read those,
+                 and only from pixels, so render the pages. */
+              if(!lines.length && useAi){ aiRasterize(doc, function(imgs){ finish(file.name, lines, null, imgs); }); return; }
+              finish(file.name, lines, null); return;
+            }
             doc.getPage(p++).then(function(page){
               return page.getTextContent();
             }).then(function(tc){
@@ -1244,11 +1574,56 @@ function pdfHandleFiles(files){
       fr.readAsArrayBuffer(file);
     }
 
-    function finish(name, lines, err){
+    function finish(name, lines, err, images){
       if(err) errs.push({ file:name, msg:err });
-      else if(!lines || !lines.length) errs.push({ file:name, msg:'no text layer \u2014 this is a scan or a photo' });
-      else all = all.concat(pdfParseDoc(lines, name));
-      if(++done === list.length) apply(all, errs);
+      else {
+        var hasText = lines && lines.length;
+        var hasImg  = images && images.length;
+        if(hasText) all = all.concat(pdfParseDoc(lines, name));
+        if(useAi && (hasText || hasImg)){
+          var d = { name:name };
+          if(hasText) d.text = lines.join('\n');
+          if(hasImg) d.images = images;
+          aiDocs.push(d);
+        } else if(!hasText){
+          errs.push({ file:name, msg:'no text layer \u2014 turn on AI reading, or type this one in' });
+        }
+      }
+      if(++done !== list.length) return;
+
+      if(!useAi || !aiDocs.length){ apply(all, errs); return; }
+
+      aiSetStatus('Reading ' + aiDocs.length + ' bill' + (aiDocs.length>1?'s':'') + ' with AI\u2026');
+      aiExtract(aiDocs, function(resp, why){
+        if(!resp){
+          AI_STATE.ready = false; AI_STATE.why = why;
+          if(why === '__SIGNIN__'){
+            aiSetStatus('<b>Sign in to read bills with AI.</b> Your session lives on this host, '
+              + esc(location.hostname) + ', separately from the portal you came from.'
+              + '<br><button class="btn btn-pri btn-sm" style="margin-top:8px" onclick="aiSignIn()">Sign in</button>', 'bad');
+          } else {
+            aiSetStatus('<b>AI reading is unavailable.</b> ' + esc(why) +
+              (all.length ? ' Falling back to pattern matching for the bills that had a text layer.'
+                          : ' Nothing could be read \u2014 type the numbers in below.'), 'bad');
+          }
+          apply(all, errs);
+          return;
+        }
+        AI_STATE.ready = true;
+        if(resp.unreadable){
+          aiSetStatus('<b>The AI could not read these.</b> ' + esc(resp.unreadable), 'bad');
+        } else {
+          aiSetStatus('');
+        }
+        var merged = aiMerge(aiRows(resp), all);
+        AI_META = resp.meta || null;
+        AI_CONFLICTS = merged.conflicts;
+        /* keep any pattern-read period the AI did not return */
+        var seen = {}, i;
+        for(i=0;i<merged.rows.length;i++) if(merged.rows[i].label) seen[merged.rows[i].label] = 1;
+        for(i=0;i<all.length;i++) if(!all[i].label || !seen[all[i].label]) merged.rows.push(all[i]);
+        apply(merged.rows, errs);
+      });
     }
   });
   return true;
@@ -1274,6 +1649,8 @@ function apply(stmts, errs){
 }
 
 var PDF_ROWS = [];
+var AI_META = null;
+var AI_CONFLICTS = [];
 
 /* Write into the same editable table used for hand entry, so what was read
    and what was typed are corrected in exactly the same place. */
@@ -1339,6 +1716,13 @@ function renderPdfReport(rows, errs){
        : 'Check them against the paper before sizing. Bills vary by utility and this is pattern matching, not a parser for your tariff.')
     + '</div>';
 
+  if(AI_CONFLICTS && AI_CONFLICTS.length){
+    h += '<div class="note bad"><b>The two readers disagree on '
+      + AI_CONFLICTS.length + ' period' + (AI_CONFLICTS.length>1?'s':'') + ': '
+      + esc(AI_CONFLICTS.join(', ')) + '.</b> '
+      + 'The AI reading was used. Check those rows against the paper before sizing \u2014 a disagreement '
+      + 'usually means an unusual bill layout, and one of the two is wrong.</div>';
+  }
   h += '<div class="scrollx"><table class="t"><thead><tr><th>Period</th><th class="num">kWh</th>'
     + '<th class="num">Peak kW</th><th class="num">$/kW</th><th>Source</th></tr></thead><tbody>';
   for(i=0;i<rows.length;i++){
@@ -1347,11 +1731,18 @@ function renderPdfReport(rows, errs){
       +  '<td class="num">' + (r.kwh != null ? fmt(r.kwh) : '<span class="pill r">\u2014</span>') + '</td>'
       +  '<td class="num">' + (r.kw != null ? fmt(r.kw,1) : '<span class="pill r">\u2014</span>') + '</td>'
       +  '<td class="num">' + (r.rate != null ? '$'+fmt(r.rate,2) : '<span class="pill a">\u2014</span>') + '</td>'
-      +  '<td class="tx" style="font-size:11px;color:var(--sub)">' + esc(r.file) + ' \u00b7 ' + esc(r.from) + '</td></tr>';
+      +  '<td class="tx" style="font-size:11px;color:var(--sub)">' + esc(r.file || '\u2014') + ' \u00b7 ' + esc(r.from)
+      +  (r.conf && r.conf !== 'high' ? ' <span class="pill a">' + esc(r.conf) + '</span>' : '')
+      +  (r.conflict ? '<br><span style="color:var(--red)">' + esc(r.conflict) + '</span>' : '')
+      +  (r.note ? '<br>' + esc(r.note) : '')
+      +  '</td></tr>';
   }
   h += '</tbody></table></div>';
   h += '<div class="hint">Everything landed in the table below and is editable. Correct anything wrong there \u2014 '
-    + 'the sizing runs off that table, not off the PDF.</div>';
+    + 'the sizing runs off that table, not off the PDF.'
+    + (AI_META ? ' Read by ' + esc(AI_META.model) + ' using the '
+        + (AI_META.keySource === 'tenant' ? esc(AI_META.org) + ' key' : 'platform key') + '.' : '')
+    + '</div>';
   $('pdfReport').innerHTML = h;
 }
 
