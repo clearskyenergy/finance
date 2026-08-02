@@ -1,0 +1,2197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ClearSky OMEGA &middot; Battery Sizer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --navy:#0E1C2B;
+  --navy2:#16293D;
+  --panel:#FFFFFF;
+  --bg:#F2F5F8;
+  --border:#D7DFE7;
+  --border2:#E8EDF2;
+  --text:#16232F;
+  --sub:#64788A;
+  --teal:#0E9E8F;
+  --teal-dk:#0A7A6E;
+  --blue:#2E86C1;
+  --amber:#C98A16;
+  --red:#C0453B;
+  --green:#2E8B57;
+  --radius:4px;
+  --mono:'IBM Plex Mono',ui-monospace,Menlo,monospace;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{
+  font-family:'IBM Plex Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  background:var(--bg);color:var(--text);font-size:13px;line-height:1.45;
+  -webkit-text-size-adjust:100%;
+}
+
+/* ---------- topbar ---------- */
+#tb{
+  background:var(--navy);color:#fff;display:flex;align-items:center;gap:10px;
+  padding:0 14px;height:52px;position:sticky;top:0;z-index:50;
+  padding-top:env(safe-area-inset-top);height:calc(52px + env(safe-area-inset-top));
+  border-bottom:1px solid #000;
+}
+.tb-omega{height:24px;width:auto;display:block}
+.tb-logo-txt{font-size:15px;font-weight:700;letter-spacing:.4px;white-space:nowrap}
+.tb-logo-txt span{color:var(--teal)}
+.tb-tool{
+  font-size:11px;font-weight:600;letter-spacing:1.2px;text-transform:uppercase;
+  color:#9FB3C4;border-left:1px solid #33485C;padding-left:10px;margin-left:2px;white-space:nowrap;
+}
+.sp{flex:1}
+.btn{
+  font-family:inherit;font-size:11.5px;font-weight:600;border-radius:var(--radius);
+  padding:7px 13px;border:1px solid transparent;cursor:pointer;white-space:nowrap;
+  transition:background .12s,border-color .12s;
+}
+.btn:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
+.btn-ghost{background:rgba(255,255,255,.09);color:#E7EEF4;border-color:rgba(255,255,255,.16)}
+.btn-ghost:hover{background:rgba(255,255,255,.17)}
+.btn-pri{background:var(--teal);color:#fff}
+.btn-pri:hover{background:var(--teal-dk)}
+.btn-pri[disabled]{background:#9AA9B4;cursor:not-allowed}
+.btn-sm{padding:5px 10px;font-size:11px}
+.btn-out{background:#fff;color:var(--text);border-color:var(--border)}
+.btn-out:hover{background:#F1F5F8}
+
+/* ---------- layout ---------- */
+#wrap{max-width:1440px;margin:0 auto;padding:16px;display:grid;grid-template-columns:400px 1fr;gap:16px;align-items:start}
+@media(max-width:1080px){#wrap{grid-template-columns:1fr;padding:12px}}
+
+.card{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:14px}
+.card-h{
+  padding:10px 14px;border-bottom:1px solid var(--border2);display:flex;align-items:center;gap:8px;
+  font-size:11px;font-weight:700;letter-spacing:1.1px;text-transform:uppercase;color:var(--sub);
+}
+.card-h .n{
+  font-family:var(--mono);font-size:10px;background:var(--navy);color:#fff;
+  width:18px;height:18px;border-radius:2px;display:flex;align-items:center;justify-content:center;font-weight:600;
+}
+.card-b{padding:14px}
+.card-b.tight{padding:10px 14px 14px}
+
+/* ---------- tabs ---------- */
+.tabs{display:flex;border-bottom:1px solid var(--border2)}
+.tab{
+  flex:1;padding:11px 8px;text-align:center;font-size:12px;font-weight:600;cursor:pointer;
+  color:var(--sub);border-bottom:2px solid transparent;background:#FAFCFD;
+}
+.tab:hover{color:var(--text)}
+.tab.on{color:var(--text);background:#fff;border-bottom-color:var(--teal)}
+
+/* ---------- forms ---------- */
+label.fl{display:block;font-size:10.5px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;color:var(--sub);margin:0 0 4px}
+input[type=text],input[type=number],select,textarea{
+  width:100%;font-family:inherit;font-size:13px;color:var(--text);background:#fff;
+  border:1px solid var(--border);border-radius:var(--radius);padding:7px 9px;
+}
+input[type=number]{font-family:var(--mono)}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 2px rgba(14,158,143,.15)}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px}
+.f{margin-bottom:10px}
+.hint{font-size:11px;color:var(--sub);margin-top:4px;line-height:1.4}
+.chk{display:flex;align-items:center;gap:7px;font-size:12.5px;margin:6px 0;cursor:pointer}
+.chk input{width:15px;height:15px;accent-color:var(--teal)}
+
+/* ---------- dropzone ---------- */
+#pdfDrop{
+  border:1.5px dashed var(--border);border-radius:var(--radius);background:#FAFCFD;
+  padding:18px 14px;text-align:center;cursor:pointer;margin-bottom:12px;
+  transition:border-color .15s,background .15s;
+}
+#pdfDrop:hover,#pdfDrop.hot{border-color:var(--teal);background:#F0FAF9}
+#pdfDrop .big{font-size:13px;font-weight:600;margin-bottom:3px}
+#pdfDrop .sm{font-size:11.5px;color:var(--sub)}
+#pdfReport:not(:empty){margin-bottom:12px}
+#drop{
+  border:1.5px dashed var(--border);border-radius:var(--radius);background:#FAFCFD;
+  padding:22px 14px;text-align:center;cursor:pointer;transition:border-color .15s,background .15s;
+}
+#drop:hover,#drop.hot{border-color:var(--teal);background:#F0FAF9}
+#drop .big{font-size:13.5px;font-weight:600;margin-bottom:3px}
+#drop .sm{font-size:11.5px;color:var(--sub)}
+
+/* ---------- tables ---------- */
+table.t{width:100%;border-collapse:collapse;font-size:12px}
+table.t th{
+  text-align:left;font-size:10px;letter-spacing:.6px;text-transform:uppercase;color:var(--sub);
+  font-weight:700;padding:7px 8px;border-bottom:1px solid var(--border);background:#FAFCFD;white-space:nowrap;
+}
+table.t td{padding:6px 8px;border-bottom:1px solid var(--border2);font-family:var(--mono);font-size:12px;white-space:nowrap}
+table.t td.tx{font-family:'IBM Plex Sans',sans-serif}
+table.t tr:last-child td{border-bottom:none}
+table.t tr.tot td{background:#F4F8FA;font-weight:600;border-top:1px solid var(--border)}
+.num{text-align:right}
+.scrollx{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table.bills input{padding:5px 6px;font-size:12px;border-radius:2px}
+table.bills td{padding:4px;font-family:inherit}
+table.bills th{padding:6px 4px;font-size:9.5px}
+
+/* ---------- results ---------- */
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border2)}
+@media(max-width:720px){.kpis{grid-template-columns:repeat(2,1fr)}}
+.kpi{background:#fff;padding:14px}
+.kpi .k{font-size:10px;font-weight:700;letter-spacing:.7px;text-transform:uppercase;color:var(--sub);margin-bottom:5px}
+.kpi .v{font-family:var(--mono);font-size:22px;font-weight:600;line-height:1.1;letter-spacing:-.5px}
+.kpi .u{font-size:12px;color:var(--sub);font-weight:500;margin-left:2px}
+.kpi .s{font-size:11px;color:var(--sub);margin-top:3px}
+.kpi.hl{background:#F0FAF9}
+.kpi.hl .v{color:var(--teal-dk)}
+
+.spec{
+  background:var(--navy);color:#fff;border-radius:var(--radius);padding:16px 18px;margin-bottom:14px;
+}
+.spec .lbl{font-size:10px;letter-spacing:1.2px;text-transform:uppercase;color:#8CA6BC;margin-bottom:6px}
+.spec .big{font-family:var(--mono);font-size:27px;font-weight:600;letter-spacing:-1px;line-height:1.15}
+.spec .big em{font-style:normal;color:var(--teal)}
+.spec .sub{font-size:12px;color:#B9CBDA;margin-top:7px;line-height:1.5}
+
+.note{border-left:3px solid var(--amber);background:#FDF8EC;padding:10px 12px;border-radius:0 2px 2px 0;font-size:12px;margin:12px 0;line-height:1.5}
+.note.ok{border-left-color:var(--green);background:#F0F8F3}
+.note.bad{border-left-color:var(--red);background:#FCF2F1}
+.note b{font-weight:600}
+
+canvas{width:100%;display:block;border-radius:2px}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--sub);margin-top:8px}
+.legend i{display:inline-block;width:11px;height:3px;border-radius:2px;margin-right:5px;vertical-align:middle}
+
+#prog{display:none;padding:14px}
+#prog .bar{height:5px;background:var(--border2);border-radius:3px;overflow:hidden}
+#prog .fill{height:100%;width:0%;background:var(--teal);transition:width .1s}
+#prog .txt{font-size:11.5px;color:var(--sub);margin-top:7px;font-family:var(--mono)}
+
+.empty{padding:52px 20px;text-align:center;color:var(--sub)}
+.empty .e1{font-size:14px;font-weight:600;color:var(--text);margin-bottom:5px}
+.empty .e2{font-size:12.5px;max-width:400px;margin:0 auto;line-height:1.55}
+
+.pill{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;padding:2px 7px;border-radius:2px;background:#EAF1F6;color:var(--sub)}
+.pill.g{background:#E4F3EA;color:var(--green)}
+.pill.a{background:#FBF0DA;color:var(--amber)}
+.pill.r{background:#F9E7E5;color:var(--red)}
+
+.foot{max-width:1440px;margin:0 auto;padding:6px 16px 30px;font-size:11px;color:var(--sub);line-height:1.6}
+.acc-h{cursor:pointer;user-select:none;display:flex;align-items:center;gap:6px}
+.acc-h .cv{font-family:var(--mono);font-size:13px;color:var(--teal)}
+
+/* ---------- inline help ---------- */
+.hb{
+  display:inline-flex;align-items:center;justify-content:center;position:relative;
+  width:15px;height:15px;min-width:15px;margin-left:5px;padding:0;top:-1px;
+  border-radius:50%;border:1px solid var(--teal);background:#fff;color:var(--teal);
+  font-family:'IBM Plex Sans',sans-serif;font-size:10px;font-weight:700;line-height:1;
+  cursor:pointer;vertical-align:middle;flex-shrink:0;
+}
+.hb::before{content:'';position:absolute;left:-9px;top:-9px;right:-9px;bottom:-9px}
+.hb:hover{background:var(--teal);color:#fff}
+.hb:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
+.spec .hb,.card-h .hb{border-color:#5BC9BC;color:#5BC9BC;background:transparent}
+.spec .hb:hover,.card-h .hb:hover{background:#5BC9BC;color:var(--navy)}
+.kpi .k .hb{border-color:var(--sub);color:var(--sub)}
+.kpi .k .hb:hover{background:var(--sub);color:#fff}
+table.t th .hb{border-color:var(--sub);color:var(--sub)}
+body.nohelp .hb{display:none}
+
+#hp{
+  position:absolute;z-index:300;width:304px;max-width:calc(100vw - 24px);display:none;
+  background:#fff;border:1px solid var(--border);border-radius:4px;
+  box-shadow:0 10px 30px rgba(14,28,43,.20);padding:13px 34px 14px 15px;
+}
+#hp.on{display:block}
+#hp h4{margin:0 0 6px;font-size:12.5px;font-weight:700;letter-spacing:0;color:var(--text)}
+#hp p{margin:0;font-size:12.5px;line-height:1.58;color:#3B4C5A}
+#hp p+p{margin-top:7px}
+#hp b{font-weight:600;color:var(--text)}
+#hp .x{
+  position:absolute;top:5px;right:7px;border:none;background:none;font-size:17px;
+  color:var(--sub);cursor:pointer;line-height:1;padding:5px 7px;font-family:inherit;
+}
+#hp .x:hover{color:var(--text)}
+@media(max-width:560px){
+  /* Anchored in the document rather than position:fixed. iOS Safari shifts
+     fixed elements against the visual viewport during momentum scroll and
+     when the keyboard opens, which puts the close button out of reach. */
+  #hp{left:10px!important;right:10px!important;width:auto;max-width:none;padding-right:38px}
+  #hp .x{top:3px;right:4px;font-size:19px;padding:7px 9px}
+}
+
+@media print{
+  #tb,#drop,.tabs,.btn,#inputs,.hb,#hp{display:none!important}
+  #wrap{grid-template-columns:1fr;max-width:none;padding:0}
+  .card{break-inside:avoid;border-color:#bbb}
+  body{background:#fff;font-size:11px}
+}
+</style>
+</head>
+<body>
+
+<div id="tb">
+  <img src="/clearsky-omega-mark-white.png" alt="OMEGA" class="tb-omega" onerror="this.style.display='none'">
+  <span class="tb-logo-txt">Clear<span>Sky</span> OMEGA</span>
+  <span class="tb-tool">Battery Sizer</span>
+  <span class="sp"></span>
+  <button class="btn btn-ghost btn-sm" id="tipBtn" onclick="toggleTips()">Tips on</button>
+  <button class="btn btn-ghost btn-sm" onclick="exportCSV()">Export CSV</button>
+  <button class="btn btn-ghost btn-sm" onclick="window.print()">Print</button>
+</div>
+
+<div id="hp" role="dialog" aria-live="polite"></div>
+
+<div id="wrap">
+
+<!-- ============ LEFT: INPUTS ============ -->
+<div id="inputs">
+
+  <!-- 1. DATA -->
+  <div class="card">
+    <div class="card-h" data-help="sData"><span class="n">1</span> Load data</div>
+    <div class="tabs">
+      <div class="tab on" id="tabInt" onclick="setMode('interval')" data-help="tabInt">Interval / 8760</div>
+      <div class="tab" id="tabBill" onclick="setMode('bill')" data-help="tabBill">Utility bills</div>
+    </div>
+
+    <!-- interval mode -->
+    <div class="card-b" id="paneInt">
+      <div id="drop">
+        <div class="big">Drop a CSV here</div>
+        <div class="sm">or tap to choose a file &middot; .csv .txt .tsv &middot; PDF bills welcome too <span data-help="drop"></span></div>
+      </div>
+      <input type="file" id="file" accept=".csv,.txt,.tsv,.pdf,text/csv,text/plain,application/pdf" multiple style="display:none">
+      <div class="hint">Timestamp + demand column, any interval (5/15/30/60&nbsp;min). Headerless 8760 or 35,040-row files work too.</div>
+
+      <div style="margin-top:10px;display:flex;gap:8px">
+        <button class="btn btn-out btn-sm" style="flex:1" onclick="togglePaste()">Paste data</button>
+        <button class="btn btn-out btn-sm" style="flex:1" onclick="loadSample()">Load sample</button>
+      </div>
+      <div id="pasteBox" style="display:none;margin-top:10px">
+        <textarea id="pasteTa" rows="5" placeholder="Paste CSV rows here, then tap Parse"></textarea>
+        <button class="btn btn-pri btn-sm" style="margin-top:7px;width:100%" onclick="parsePaste()">Parse pasted data</button>
+      </div>
+
+      <div id="mapBox" style="display:none;margin-top:14px;border-top:1px solid var(--border2);padding-top:12px">
+        <div class="row">
+          <div><label class="fl" data-help="colT">Timestamp column</label><select id="colT" onchange="reIngest()"></select></div>
+          <div><label class="fl" data-help="colV">Demand column</label><select id="colV" onchange="reIngest()"></select></div>
+        </div>
+        <div class="row">
+          <div><label class="fl" data-help="units">Units</label>
+            <select id="units" onchange="reIngest()">
+              <option value="auto">Auto-detect</option>
+              <option value="kw">kW (average demand)</option>
+              <option value="kwh">kWh per interval</option>
+            </select>
+          </div>
+          <div><label class="fl" data-help="ivl">Interval</label>
+            <select id="ivl" onchange="reIngest()">
+              <option value="0">Auto-detect</option>
+              <option value="5">5 min</option><option value="15">15 min</option>
+              <option value="30">30 min</option><option value="60">60 min</option>
+            </select>
+          </div>
+        </div>
+        <div id="dataSum"></div>
+      </div>
+    </div>
+
+    <!-- bill mode -->
+    <div class="card-b" id="paneBill" style="display:none">
+      <div id="pdfDrop">
+        <div class="big">Drop utility bill PDFs here</div>
+        <div class="sm">or tap to choose &middot; one file per month, or a bill with a usage-history table</div>
+      </div>
+      <input type="file" id="pdfFile" accept=".pdf,application/pdf" multiple style="display:none">
+      <div id="pdfReport"></div>
+      <div class="hint" data-help="pdfDrop">Reads the text layer. A scanned bill or a phone photo has no text
+        in it &mdash; those have to be typed in.</div>
+
+      <div class="row">
+        <div>
+          <label class="fl" data-help="nMonths">Months of bills</label>
+          <select id="nMonths" onchange="buildBillRows()">
+            <option>1</option><option>2</option><option>3</option><option>4</option>
+            <option>5</option><option>6</option><option>7</option><option>8</option>
+            <option>9</option><option>10</option><option>11</option><option selected>12</option>
+          </select>
+        </div>
+        <div>
+          <label class="fl" data-help="startMon">Start month</label>
+          <select id="startMon" onchange="buildBillRows()"></select>
+        </div>
+      </div>
+      <div class="scrollx" style="margin:6px -4px 0">
+        <table class="t bills" id="billTbl">
+          <thead><tr>
+            <th data-help="bMonth">Month</th><th data-help="bDays">Days</th><th data-help="bKwh">kWh</th><th data-help="bPeak">Peak kW</th><th data-help="bRate">$/kW</th>
+          </tr></thead>
+          <tbody id="billBody"></tbody>
+        </table>
+      </div>
+      <div class="hint">Peak&nbsp;kW is the billed demand on the invoice. Enter the demand rate that actually applies to it &mdash; add facilities + distribution + transmission $/kW together if they are separate line items.</div>
+      <div style="margin-top:10px"><button class="btn btn-out btn-sm" style="width:100%" onclick="fillSampleBills()">Fill with sample bills</button></div>
+
+      <div style="border-top:1px solid var(--border2);margin-top:12px;padding-top:12px">
+        <div class="row">
+          <div><label class="fl" data-help="baseFrac">Base load % of peak</label><input type="number" id="baseFrac" value="35" min="5" max="90" step="1"></div>
+          <div><label class="fl" data-help="evtMo">Peak events / month</label><input type="number" id="evtMo" value="22" min="1" max="31" step="1"></div>
+        </div>
+        <div class="hint">Bills give totals, not shape. These two numbers define the assumed load duration curve. Lower base load = spikier site = more shaveable. Verify against interval data before quoting.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. RATE -->
+  <div class="card">
+    <div class="card-h" data-help="sRate"><span class="n">2</span> Rate</div>
+    <div class="card-b">
+      <div class="row" id="rateRow">
+        <div><label class="fl" data-help="dRate">Demand charge $/kW-mo</label><input type="number" id="dRate" value="18.50" step="0.25"></div>
+        <div><label class="fl" data-help="eRate">Energy $/kWh</label><input type="number" id="eRate" value="0.075" step="0.005"></div>
+      </div>
+      <div class="row">
+        <div><label class="fl" data-help="ratchet">Demand ratchet %</label><input type="number" id="ratchet" value="0" min="0" max="100" step="5"></div>
+        <div><label class="fl" data-help="headroom">Sizing headroom %</label><input type="number" id="headroom" value="10" min="0" max="50" step="5"></div>
+      </div>
+      <div class="hint">Ratchet 0 = none. At 80%, billed demand never drops below 80% of the highest peak in the prior 11 months &mdash; which caps what a battery can recover in year one. Headroom oversizes the final rating against load growth and metering error.</div>
+    </div>
+  </div>
+
+  <!-- 3. BATTERY + ECONOMICS -->
+  <div class="card">
+    <div class="card-h" data-help="sBatt"><span class="n">3</span> Battery &amp; economics</div>
+    <div class="card-b">
+      <div class="f"><label class="fl" data-help="durs">Durations to evaluate</label>
+        <div style="display:flex;gap:14px;flex-wrap:wrap">
+          <label class="chk"><input type="checkbox" class="dur" value="1"> 1 h</label>
+          <label class="chk"><input type="checkbox" class="dur" value="2" checked> 2 h</label>
+          <label class="chk"><input type="checkbox" class="dur" value="4" checked> 4 h</label>
+          <label class="chk"><input type="checkbox" class="dur" value="6"> 6 h</label>
+        </div>
+      </div>
+      <div class="row3">
+        <div><label class="fl" data-help="rte">RTE %</label><input type="number" id="rte" value="88" min="70" max="98" step="1"></div>
+        <div><label class="fl" data-help="dod">Usable DoD %</label><input type="number" id="dod" value="90" min="50" max="100" step="1"></div>
+        <div><label class="fl" data-help="fade">Fade %/yr</label><input type="number" id="fade" value="2.0" min="0" max="6" step="0.5"></div>
+      </div>
+      <div class="row">
+        <div><label class="fl" data-help="cKwh">Cost $/kWh installed</label><input type="number" id="cKwh" value="450" step="10"></div>
+        <div><label class="fl" data-help="cKw">Cost $/kW installed</label><input type="number" id="cKw" value="0" step="10"></div>
+      </div>
+      <div class="row3">
+        <div><label class="fl" data-help="itc">ITC %</label><input type="number" id="itc" value="30" min="0" max="70" step="5"></div>
+        <div><label class="fl" data-help="om">O&amp;M $/kW-yr</label><input type="number" id="om" value="10" min="0" step="1"></div>
+        <div><label class="fl" data-help="term">Term yrs</label><input type="number" id="term" value="10" min="1" max="25" step="1"></div>
+      </div>
+      <div class="row">
+        <div><label class="fl" data-help="disc">Discount %</label><input type="number" id="disc" value="8" min="0" max="25" step="0.5"></div>
+        <div><label class="fl" data-help="obj">Objective</label>
+          <select id="obj"><option value="npv">Max NPV</option><option value="pay">Fastest payback</option><option value="sav">Max savings</option></select>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <button class="btn btn-pri" id="runBtn" style="width:100%;padding:12px;font-size:14px" onclick="run()">Size the battery</button>
+  <div style="height:20px"></div>
+</div>
+
+<!-- ============ RIGHT: RESULTS ============ -->
+<div id="results">
+  <div class="card">
+    <div id="prog"><div class="bar"><div class="fill" id="progFill"></div></div><div class="txt" id="progTxt">Working&hellip;</div></div>
+    <div id="out">
+      <div class="empty">
+        <div class="e1">No results yet</div>
+        <div class="e2">Upload interval data or enter at least one utility bill, then size the battery. With a single month, the tool reports what that month alone would have required and what it would have saved.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div>
+<div class="foot">
+  Peak-shaving analysis only. Excludes energy arbitrage, resiliency value, ancillary/capacity market revenue, and interconnection or utility-review cost. Dispatch assumes a full state of charge entering each billing period and charging that never sets a new peak. Confirm the demand rate structure, ratchet language, and any interval-metering convention against the tariff before this reaches a customer.
+</div>
+
+<script>
+/* ============================================================
+   ClearSky OMEGA - Battery Sizer
+   ES5 only. Single file. No build step. No dependencies.
+   ============================================================ */
+
+var MODE = 'interval';
+var RAW = null;        /* {header:[], rows:[[]]}                */
+var SERIES = null;     /* {t:[Date], kw:[Number], dt:hours}      */
+var MONTHS = null;     /* [{key,label,load:[],dt,peak,kwh,days}] */
+var RESULT = null;     /* last computed result                   */
+var MONNAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+/* ============================================================
+   INLINE HELP
+   Every "!" badge is injected from a data-help attribute so the
+   copy lives in one place instead of scattered through markup.
+   ============================================================ */
+var HELP = {
+
+/* --- step 1: data --- */
+'sData':['Start here: get the load data in',
+ 'Two ways in. If you can get <b>interval data</b> \u2014 your utility may call it Green Button, AMI, or an 8760 \u2014 use that tab. It gives a real answer because the tool can see every peak.<p>If all you have are paper bills, use the Utility bills tab. It still works, but it has to assume the shape of your load, so treat the result as a screening number, not a quote.</p>'],
+'tabInt':['Interval / 8760 data',
+ 'A file with one row per time period for the whole year \u2014 8,760 rows if hourly, 35,040 if 15-minute. Request it from the utility account portal or ask the account rep for "interval usage data."<p>This is the tab to use whenever you can. Demand charges are set by a single worst interval, and only interval data shows you where it is.</p>'],
+'tabBill':['Utility bills',
+ 'Use this when you only have invoices. Type in the totals from each bill and the tool models a plausible load shape behind them.<p>Good enough to decide whether a site is worth chasing. Not good enough to order equipment.</p>'],
+'drop':['Uploading your file',
+ 'Save the utility export as <b>CSV</b> (Excel: File \u2192 Save As \u2192 CSV) and drop it here, or tap to browse.<p>It needs a date/time column and a demand column. Extra columns are fine \u2014 you pick which ones to use in a second. Files with no dates at all still work if the rows are in time order.</p><p>On a phone, <b>Paste data</b> is often easier than the file picker.</p>'],
+'colT':['Which column has the date and time',
+ 'The tool guesses and is usually right. Change it if the preview below looks wrong.<p>If your file is just a bare column of numbers with no dates, choose <b>(none / row order)</b>. The tool then assumes row 1 is January 1 at midnight and counts forward.</p>'],
+'colV':['Which column has the load',
+ 'Pick the column with the actual kW or kWh readings \u2014 not a meter number, channel ID, or quality flag.<p>Check the Max demand figure in the summary below. If it looks nothing like the peak on the bill, you picked the wrong column.</p>'],
+'units':['kW or kWh?',
+ 'These are different numbers and mixing them up is the most common error with utility exports.<p><b>kW</b> is average demand during the interval. <b>kWh</b> is energy used during it. On 15-minute data the kWh value is one quarter of the kW value.</p><p>Auto reads the column heading. If your max demand comes out about 4x too low on 15-minute data, set this to kWh manually.</p>'],
+'ivl':['How much time each row covers',
+ 'Read automatically from the gaps between timestamps. Only override it if your file has missing rows or duplicate stamps that throw off the detection.<p>Getting this wrong scales the energy sizing, so if you set it by hand, be sure.</p>'],
+
+/* --- bills --- */
+'pdfDrop':['Reading bills from PDF',
+ 'Drop the statements the utility emails you. One PDF per month works, and so does a single bill that carries a twelve-month usage history table on the back page — that one file alone can fill the whole year.<p>What it pulls: the billing period, total kWh, billed demand in kW, and the demand rate. Everything lands in the table below, editable, with a report showing which file each number came from.</p><p><b>Check it against the paper.</b> There is no standard format for a utility bill, so this is pattern matching against common wording, not a parser written for your tariff. It will occasionally grab the wrong number, and the table is where you fix it.</p><p>A scanned bill or a photo has no text layer and cannot be read at all. Those need the four numbers typed in.</p>'],
+'nMonths':['How many bills you have',
+ 'Set this to the number of invoices in hand, then fill in one row per bill.<p><b>One month is allowed and useful</b> \u2014 the tool will tell you exactly what that month would have needed and what it would have saved. It will also warn you, loudly, not to size a system on it. A single month sets a floor, not a rating.</p><p>Twelve months is what you need before quoting.</p>'],
+'startMon':['Your most recent bill',
+ 'Pick the newest month you have. The table fills backward from here, so 6 months ending in August gives you March through August.'],
+'bMonth':['Billing period',
+ 'One row per invoice. Labels are generated from the count and start month you chose above.'],
+'bDays':['Days in the billing period',
+ 'Straight off the invoice \u2014 usually 28 to 33, and rarely a clean calendar month.<p>It matters because it sets the load factor, which is what tells the tool how spiky the site is.</p>'],
+'bKwh':['Total energy for the period',
+ 'The bottom-line kWh for the whole bill. If your rate splits energy into on-peak and off-peak blocks, add them together.'],
+'bPeak':['Billed demand in kW',
+ 'The kW figure the demand charge is actually multiplied by. On the invoice it may read as Billing Demand, Peak Demand, Maximum Demand, or On-Peak Demand.<p>If the bill lists both an <b>actual</b> and a <b>billed</b> demand, enter the actual number here and set the ratchet percentage in step 2. Otherwise you will double-count the ratchet.</p>'],
+'bRate':['Demand charge for that month',
+ 'Dollars per kW for this specific bill. If the invoice breaks demand into separate facilities, distribution, and transmission lines, <b>add them together</b>.<p>It is per-month because summer and winter rates usually differ, and the summer rate is where the savings are.</p>'],
+'baseFrac':['Base load as a share of peak',
+ 'How much load the site never drops below \u2014 overnight, weekends, idle. Expressed as a percentage of the peak.<p>This drives the answer more than almost anything else here. A plant that never falls below 60% of peak is flat and expensive to shave. A school or office at 20% is spiky and cheap to shave.</p><p>35% is a fair starting guess. Before you quote anything, get one month of interval data and check it.</p>'],
+'evtMo':['Peak events per month',
+ 'Roughly how many separate times per month the site runs up near its peak. 22 means every weekday.<p>Fewer events means each one carries more energy, so the battery needs more kWh for the same kW of shaving.</p>'],
+
+/* --- step 2: rate --- */
+'sRate':['Step 2: the tariff',
+ 'The business case lives or dies here. Pull these numbers off the actual tariff sheet, not the summary page of the bill.<p>As a rule of thumb, peak shaving rarely pencils on demand charges alone below about $8/kW-month.</p>'],
+'dRate':['Demand charge, $/kW per month',
+ 'What the utility bills per kW of peak demand. Add facilities, distribution, and transmission demand charges together if they are separate lines.<p>This single number sets almost all of the savings. Get it from the tariff.</p>'],
+'eRate':['Energy rate, $/kWh',
+ 'Only used to price round-trip losses. A battery buys back a little more energy than it gives out, and that costs money.<p>It has a small effect. An approximate blended rate is fine.</p>'],
+'ratchet':['Demand ratchet',
+ 'Some tariffs bill you on a percentage of your highest peak from the previous 11 months, even in months when you used far less. At 80%, your billed demand never falls below 80% of last summer\u0027s peak.<p>This <b>caps what a battery can recover in year one</b>, and customers are often surprised by it. Read the tariff. Enter 0 only if you have confirmed there is no ratchet.</p>'],
+'headroom':['Sizing headroom',
+ 'Extra margin added on top of the modeled optimum, for load growth, metering error, and the day the site does something it has never done before.<p>It costs money and earns no extra savings, and the tool prices it that way \u2014 the payback and NPV you see are for the system including headroom.</p>'],
+
+/* --- step 3: battery --- */
+'sBatt':['Step 3: the equipment and the money',
+ 'Defaults are reasonable industry placeholders, not your numbers. Replace the cost figures with your real landed cost before this goes anywhere near a customer.'],
+'durs':['Durations to evaluate',
+ 'How many hours the battery can run at full rated power. A 100 kW / 400 kWh system is 4-hour.<p>2h and 4h cover most commercial peak shaving. Check more boxes to compare \u2014 each one runs a full simulation, so more boxes means a slower run.</p>'],
+'rte':['Round-trip efficiency',
+ 'Energy out divided by energy in, after inverter and auxiliary losses. 86 to 90% is typical for lithium.<p>Lower efficiency means buying more energy to deliver the same shave.</p>'],
+'dod':['Usable depth of discharge',
+ 'The share of nameplate capacity you can actually cycle day after day without hurting warranty life.<p>All sizing here is done in <b>usable</b> kWh, then divided by this to get the nameplate you actually purchase.</p>'],
+'fade':['Capacity fade per year',
+ 'How much capacity the battery loses annually. It reduces savings in later years inside the NPV calculation.<p>It does not change your year-one numbers or the payback figure.</p>'],
+'cKwh':['Installed cost per kWh',
+ 'All-in landed cost: cells, enclosure, PCS, transformer, pad, conduit, install, commissioning.<p>The default is a placeholder. Put your real number in \u2014 nothing else on this page moves the payback as much.</p>'],
+'cKw':['Installed cost per kW',
+ 'Use this only if you price power separately from energy. If your $/kWh figure already covers the whole turnkey job, leave this at 0 so you do not double-count.'],
+'itc':['Investment tax credit',
+ 'Federal credit applied against capex. Domestic content, energy community, and other adders can push it above the base rate.<p>Eligibility and stacking rules change. Confirm with the tax counsel on the deal before promising a number.</p>'],
+'om':['Operations and maintenance',
+ 'Annual cost per kW for monitoring, service visits, and warranty. Subtracted from savings every year.'],
+'term':['Analysis term',
+ 'How many years the NPV covers. Match it to the customer\u0027s expected hold period or the warranty term, whichever drives their decision.'],
+'disc':['Discount rate',
+ 'The customer\u0027s cost of capital. Higher rates penalize savings that arrive years from now, which pushes the recommendation toward smaller systems.'],
+'obj':['What the tool optimizes for',
+ '<b>Max NPV</b> picks the system with the most total lifetime value. Usually the largest defensible size.<p><b>Fastest payback</b> picks the smallest system that pays back quickest. Usually the easiest sell.</p><p><b>Max savings</b> picks the biggest system that still saves money. Usually too big to justify.</p><p>Most customers respond to payback. Most engineers argue for NPV.</p>'],
+
+/* --- results --- */
+'rSpec':['What to actually buy',
+ 'Power rating and usable energy, with your sizing headroom already included.<p><b>Usable kWh</b> is what the battery can cycle. <b>Nameplate kWh</b> is what appears on the purchase order \u2014 it is larger because of the depth-of-discharge limit.</p><p>The C-rate tells you how hard the system works: below 0.5C is gentle and warranty-friendly, above 1C means a bigger inverter relative to the cells.</p>'],
+'rSav':['Annual savings',
+ 'Demand charge reduction over a full year. The smaller figure below it subtracts O&amp;M and the cost of round-trip losses \u2014 that is the number that actually hits the customer\u0027s pocket.'],
+'rPay':['Simple payback',
+ 'Net cost after the tax credit, divided by year-one net savings. No discounting, no escalation.<p>It is the number customers ask for first. It is also the least sophisticated number on this page \u2014 it ignores everything after the payback date.</p>'],
+'rNpv':['Net present value',
+ 'All savings over the analysis term, discounted back to today, minus the net cost. Positive means the project beats the customer\u0027s cost of capital.<p>Unlike payback, this accounts for capacity fade and for value earned late in life.</p>'],
+'rCut':['Deepest monthly cut',
+ 'The largest demand reduction the battery achieves in any single month, and which month that was.<p>This is normally your worst month \u2014 the one setting the annual peak. It is the number to quote when someone asks "how much can it take off my bill."</p>'],
+'rMonth':['Month by month',
+ 'What each billing period looks like before and after.<p><b>Peak kW</b> is the raw metered peak. <b>Billed kW</b> is what the utility charges for, which differs only when a ratchet applies. <b>With BESS</b> is the peak after the battery dispatches.</p><p>Look for months where the cut is small \u2014 that is either a flat load profile or the ratchet holding the floor up.</p>'],
+'rChartMon':['Reading this chart',
+ 'Gray is the demand you are billed for today. Teal is what you would be billed for with the battery running. The gray showing above each teal bar is the savings.<p>If the gray caps are uneven, your site is seasonal and the battery is doing most of its work in a few months.</p>'],
+'rSweep':['Reading the sizing curve',
+ 'Every point is a complete simulation at that battery size.<p>The teal line is annual savings. It climbs steeply, then <b>flattens at the knee</b> \u2014 past that point you are buying kWh that only get used a handful of hours a year.</p><p>The dashed amber line is payback in years, on the right axis. The vertical marker is the size selected under your chosen objective.</p><p>Sizing anything far to the right of the knee is how projects get oversold.</p>'],
+'rDay':['Peak day',
+ 'The single worst day in the data \u2014 the day that set your annual demand charge.<p>Gray is the site load. Teal is the net load at the meter with the battery working. The red dashed line is the target the battery holds.</p><p>Watch the teal line sit <b>above</b> gray overnight: that is the battery recharging. It is deliberately held below the target so charging never sets a new peak, which is the mistake that ruins real installations.</p>'],
+'rAlt':['Other sizes worth considering',
+ 'The ten best configurations by NPV, so you can see what a step up or down actually costs.<p>Useful when the customer has a hard budget: find the row that fits and show them what they give up.</p>'],
+'rBasis':['Assumptions behind the numbers',
+ 'Every input that shaped the result, in one place.<p>Check this before sending anything out. If the demand charge, the ratchet, or the installed cost is wrong here, everything above it is wrong too.</p>'],
+'rOne':['What this single month tells you',
+ 'This is the honest answer to "what would this month have needed." It uses only the month you entered.<p>What it does <b>not</b> tell you is what to install. If this was not the site\u0027s worst month, the annual peak is higher and a system sized here will be short on power exactly when it matters most.</p>'],
+'rLadder':['Shave depth ladder',
+ 'Each row asks: what if you cut this percentage off that month\u0027s peak?<p><b>Duration</b> is the giveaway. Rows needing more than about 8 hours are marked \u2014 that means the load is flat, not peaky, and no amount of battery will make demand charges pencil.</p><p>The "if every month" column assumes an identical peak all twelve months. No site behaves that way. Treat it as a ceiling, never a forecast.</p>'],
+'rShort':['Not enough months yet',
+ 'Annual figures are scaled up from the months you provided.<p>Demand charges are driven by the single worst interval in each period, so if the months you have exclude the seasonal peak, both the savings and the required power rating are understated.</p>']
+};
+
+function wireHelp(root){
+  var els = (root||document).getElementsByTagName('*'), i, list=[];
+  for(i=0;i<els.length;i++){
+    var k = els[i].getAttribute && els[i].getAttribute('data-help');
+    if(k && els[i].getAttribute('data-hw')!=='1' && HELP[k]) list.push(els[i]);
+  }
+  for(i=0;i<list.length;i++){
+    list[i].setAttribute('data-hw','1');
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'hb';
+    b.setAttribute('data-k', list[i].getAttribute('data-help'));
+    b.setAttribute('aria-label', 'What is this?');
+    b.innerHTML = '!';
+    list[i].appendChild(b);
+  }
+}
+
+function showHelp(k, el){
+  var d = HELP[k]; if(!d) return;
+  var p = $('hp');
+  p.innerHTML = '<button class="x" type="button" aria-label="Close">\u00d7</button><h4>'+d[0]+'</h4><p>'+d[1]+'</p>';
+  p.className = 'on';
+  var r = el.getBoundingClientRect();
+  var sy = window.pageYOffset || document.documentElement.scrollTop || 0;
+  var sx = window.pageXOffset || document.documentElement.scrollLeft || 0;
+
+  if(window.innerWidth > 560){
+    var w = 304;
+    var left = r.left + sx - 12;
+    var maxL = sx + window.innerWidth - w - 12;
+    if(left > maxL) left = maxL;
+    if(left < sx + 8) left = sx + 8;
+    var top = r.bottom + sy + 9;
+    /* flip above if it would run off the bottom of the viewport */
+    if(r.bottom + p.offsetHeight + 24 > window.innerHeight && r.top > p.offsetHeight + 16){
+      top = r.top + sy - p.offsetHeight - 9;
+    }
+    p.style.top = top+'px';
+    p.style.left = left+'px';
+  } else {
+    /* narrow: CSS pins left/right, we only place it vertically */
+    p.style.left = '';
+    p.style.top = (r.bottom + sy + 9)+'px';
+    var over = (r.bottom + 9 + p.offsetHeight) - window.innerHeight;
+    if(over > 0 && window.scrollBy) window.scrollBy(0, over + 14);
+  }
+}
+function hideHelp(){ var p=$('hp'); if(p) p.className=''; }
+
+document.addEventListener('click', function(e){
+  var t = e.target;
+  if(t && t.className === 'hb'){
+    e.preventDefault(); e.stopPropagation();
+    showHelp(t.getAttribute('data-k'), t);
+    return;
+  }
+  if(t && t.className === 'x'){ hideHelp(); return; }
+  var p = $('hp'), n = t;
+  while(n){ if(n === p) return; n = n.parentNode; }   /* clicks inside stay open */
+  hideHelp();
+}, false);
+
+document.addEventListener('keydown', function(e){
+  if(e.keyCode === 27) hideHelp();
+}, false);
+
+function toggleTips(){
+  var off = document.body.className.indexOf('nohelp') >= 0;
+  document.body.className = off ? '' : 'nohelp';
+  $('tipBtn').textContent = off ? 'Tips on' : 'Tips off';
+  if(!off) hideHelp();
+}
+
+/* ============================================================
+   small helpers
+   ============================================================ */
+function $(id){ return document.getElementById(id); }
+function nv(id,d){ var e=$(id); if(!e) return d; var v=parseFloat(e.value); return isFinite(v)?v:d; }
+function fmt(n,d){
+  if(!isFinite(n)) return '--';
+  d = (d===undefined)?0:d;
+  var s = Math.abs(n).toFixed(d), p = s.split('.');
+  p[0] = p[0].replace(/\B(?=(\d{3})+(?!\d))/g,',');
+  return (n<0?'-':'') + p.join('.');
+}
+function money(n,d){ return '$'+fmt(n,(d===undefined)?0:d); }
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+/* ---------- mode ---------- */
+function setMode(m){
+  MODE = m;
+  $('tabInt').className = 'tab' + (m==='interval'?' on':'');
+  $('tabBill').className = 'tab' + (m==='bill'?' on':'');
+  $('paneInt').style.display = (m==='interval')?'':'none';
+  $('paneBill').style.display = (m==='bill')?'':'none';
+  $('rateRow').style.display = (m==='bill')?'none':'';
+}
+
+/* ============================================================
+   CSV PARSING
+   ============================================================ */
+function parseCSV(txt){
+  txt = txt.replace(/^\uFEFF/,'').replace(/\r\n/g,'\n').replace(/\r/g,'\n');
+  var lines = txt.split('\n'), out = [], i, j;
+  /* sniff delimiter on the first non-empty line */
+  var probe='', k;
+  for(k=0;k<lines.length;k++){ if(lines[k].replace(/\s/g,'')!==''){ probe=lines[k]; break; } }
+  var delim = ',';
+  var counts = {',':0,'\t':0,';':0,'|':0};
+  for(i=0;i<probe.length;i++){ if(counts[probe.charAt(i)]!==undefined) counts[probe.charAt(i)]++; }
+  var bestC = -1;
+  for(var d in counts){ if(counts[d]>bestC){ bestC=counts[d]; delim=d; } }
+
+  for(i=0;i<lines.length;i++){
+    var ln = lines[i];
+    if(ln.replace(/\s/g,'')==='') continue;
+    var cells=[], cur='', q=false;
+    for(j=0;j<ln.length;j++){
+      var c = ln.charAt(j);
+      if(q){
+        if(c==='"'){ if(ln.charAt(j+1)==='"'){ cur+='"'; j++; } else q=false; }
+        else cur+=c;
+      } else {
+        if(c==='"') q=true;
+        else if(c===delim){ cells.push(cur); cur=''; }
+        else cur+=c;
+      }
+    }
+    cells.push(cur);
+    for(j=0;j<cells.length;j++) cells[j] = cells[j].replace(/^\s+|\s+$/g,'');
+    out.push(cells);
+  }
+  return out;
+}
+
+function looksNumeric(s){
+  if(s===''||s===null||s===undefined) return false;
+  return /^-?[\d,]*\.?\d+(e[-+]?\d+)?$/i.test(String(s).replace(/[$\s]/g,''));
+}
+function toNum(s){
+  var v = parseFloat(String(s).replace(/[$,\s]/g,''));
+  return isFinite(v)?v:NaN;
+}
+
+/* Robust-enough timestamp parse for utility exports. */
+function parseTS(s){
+  if(s instanceof Date) return s;
+  s = String(s).replace(/^\s+|\s+$/g,'');
+  if(s==='') return null;
+  var m;
+  /* ISO-ish: 2024-07-01 14:30[:00] */
+  m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})[T ]?(\d{1,2})?:?(\d{2})?:?(\d{2})?/);
+  if(m) return new Date(+m[1], +m[2]-1, +m[3], +(m[4]||0), +(m[5]||0), +(m[6]||0));
+  /* US: 7/1/2024 2:30 PM  or 7/1/24 14:30 */
+  m = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})[T ,]*(\d{1,2})?:?(\d{2})?:?(\d{2})?\s*(AM|PM|am|pm)?/);
+  if(m){
+    var yr = +m[3]; if(yr<100) yr += (yr<70?2000:1900);
+    var hh = +(m[4]||0);
+    var ap = m[7]?m[7].toUpperCase():'';
+    if(ap==='PM' && hh<12) hh+=12;
+    if(ap==='AM' && hh===12) hh=0;
+    return new Date(yr, +m[1]-1, +m[2], hh, +(m[5]||0), +(m[6]||0));
+  }
+  var d = new Date(s);
+  return isNaN(d.getTime())?null:d;
+}
+
+/* ============================================================
+   INGEST
+   ============================================================ */
+function handleText(txt){
+  var rows = parseCSV(txt);
+  if(rows.length < 2){ alert('Could not read any rows out of that file.'); return; }
+
+  /* header row = first row that is not fully numeric */
+  var hdr = rows[0], hasHdr = false, i;
+  for(i=0;i<hdr.length;i++){ if(hdr[i]!=='' && !looksNumeric(hdr[i]) && !parseTS(hdr[i])) { hasHdr=true; break; } }
+  if(!hasHdr){
+    var nc = rows[0].length, gen=[];
+    for(i=0;i<nc;i++) gen.push('Column '+(i+1));
+    RAW = { header: gen, rows: rows };
+  } else {
+    RAW = { header: hdr, rows: rows.slice(1) };
+  }
+
+  buildColSelects();
+  reIngest();
+}
+
+function buildColSelects(){
+  var h = RAW.header, i, o1='', o2='';
+  var guessT = -1, guessV = -1;
+  for(i=0;i<h.length;i++){
+    var n = String(h[i]).toLowerCase();
+    if(guessT<0 && /date|time|stamp|interval|start|period|dttm|read/.test(n)) guessT = i;
+    if(guessV<0 && /(^|[^a-z])(kw|kwh|kva|demand|usage|load|consum|power|energy|value|quantity|qty)/.test(n)) guessV = i;
+  }
+  /* fall back to data sniffing */
+  var probe = RAW.rows[Math.min(2, RAW.rows.length-1)] || [];
+  if(guessT<0){ for(i=0;i<probe.length;i++){ if(!looksNumeric(probe[i]) && parseTS(probe[i])){ guessT=i; break; } } }
+  if(guessV<0){ for(i=0;i<probe.length;i++){ if(i!==guessT && looksNumeric(probe[i])){ guessV=i; break; } } }
+  if(guessV<0) guessV = Math.min(1, h.length-1);
+
+  o1 += '<option value="-1">(none / row order)</option>';
+  for(i=0;i<h.length;i++){
+    o1 += '<option value="'+i+'"'+(i===guessT?' selected':'')+'>'+esc(h[i])+'</option>';
+    o2 += '<option value="'+i+'"'+(i===guessV?' selected':'')+'>'+esc(h[i])+'</option>';
+  }
+  $('colT').innerHTML = o1;
+  $('colV').innerHTML = o2;
+  /* set explicitly - a stale .value survives an innerHTML swap in some engines */
+  $('colT').value = String(guessT);
+  $('colV').value = String(guessV);
+  $('mapBox').style.display = '';
+}
+
+function reIngest(){
+  if(!RAW) return;
+  var ti = parseInt($('colT').value,10);
+  var vi = parseInt($('colV').value,10);
+  var rows = RAW.rows, i, ts=[], kw=[];
+
+  for(i=0;i<rows.length;i++){
+    var r = rows[i];
+    if(!r || r.length===0) continue;
+    var v = toNum(r[vi]);
+    if(!isFinite(v)) continue;
+    var t = null;
+    if(ti>=0){ t = parseTS(r[ti]); if(!t) continue; }
+    ts.push(t); kw.push(v);
+  }
+  if(kw.length < 24){ $('dataSum').innerHTML = '<div class="note bad">Only '+kw.length+' usable rows. Check the column mapping.</div>'; SERIES=null; return; }
+
+  /* interval */
+  var dtMin = parseFloat($('ivl').value);
+  if(!dtMin){
+    if(ti>=0 && ts.length>10){
+      var diffs=[];
+      for(i=1;i<Math.min(ts.length,600);i++){
+        var d=(ts[i]-ts[i-1])/60000;
+        if(d>0 && d<=1440) diffs.push(d);
+      }
+      diffs.sort(function(a,b){return a-b;});
+      dtMin = diffs.length ? diffs[Math.floor(diffs.length/2)] : 60;
+    } else {
+      dtMin = (kw.length>30000)?15:(kw.length>15000?30:60);
+    }
+    dtMin = [5,10,15,30,60].reduce(function(best,c){
+      return Math.abs(c-dtMin) < Math.abs(best-dtMin) ? c : best;
+    }, 60);
+  }
+  var dt = dtMin/60;
+
+  /* synthesize timestamps if none */
+  if(ti<0 || !ts[0]){
+    var yr = new Date().getFullYear()-1;
+    var base = new Date(yr,0,1,0,0,0);
+    ts = [];
+    for(i=0;i<kw.length;i++) ts.push(new Date(base.getTime() + i*dtMin*60000));
+  }
+
+  /* units */
+  var u = $('units').value;
+  var isEnergy = false;
+  if(u==='kwh') isEnergy = true;
+  else if(u==='auto'){
+    var hn = (ti>=0? String(RAW.header[vi]) : '').toLowerCase();
+    if(/kwh|wh\b|energy|consum/.test(hn) && !/kw\b|demand|power/.test(hn)) isEnergy = true;
+  }
+  if(isEnergy){ for(i=0;i<kw.length;i++) kw[i] = kw[i]/dt; }
+
+  SERIES = { t:ts, kw:kw, dt:dt, dtMin:dtMin, energyInput:isEnergy };
+  groupMonths();
+  renderDataSum();
+}
+
+function groupMonths(){
+  var s = SERIES, i, map = {}, order = [];
+  for(i=0;i<s.kw.length;i++){
+    var d = s.t[i];
+    var key = d.getFullYear() + '-' + (d.getMonth()<9?'0':'') + (d.getMonth()+1);
+    if(!map[key]){
+      map[key] = { key:key, label: MONNAMES[d.getMonth()]+' '+d.getFullYear(), load:[], dt:s.dt, mon:d.getMonth(), yr:d.getFullYear() };
+      order.push(key);
+    }
+    map[key].load.push(s.kw[i]);
+  }
+  MONTHS = [];
+  for(i=0;i<order.length;i++){
+    var m = map[order[i]], j, pk=0, sum=0, mn=1e15;
+    for(j=0;j<m.load.length;j++){
+      var v=m.load[j];
+      if(v>pk) pk=v;
+      if(v<mn) mn=v;
+      sum += v*m.dt;
+    }
+    m.peak = pk; m.min = mn; m.kwh = sum;
+    m.hours = m.load.length*m.dt;
+    m.days = m.hours/24;
+    m.lf = m.kwh/(pk*m.hours);
+    /* drop stub months under 5 days - partial-period artifacts skew everything */
+    if(m.days >= 5) MONTHS.push(m);
+  }
+}
+
+function renderDataSum(){
+  var s = SERIES, i, h='';
+  var pk=0, tot=0, mn=1e15;
+  for(i=0;i<s.kw.length;i++){ if(s.kw[i]>pk)pk=s.kw[i]; if(s.kw[i]<mn)mn=s.kw[i]; tot+=s.kw[i]*s.dt; }
+  h += '<div class="scrollx"><table class="t"><tbody>';
+  h += '<tr><td class="tx">Intervals</td><td class="num">'+fmt(s.kw.length)+' @ '+s.dtMin+' min</td></tr>';
+  h += '<tr><td class="tx">Period</td><td class="num">'+MONNAMES[s.t[0].getMonth()]+' '+s.t[0].getDate()+', '+s.t[0].getFullYear()+' &rarr; '+MONNAMES[s.t[s.t.length-1].getMonth()]+' '+s.t[s.t.length-1].getDate()+', '+s.t[s.t.length-1].getFullYear()+'</td></tr>';
+  h += '<tr><td class="tx">Billing months</td><td class="num">'+(MONTHS?MONTHS.length:0)+'</td></tr>';
+  h += '<tr><td class="tx">Max demand</td><td class="num">'+fmt(pk,1)+' kW</td></tr>';
+  h += '<tr><td class="tx">Min demand</td><td class="num">'+fmt(mn,1)+' kW</td></tr>';
+  h += '<tr><td class="tx">Total energy</td><td class="num">'+fmt(tot)+' kWh</td></tr>';
+  h += '<tr><td class="tx">Load factor</td><td class="num">'+fmt(tot/(pk*s.kw.length*s.dt)*100,1)+'%</td></tr>';
+  h += '</tbody></table></div>';
+  if(s.energyInput) h += '<div class="hint">Values read as kWh per interval and converted to kW.</div>';
+  $('dataSum').innerHTML = h;
+}
+
+/* ---------- file input wiring ---------- */
+(function(){
+  var dz = $('drop'), fi = $('file');
+  dz.onclick = function(){ fi.click(); };
+  fi.onchange = function(){
+    if(!fi.files || !fi.files[0]) return;
+    /* a PDF here is a bill, not interval data - send it the right way rather
+       than reading binary as text and showing the person a parse failure */
+    if(pdfHandleFiles(fi.files)) return;
+    var r = new FileReader();
+    r.onload = function(){ handleText(String(r.result)); };
+    r.onerror = function(){ alert('Could not read that file.'); };
+    r.readAsText(fi.files[0]);
+  };
+  function stop(e){ e.preventDefault(); e.stopPropagation(); }
+  dz.addEventListener('dragover', function(e){ stop(e); dz.className='hot'; });
+  dz.addEventListener('dragleave', function(e){ stop(e); dz.className=''; });
+  dz.addEventListener('drop', function(e){
+    stop(e); dz.className='';
+    var fs = e.dataTransfer && e.dataTransfer.files;
+    if(!fs || !fs.length) return;
+    if(pdfHandleFiles(fs)) return;
+    var r = new FileReader();
+    r.onload = function(){ handleText(String(r.result)); };
+    r.readAsText(fs[0]);
+  });
+})();
+
+(function(){
+  var dz = $('pdfDrop'), fi = $('pdfFile');
+  dz.onclick = function(){ fi.click(); };
+  fi.onchange = function(){ if(fi.files && fi.files.length) pdfHandleFiles(fi.files); };
+  function stop(e){ e.preventDefault(); e.stopPropagation(); }
+  dz.addEventListener('dragover', function(e){ stop(e); dz.className='hot'; });
+  dz.addEventListener('dragleave', function(e){ stop(e); dz.className=''; });
+  dz.addEventListener('drop', function(e){
+    stop(e); dz.className='';
+    if(e.dataTransfer && e.dataTransfer.files) pdfHandleFiles(e.dataTransfer.files);
+  });
+})();
+
+function togglePaste(){
+  var b = $('pasteBox');
+  b.style.display = (b.style.display==='none')?'':'none';
+}
+function parsePaste(){
+  var t = $('pasteTa').value;
+  if(!t || t.replace(/\s/g,'')===''){ alert('Nothing pasted yet.'); return; }
+  handleText(t);
+}
+
+/* ---------- synthetic sample 8760 ---------- */
+function loadSample(){
+  var lines = ['Timestamp,kW'], i;
+  var base = new Date(2025,0,1,0,0,0);
+  for(i=0;i<8760;i++){
+    var d = new Date(base.getTime()+i*3600000);
+    var mo = d.getMonth(), hr = d.getHours(), dow = d.getDay();
+    var seasonal = 1 + 0.30*Math.cos((mo-6)/12*2*Math.PI);         /* summer heavy */
+    var work = (dow===0||dow===6) ? 0.42 : 1.0;
+    var shape = 0.36 + 0.64*Math.exp(-Math.pow((hr-14)/4.4,2));    /* midday peak */
+    var kw = 420 * seasonal * work * shape;
+    if(work===1.0 && hr>=9 && hr<=17 && Math.random()<0.14) kw *= 1.16 + Math.random()*0.30; /* process spikes */
+    kw *= 0.97 + Math.random()*0.06;
+    lines.push(fmtDate(d)+','+kw.toFixed(1));
+  }
+  handleText(lines.join('\n'));
+}
+function fmtDate(d){
+  function p(n){ return (n<10?'0':'')+n; }
+  return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())+' '+p(d.getHours())+':'+p(d.getMinutes());
+}
+
+
+/* ============================================================
+   PDF BILL READING
+
+   Utility statements have no common format, so nothing here is
+   trusted. Every value lands in the editable month table with a
+   note saying where it came from and what could not be found.
+   The person confirms it before it sizes anything.
+
+   Text layer only. A scanned bill or a phone photo carries no
+   text, and OCR in the browser is a different order of problem —
+   those get told plainly to type four numbers instead.
+   ============================================================ */
+
+var PDFJS_SRC    = window.PDFJS_SRC    || 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+var PDFJS_WORKER = window.PDFJS_WORKER || 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+var _pdfState = 0;   /* 0 unloaded, 1 loading, 2 ready, 3 failed */
+var _pdfQueue = [];
+
+function pdfEnsure(cb){
+  if(_pdfState === 2){ cb(true); return; }
+  if(_pdfState === 3){ cb(false); return; }
+  _pdfQueue.push(cb);
+  if(_pdfState === 1) return;
+  _pdfState = 1;
+  var s = document.createElement('script');
+  s.src = PDFJS_SRC;
+  s.onload = function(){
+    var lib = window.pdfjsLib || window['pdfjs-dist/build/pdf'];
+    if(!lib){ _pdfDone(false); return; }
+    window.pdfjsLib = lib;
+    try { lib.GlobalWorkerOptions.workerSrc = PDFJS_WORKER; } catch(e){}
+    _pdfDone(true);
+  };
+  s.onerror = function(){ _pdfDone(false); };
+  document.head.appendChild(s);
+}
+function _pdfDone(ok){
+  _pdfState = ok ? 2 : 3;
+  var q = _pdfQueue; _pdfQueue = [];
+  for(var i=0;i<q.length;i++) q[i](ok);
+}
+
+/* Rebuild visual lines from positioned glyph runs. Without this a
+   two-column layout reads as "Consumption / 398,000 / KWH" on three
+   separate lines and the number loses its label. */
+function pdfLines(tc){
+  var items = tc.items, buckets = {}, i;
+  for(i=0;i<items.length;i++){
+    var it = items[i];
+    if(!it.str || !it.str.replace(/\s/g,'')) continue;
+    var tr = it.transform || [1,0,0,1,0,0];
+    var y = Math.round(tr[5] / 2) * 2;      /* 2pt tolerance for baseline jitter */
+    var x = tr[4];
+    if(!buckets[y]) buckets[y] = [];
+    buckets[y].push({ x:x, s:it.str });
+  }
+  var keys = [];
+  for(var k in buckets) if(buckets.hasOwnProperty(k)) keys.push(parseFloat(k));
+  keys.sort(function(a,b){ return b-a; });        /* PDF origin is bottom-left */
+  var out = [];
+  for(i=0;i<keys.length;i++){
+    var row = buckets[keys[i]];
+    row.sort(function(a,b){ return a.x-b.x; });
+    var line = '';
+    for(var j=0;j<row.length;j++){
+      if(j && row[j].x - (row[j-1].x) > 2 && !/\s$/.test(line)) line += ' ';
+      line += row[j].s;
+    }
+    line = line.replace(/\s+/g,' ').replace(/^\s+|\s+$/g,'');
+    if(line) out.push(line);
+  }
+  return out;
+}
+
+var PDF_MON = ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
+var PDF_MON_FULL = ['january','february','march','april','may','june','july','august','september','october','november','december'];
+
+function pdfNum(s){
+  var v = parseFloat(String(s).replace(/[$,\s]/g,''));
+  return isFinite(v) ? v : NaN;
+}
+function pdfMonIdx(name){
+  var n = String(name).toLowerCase().substr(0,3);
+  for(var i=0;i<12;i++) if(PDF_MON[i] === n) return i;
+  return -1;
+}
+function pdfLabel(mi, yr){ return MONNAMES[mi] + ' ' + yr; }
+
+/* ---- billing period -------------------------------------------------- */
+function pdfPeriod(text){
+  var m;
+  /* 07/01/2025 to 07/31/2025 */
+  m = text.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})\s*(?:to|-|through|thru|–)\s*(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/i);
+  if(m){
+    var y = +m[3]; if(y<100) y += 2000;
+    var y2 = +m[6]; if(y2<100) y2 += 2000;
+    var d1 = new Date(y, +m[1]-1, +m[2]), d2 = new Date(y2, +m[4]-1, +m[5]);
+    var days = Math.round((d2-d1)/86400000) + 1;
+    return { mi:+m[1]-1, yr:y, days:(days>15 && days<45)?days:null };
+  }
+  /* Jul 1, 2025 - Jul 31, 2025   |   July 1 2025 to July 31 2025 */
+  m = text.match(/([A-Za-z]{3,9})\s+(\d{1,2}),?\s+(\d{4})\s*(?:to|-|through|thru|–)\s*([A-Za-z]{3,9})\s+(\d{1,2}),?\s+(\d{4})/);
+  if(m){
+    var mi = pdfMonIdx(m[1]);
+    if(mi >= 0){
+      var a = new Date(+m[3], mi, +m[2]);
+      var mi2 = pdfMonIdx(m[4]);
+      var b = new Date(+m[6], mi2 < 0 ? mi : mi2, +m[5]);
+      var dd = Math.round((b-a)/86400000) + 1;
+      return { mi:mi, yr:+m[3], days:(dd>15 && dd<45)?dd:null };
+    }
+  }
+  /* last resort: a lone "Jul 2025" or "07/2025" */
+  m = text.match(/\b([A-Za-z]{3,9})\.?\s+(20\d\d)\b/);
+  if(m && pdfMonIdx(m[1]) >= 0) return { mi:pdfMonIdx(m[1]), yr:+m[2], days:null };
+  return null;
+}
+
+/* ---- scored field extraction ----------------------------------------- */
+function pdfScoreLine(line, good, bad){
+  var l = line.toLowerCase(), sc = 0, i;
+  for(i=0;i<good.length;i++) if(l.indexOf(good[i][0]) >= 0) sc += good[i][1];
+  for(i=0;i<bad.length;i++) if(l.indexOf(bad[i][0]) >= 0) sc += bad[i][1];
+  return sc;
+}
+
+function pdfFindKwh(lines){
+  var best = null, i, m, re;
+  for(i=0;i<lines.length;i++){
+    re = /([\d,]+(?:\.\d+)?)\s*(?:kwh|kw-hr|kilowatt[- ]hours?)\b/gi;
+    while((m = re.exec(lines[i]))){
+      var v = pdfNum(m[1]);
+      if(!isFinite(v) || v <= 0) continue;
+      var sc = pdfScoreLine(lines[i],
+        [['total',3],['energy',2],['consumption',3],['usage',2],['billed',2],['metered',2]],
+        [['history',-6],['prior',-4],['last year',-4],['average',-3],['per ',-3],['rate',-2],['@',-2],['x $',-2]]);
+      if(!best || sc > best.sc || (sc === best.sc && v > best.v)) best = { v:v, sc:sc, line:lines[i] };
+    }
+  }
+  return best;
+}
+
+function pdfFindKw(lines){
+  var best = null, i, m, re;
+  for(i=0;i<lines.length;i++){
+    /* kw but never kwh */
+    re = /([\d,]+(?:\.\d+)?)\s*kw(?!h)\b/gi;
+    while((m = re.exec(lines[i]))){
+      var v = pdfNum(m[1]);
+      if(!isFinite(v) || v <= 0) continue;
+      var sc = pdfScoreLine(lines[i],
+        [['billing demand',6],['billed demand',6],['maximum demand',4],['max demand',4],
+         ['peak demand',4],['on-peak demand',4],['on peak demand',4],['actual demand',3],['demand',1]],
+        [['off-peak',-5],['off peak',-5],['reactive',-6],['kvar',-6],['kva',-4],['history',-6],
+         ['per kw',-4],['/kw',-4],['ratchet',-2],['contract',-2]]);
+      if(!best || sc > best.sc || (sc === best.sc && v > best.v)) best = { v:v, sc:sc, line:lines[i] };
+    }
+  }
+  return best;
+}
+
+function pdfFindRate(lines){
+  var best = null, i, m, re, pats = [
+    /\$\s*([\d.]+)\s*(?:per|\/)\s*kw(?!h)/gi,
+    /(?:x|@|at)\s*\$\s*([\d.]+)\s*\/?\s*kw(?!h)/gi,
+    /kw(?!h)[^\n$]{0,18}\$\s*([\d.]+)\s*(?:per|\/)?\s*kw?(?!h)/gi
+  ];
+  for(i=0;i<lines.length;i++){
+    for(var p=0;p<pats.length;p++){
+      pats[p].lastIndex = 0;
+      while((m = pats[p].exec(lines[i]))){
+        var v = pdfNum(m[1]);
+        if(!isFinite(v) || v <= 0 || v > 200) continue;   /* $/kW above 200 is not a demand rate */
+        var sc = pdfScoreLine(lines[i], [['demand',3],['distribution',1],['transmission',1],['facilities',1]], [['energy',-3],['kwh',-3]]);
+        if(!best || sc > best.sc) best = { v:v, sc:sc, line:lines[i] };
+      }
+    }
+  }
+  return best;
+}
+
+function pdfFindDays(lines){
+  var i, m;
+  for(i=0;i<lines.length;i++){
+    m = lines[i].match(/days?\s*(?:in|of)?\s*(?:this\s*)?(?:billing\s*)?period\s*:?\s*(\d{1,2})/i);
+    if(m){ var v = +m[1]; if(v>15 && v<45) return v; }
+    m = lines[i].match(/(?:billing\s*)?days\s*:?\s*(\d{1,2})\b/i);
+    if(m){ var v2 = +m[1]; if(v2>15 && v2<45) return v2; }
+  }
+  return null;
+}
+
+/* ---- a 12-month history table beats twelve separate statements ------- */
+function pdfHistory(lines){
+  var rows = [], i, m;
+  for(i=0;i<lines.length;i++){
+    /* Jan 2025   268,000   488   $17,234.00     (amount optional) */
+    m = lines[i].match(/^([A-Za-z]{3,9})\.?\s*,?\s*(20\d\d)?\s+([\d,]{4,})\s+([\d,]+(?:\.\d+)?)\b/);
+    if(!m) continue;
+    var mi = pdfMonIdx(m[1]);
+    if(mi < 0) continue;
+    var kwh = pdfNum(m[3]), kw = pdfNum(m[4]);
+    /* a usage row always has far more kWh than kW; anything else is a coincidence */
+    if(!(kwh > 0) || !(kw > 0) || kwh < kw * 10) continue;
+    rows.push({ mi:mi, yr:m[2] ? +m[2] : null, kwh:kwh, kw:kw });
+  }
+  return rows.length >= 3 ? rows : null;
+}
+
+/* ---- one file -> statements ------------------------------------------ */
+function pdfParseDoc(lines, fname){
+  var joined = lines.join('\n');
+  var per = pdfPeriod(joined);
+  var out = [], i;
+
+  var hist = pdfHistory(lines);
+  if(hist){
+    var yr = per ? per.yr : new Date().getFullYear() - 1;
+    var rate = pdfFindRate(lines);
+    for(i=0;i<hist.length;i++){
+      out.push({
+        label: pdfLabel(hist[i].mi, hist[i].yr || yr),
+        kwh: hist[i].kwh, kw: hist[i].kw,
+        rate: rate ? rate.v : null,
+        days: null, file: fname, from: 'usage history table',
+        warn: rate ? null : 'no $/kW found'
+      });
+    }
+    return out;
+  }
+
+  var kwh = pdfFindKwh(lines), kw = pdfFindKw(lines), rate = pdfFindRate(lines);
+  var days = pdfFindDays(lines) || (per ? per.days : null);
+  var warn = [];
+  if(!per) warn.push('no billing period');
+  if(!kwh) warn.push('no kWh');
+  if(!kw) warn.push('no demand kW');
+  if(!rate) warn.push('no $/kW');
+  out.push({
+    label: per ? pdfLabel(per.mi, per.yr) : null,
+    kwh: kwh ? kwh.v : null,
+    kw: kw ? kw.v : null,
+    rate: rate ? rate.v : null,
+    days: days, file: fname, from: 'statement',
+    warn: warn.length ? warn.join(', ') : null
+  });
+  return out;
+}
+
+/* ---- driver ----------------------------------------------------------- */
+function pdfHandleFiles(files){
+  var list = [], i;
+  for(i=0;i<files.length;i++) if(/\.pdf$/i.test(files[i].name)) list.push(files[i]);
+  if(!list.length) return false;
+
+  setMode('bill');
+  var box = $('pdfReport');
+  box.innerHTML = '<div class="note">Loading the PDF reader\u2026</div>';
+
+  pdfEnsure(function(ok){
+    if(!ok){
+      box.innerHTML = '<div class="note bad"><b>The PDF reader could not load.</b> '
+        + 'It is fetched from a CDN, so this usually means the network blocked it. '
+        + 'Save the bill as CSV, or type the four numbers into the table below \u2014 '
+        + 'kWh, peak kW and the demand rate are all the sizing needs.</div>';
+      return;
+    }
+    var done = 0, all = [], errs = [];
+    box.innerHTML = '<div class="note">Reading ' + list.length + ' file' + (list.length>1?'s':'') + '\u2026</div>';
+
+    for(var n=0;n<list.length;n++) readOne(list[n]);
+
+    function readOne(file){
+      var fr = new FileReader();
+      fr.onload = function(){
+        var task;
+        try { task = window.pdfjsLib.getDocument({ data: new Uint8Array(fr.result) }); }
+        catch(e){ finish(file.name, null, 'could not open'); return; }
+        task.promise.then(function(doc){
+          var lines = [], p = 1;
+          function nextPage(){
+            if(p > doc.numPages){ finish(file.name, lines, null); return; }
+            doc.getPage(p++).then(function(page){
+              return page.getTextContent();
+            }).then(function(tc){
+              lines = lines.concat(pdfLines(tc));
+              nextPage();
+            })['catch'](function(){ finish(file.name, lines, null); });
+          }
+          nextPage();
+        })['catch'](function(){ finish(file.name, null, 'could not open \u2014 encrypted or damaged'); });
+      };
+      fr.onerror = function(){ finish(file.name, null, 'could not read the file'); };
+      fr.readAsArrayBuffer(file);
+    }
+
+    function finish(name, lines, err){
+      if(err) errs.push({ file:name, msg:err });
+      else if(!lines || !lines.length) errs.push({ file:name, msg:'no text layer \u2014 this is a scan or a photo' });
+      else all = all.concat(pdfParseDoc(lines, name));
+      if(++done === list.length) apply(all, errs);
+    }
+  });
+  return true;
+}
+
+function apply(stmts, errs){
+  /* newest first, dedupe on the month label */
+  var seen = {}, keep = [], i;
+  for(i=0;i<stmts.length;i++){
+    var s = stmts[i];
+    var key = s.label || ('?' + i);
+    if(seen[key]) continue;
+    seen[key] = 1;
+    keep.push(s);
+  }
+  keep.sort(function(a,b){
+    if(!a.label || !b.label) return 0;
+    return new Date(a.label + ' 1') - new Date(b.label + ' 1');
+  });
+  PDF_ROWS = keep;
+  renderPdfReport(keep, errs);
+  if(keep.length) fillFromPdf(keep);
+}
+
+var PDF_ROWS = [];
+
+/* Write into the same editable table used for hand entry, so what was read
+   and what was typed are corrected in exactly the same place. */
+function fillFromPdf(rows){
+  var n = Math.min(12, rows.length);
+  $('nMonths').value = String(n);
+  var last = rows[rows.length-1];
+  if(last && last.label){
+    var mi = -1, parts = last.label.split(' ');
+    for(var k=0;k<12;k++) if(MONNAMES[k] === parts[0]) mi = k;
+    if(mi >= 0) $('startMon').value = String(mi);
+  }
+  buildBillRows();
+  var trs = $('billBody').getElementsByTagName('tr'), i;
+  var start = Math.max(0, rows.length - trs.length);
+  for(i=0;i<trs.length;i++){
+    var r = rows[start + i];
+    if(!r) continue;
+    if(r.kwh != null) trs[i].getElementsByClassName('bK')[0].value = Math.round(r.kwh);
+    if(r.kw != null)  trs[i].getElementsByClassName('bP')[0].value = Math.round(r.kw * 100) / 100;
+    if(r.rate != null) trs[i].getElementsByClassName('bR')[0].value = r.rate;
+    if(r.days != null) trs[i].getElementsByClassName('bD')[0].value = r.days;
+  }
+  /* The generic table numbers months consecutively from the current year.
+     Real uploads skip months and come from a prior year, so the row must
+     carry the period that was actually read or the labels quietly lie. */
+  for(i=0;i<trs.length;i++){
+    var rr = rows[start + i];
+    if(!rr || !rr.label) continue;
+    trs[i].setAttribute('data-lab', rr.label);
+    var mi2 = -1, p0 = rr.label.split(' ')[0];
+    for(var q=0;q<12;q++) if(MONNAMES[q] === p0) mi2 = q;
+    if(mi2 >= 0) trs[i].setAttribute('data-mon', String(mi2));
+    var cell = trs[i].getElementsByTagName('td')[0];
+    if(cell) cell.innerHTML = esc(rr.label);
+  }
+
+  var rate = null;
+  for(i=0;i<rows.length;i++) if(rows[i].rate != null){ rate = rows[i].rate; break; }
+  if(rate != null) $('dRate').value = rate;
+  wireHelp();
+}
+
+function renderPdfReport(rows, errs){
+  var h = '', i;
+  if(errs && errs.length){
+    h += '<div class="note bad"><b>' + errs.length + ' file'
+      + (errs.length>1?'s':'') + ' could not be read.</b><br>';
+    for(i=0;i<errs.length;i++) h += esc(errs[i].file) + ' \u2014 ' + esc(errs[i].msg) + '<br>';
+    h += 'A scanned bill has no text to pull from. Type the numbers in below, or export CSV from the utility portal instead.</div>';
+  }
+  if(!rows.length){
+    $('pdfReport').innerHTML = h || '<div class="note bad">Nothing readable was found in those files.</div>';
+    return;
+  }
+  var missing = 0;
+  for(i=0;i<rows.length;i++) if(rows[i].warn) missing++;
+
+  h += '<div class="note' + (missing ? '' : ' ok') + '"><b>Read ' + rows.length + ' billing period'
+    + (rows.length>1?'s':'') + '.</b> '
+    + (missing
+       ? missing + ' had something missing \u2014 the gaps are listed below and left blank in the table.'
+       : 'Check them against the paper before sizing. Bills vary by utility and this is pattern matching, not a parser for your tariff.')
+    + '</div>';
+
+  h += '<div class="scrollx"><table class="t"><thead><tr><th>Period</th><th class="num">kWh</th>'
+    + '<th class="num">Peak kW</th><th class="num">$/kW</th><th>Source</th></tr></thead><tbody>';
+  for(i=0;i<rows.length;i++){
+    var r = rows[i];
+    h += '<tr><td class="tx">' + esc(r.label || '<span class="pill r">no date</span>') + '</td>'
+      +  '<td class="num">' + (r.kwh != null ? fmt(r.kwh) : '<span class="pill r">\u2014</span>') + '</td>'
+      +  '<td class="num">' + (r.kw != null ? fmt(r.kw,1) : '<span class="pill r">\u2014</span>') + '</td>'
+      +  '<td class="num">' + (r.rate != null ? '$'+fmt(r.rate,2) : '<span class="pill a">\u2014</span>') + '</td>'
+      +  '<td class="tx" style="font-size:11px;color:var(--sub)">' + esc(r.file) + ' \u00b7 ' + esc(r.from) + '</td></tr>';
+  }
+  h += '</tbody></table></div>';
+  h += '<div class="hint">Everything landed in the table below and is editable. Correct anything wrong there \u2014 '
+    + 'the sizing runs off that table, not off the PDF.</div>';
+  $('pdfReport').innerHTML = h;
+}
+
+/* ============================================================
+   BILL MODE
+   ============================================================ */
+(function(){
+  var s='', i, now=new Date().getMonth();
+  for(i=0;i<12;i++) s += '<option value="'+i+'"'+(i===now?' selected':'')+'>'+MONNAMES[i]+'</option>';
+  $('startMon').innerHTML = s;
+})();
+
+function buildBillRows(){
+  var n = parseInt($('nMonths').value,10);
+  var start = parseInt($('startMon').value,10);
+  var yr = new Date().getFullYear();
+  var body = $('billBody'), h='', i;
+  var prev = {};
+  var rows = body.getElementsByTagName('tr');
+  for(i=0;i<rows.length;i++){
+    var lab = rows[i].getAttribute('data-lab');
+    prev[lab] = {
+      d: rows[i].getElementsByClassName('bD')[0].value,
+      k: rows[i].getElementsByClassName('bK')[0].value,
+      p: rows[i].getElementsByClassName('bP')[0].value,
+      r: rows[i].getElementsByClassName('bR')[0].value
+    };
+  }
+  /* n months ending at the selected month */
+  for(i=n-1;i>=0;i--){
+    var mi = ((start - i) % 12 + 12) % 12;
+    var y = yr + (start - i < 0 ? -1 : 0);
+    var lab = MONNAMES[mi]+' '+y;
+    var dim = new Date(y, mi+1, 0).getDate();
+    var p = prev[lab] || {};
+    h += '<tr data-lab="'+lab+'" data-mon="'+mi+'">'
+      +  '<td style="font-size:11.5px;white-space:nowrap">'+lab+'</td>'
+      +  '<td><input type="number" class="bD" value="'+(p.d||dim)+'" style="width:48px"></td>'
+      +  '<td><input type="number" class="bK" value="'+(p.k||'')+'" style="width:78px" placeholder="0"></td>'
+      +  '<td><input type="number" class="bP" value="'+(p.p||'')+'" style="width:64px" placeholder="0"></td>'
+      +  '<td><input type="number" class="bR" value="'+(p.r||nv('dRate',18.5))+'" step="0.25" style="width:58px"></td>'
+      +  '</tr>';
+  }
+  body.innerHTML = h;
+}
+buildBillRows();
+wireHelp();
+
+function fillSampleBills(){
+  var rows = $('billBody').getElementsByTagName('tr'), i;
+  var kwhBy = [268000,241000,252000,259000,301000,352000,398000,391000,340000,272000,255000,264000];
+  var pkBy  = [488,452,466,474,552,648,742,731,624,498,470,482];
+  for(i=0;i<rows.length;i++){
+    var mi = parseInt(rows[i].getAttribute('data-mon'),10);
+    rows[i].getElementsByClassName('bK')[0].value = kwhBy[mi];
+    rows[i].getElementsByClassName('bP')[0].value = pkBy[mi];
+  }
+}
+
+function readBills(){
+  var rows = $('billBody').getElementsByTagName('tr'), i, out=[];
+  for(i=0;i<rows.length;i++){
+    var r = rows[i];
+    var days = parseFloat(r.getElementsByClassName('bD')[0].value);
+    var kwh  = parseFloat(r.getElementsByClassName('bK')[0].value);
+    var pk   = parseFloat(r.getElementsByClassName('bP')[0].value);
+    var rate = parseFloat(r.getElementsByClassName('bR')[0].value);
+    if(!isFinite(kwh) || !isFinite(pk) || kwh<=0 || pk<=0) continue;
+    out.push({
+      key:r.getAttribute('data-lab'), label:r.getAttribute('data-lab'),
+      mon:parseInt(r.getAttribute('data-mon'),10),
+      days:isFinite(days)?days:30, kwh:kwh, peak:pk, rate:isFinite(rate)?rate:18.5
+    });
+  }
+  return out;
+}
+
+/* Build a load duration curve from bill totals.
+   p(x) = Pmin + (Ppk-Pmin)(1-x)^k  over x in [0,1] of the billing period,
+   with k solved so the curve's mean equals the billed load factor. */
+function ldcFromBill(b, baseFrac){
+  var hours = b.days*24;
+  var lf = b.kwh/(b.peak*hours);
+  if(lf >= 0.99) lf = 0.99;
+  var f = baseFrac;
+  if(f >= lf) f = lf*0.85;          /* base load cannot exceed the average */
+  if(f < 0.02) f = 0.02;
+  var k = (1-f)/(lf-f) - 1;
+  if(!isFinite(k) || k < 0.05) k = 0.05;
+  if(k > 60) k = 60;
+  return { pmin:f*b.peak, ppk:b.peak, k:k, hours:hours, lf:lf };
+}
+/* Energy (kWh) above threshold T across the billing period. */
+function energyAbove(c, T){
+  if(T >= c.ppk) return 0;
+  if(T <= c.pmin) T = c.pmin;
+  var N = 1500, sum = 0, i;
+  for(i=0;i<N;i++){
+    var x = (i+0.5)/N;
+    var p = c.pmin + (c.ppk-c.pmin)*Math.pow(1-x, c.k);
+    if(p > T) sum += (p-T);
+  }
+  return sum/N * c.hours;
+}
+
+/* ============================================================
+   DISPATCH SIMULATION (interval mode)
+   ============================================================ */
+function simMonth(load, dt, T, Pmax, Emax, rte){
+  var soc = Emax, peak = 0, dis = 0, evt = 0, maxEvt = 0, i, n = load.length;
+  for(i=0;i<n;i++){
+    var p = load[i], net;
+    if(p > T){
+      var need = p - T;
+      var out = need;
+      if(out > Pmax) out = Pmax;
+      var avail = soc/dt;
+      if(out > avail) out = avail;
+      net = p - out;
+      soc -= out*dt; dis += out*dt; evt += out*dt;
+    } else {
+      if(evt > maxEvt) maxEvt = evt;
+      evt = 0;
+      var chg = T - p;
+      if(chg > Pmax) chg = Pmax;
+      var room = (Emax - soc)/(dt*rte);
+      if(chg > room) chg = room;
+      if(chg < 0) chg = 0;
+      net = p + chg;
+      soc += chg*dt*rte;
+    }
+    if(net > peak) peak = net;
+  }
+  if(evt > maxEvt) maxEvt = evt;
+  return { peak:peak, dis:dis, maxEvt:maxEvt };
+}
+
+/* Lowest achievable billed demand for one month with a given battery. */
+function solveMonth(m, Pmax, Emax, rte){
+  var lo = m.min, hi = m.peak, best = m.peak, bestR = null, i;
+  for(i=0;i<16;i++){
+    var mid = (lo+hi)/2;
+    var r = simMonth(m.load, m.dt, mid, Pmax, Emax, rte);
+    if(r.peak <= mid*1.0008){ hi = mid; best = mid; bestR = r; }
+    else lo = mid;
+  }
+  if(!bestR) bestR = simMonth(m.load, m.dt, m.peak, Pmax, Emax, rte);
+  return { peak: Math.min(bestR.peak, m.peak), dis:bestR.dis, maxEvt:bestR.maxEvt };
+}
+
+/* ============================================================
+   RATCHET
+   ============================================================ */
+function applyRatchet(peaks, pct){
+  if(!pct) return peaks.slice();
+  var out = [], i, j, n = peaks.length;
+  for(i=0;i<n;i++){
+    var hi = 0;
+    for(j=Math.max(0,i-11); j<i; j++) if(peaks[j]>hi) hi = peaks[j];
+    var floor = hi*pct/100;
+    out.push(Math.max(peaks[i], floor));
+  }
+  return out;
+}
+
+/* ============================================================
+   ECONOMICS
+   ============================================================ */
+function econ(kW, kWhUsable, annSav, lossCost){
+  var dod = nv('dod',90)/100;
+  var name = kWhUsable/dod;
+  var capex = name*nv('cKwh',450) + kW*nv('cKw',0);
+  var net = capex*(1 - nv('itc',30)/100);
+  var om = kW*nv('om',10);
+  var yr1 = annSav - lossCost - om;
+  var term = Math.round(nv('term',10));
+  var disc = nv('disc',8)/100;
+  var fade = nv('fade',2)/100;
+  var npv = -net, i;
+  for(i=1;i<=term;i++){
+    var cf = (annSav*Math.pow(1-fade,i-1)) - lossCost - om;
+    npv += cf/Math.pow(1+disc,i);
+  }
+  return {
+    kW:kW, kWh:kWhUsable, nameplate:name, capex:capex, net:net, om:om,
+    annSav:annSav, lossCost:lossCost, yr1:yr1,
+    payback: yr1>0 ? net/yr1 : Infinity,
+    npv:npv, roi: net>0 ? (yr1/net*100) : 0
+  };
+}
+
+/* ============================================================
+   RUN
+   ============================================================ */
+function durations(){
+  var els = document.getElementsByClassName('dur'), out=[], i;
+  for(i=0;i<els.length;i++) if(els[i].checked) out.push(parseFloat(els[i].value));
+  if(!out.length) out = [4];
+  return out;
+}
+
+function run(){
+  if(MODE==='interval'){
+    if(!SERIES || !MONTHS || !MONTHS.length){ alert('Load interval data first.'); return; }
+    runInterval();
+  } else {
+    var b = readBills();
+    if(!b.length){ alert('Enter at least one month with kWh and peak kW.'); return; }
+    runBills(b);
+  }
+}
+
+function runInterval(){
+  var durs = durations();
+  var rte = nv('rte',88)/100;
+  var dRate = nv('dRate',18.5);
+  var ratchet = nv('ratchet',0);
+
+  var maxPeak = 0, i;
+  for(i=0;i<MONTHS.length;i++) if(MONTHS[i].peak>maxPeak) maxPeak = MONTHS[i].peak;
+
+  /* candidate power ratings - coarse pass, refined around the optimum below */
+  var cands = [], STEPS = 16, LOF = 0.02, HIF = 0.70;
+  var coarseStep = maxPeak*(HIF-LOF)/(STEPS-1);
+  for(i=1;i<=STEPS;i++) cands.push(maxPeak * (LOF + (HIF-LOF)*(i-1)/(STEPS-1)));
+
+  var basePeaks = [];
+  for(i=0;i<MONTHS.length;i++) basePeaks.push(MONTHS[i].peak);
+  var baseBilled = applyRatchet(basePeaks, ratchet);
+  var baseCost = 0;
+  for(i=0;i<MONTHS.length;i++) baseCost += baseBilled[i]*dRate;
+
+  var jobs = [], di, ci;
+  for(di=0;di<durs.length;di++) for(ci=0;ci<cands.length;ci++) jobs.push({dur:durs[di], kW:cands[ci]});
+
+  var sweep = [], idx = 0, refined = false;
+  $('prog').style.display = 'block';
+  $('out').style.display = 'none';
+
+  function step(){
+    var t0 = new Date().getTime();
+    while(idx < jobs.length && (new Date().getTime()-t0) < 90){
+      var j = jobs[idx++];
+      var Emax = j.kW*j.dur;
+      var peaks = [], dis = 0, maxEvt = 0, k;
+      for(k=0;k<MONTHS.length;k++){
+        var r = solveMonth(MONTHS[k], j.kW, Emax, rte);
+        peaks.push(r.peak); dis += r.dis;
+        if(r.maxEvt > maxEvt) maxEvt = r.maxEvt;
+      }
+      var billed = applyRatchet(peaks, ratchet);
+      var cost = 0;
+      for(k=0;k<MONTHS.length;k++) cost += billed[k]*dRate;
+      var sav = baseCost - cost;
+      var ann = sav * (12/MONTHS.length);
+      var lossKwh = dis*(1/rte - 1) * (12/MONTHS.length);
+      var e = econ(j.kW, Emax, ann, lossKwh*nv('eRate',0.075));
+      e.dur = j.dur; e.peaks = peaks; e.billed = billed;
+      e.periodSav = sav; e.maxEvt = maxEvt; e.disAnn = dis*(12/MONTHS.length);
+      sweep.push(e);
+    }
+    var pct = Math.round(idx/jobs.length*100);
+    $('progFill').style.width = pct+'%';
+    $('progTxt').textContent = 'Simulating dispatch \u00b7 ' + idx + ' of ' + jobs.length + ' configurations';
+    if(idx < jobs.length){ setTimeout(step, 0); return; }
+
+    /* second pass: walk a finer grid around the coarse optimum */
+    if(!refined){
+      refined = true;
+      var b0 = pickBest(sweep), q, dd;
+      var lo2 = Math.max(maxPeak*0.005, b0.kW - coarseStep);
+      var hi2 = Math.min(maxPeak*0.95,  b0.kW + coarseStep);
+      for(dd=0;dd<durs.length;dd++){
+        for(q=1;q<=7;q++){
+          var kwq = lo2 + (hi2-lo2)*(q-1)/6;
+          jobs.push({dur:durs[dd], kW:kwq});
+        }
+      }
+      $('progTxt').textContent = 'Refining around the optimum';
+      setTimeout(step, 0); return;
+    }
+    finishInterval(sweep, baseBilled, baseCost, maxPeak);
+  }
+  setTimeout(step, 30);
+}
+
+function pickBest(sweep){
+  var obj = $('obj').value, best = null, i;
+  for(i=0;i<sweep.length;i++){
+    var s = sweep[i];
+    if(s.annSav <= 0) continue;
+    if(!best){ best = s; continue; }
+    if(obj==='npv' && s.npv > best.npv) best = s;
+    else if(obj==='pay' && s.payback < best.payback) best = s;
+    else if(obj==='sav' && s.annSav > best.annSav) best = s;
+  }
+  if(!best){
+    best = sweep[0];
+    for(i=0;i<sweep.length;i++) if(sweep[i].npv > best.npv) best = sweep[i];
+  }
+  return best;
+}
+
+function finishInterval(sweep, baseBilled, baseCost, maxPeak){
+  $('prog').style.display = 'none';
+  $('out').style.display = '';
+  var best = pickBest(sweep);
+  RESULT = {
+    mode:'interval', sweep:sweep, best:best, baseBilled:baseBilled, baseCost:baseCost,
+    maxPeak:maxPeak, months:MONTHS, dRate:nv('dRate',18.5), nMon:MONTHS.length
+  };
+  render();
+}
+
+function runBills(bills){
+  var durs = durations(), i, j;
+  var baseFrac = nv('baseFrac',35)/100;
+  var evtMo = nv('evtMo',22);
+  var rte = nv('rte',88)/100;
+  var ratchet = nv('ratchet',0);
+
+  var maxPeak = 0;
+  for(i=0;i<bills.length;i++) if(bills[i].peak>maxPeak) maxPeak = bills[i].peak;
+
+  var curves = [];
+  for(i=0;i<bills.length;i++) curves.push(ldcFromBill(bills[i], baseFrac));
+
+  var basePeaks = [];
+  for(i=0;i<bills.length;i++) basePeaks.push(bills[i].peak);
+  var baseBilled = applyRatchet(basePeaks, ratchet);
+  var baseCost = 0;
+  for(i=0;i<bills.length;i++) baseCost += baseBilled[i]*bills[i].rate;
+
+  var cands = [], STEPS = 44;
+  for(i=1;i<=STEPS;i++) cands.push(maxPeak*(0.015 + (0.70-0.015)*(i-1)/(STEPS-1)));
+
+  var sweep = [], di, ci;
+  for(di=0;di<durs.length;di++){
+    for(ci=0;ci<cands.length;ci++){
+      var kW = cands[ci], dur = durs[di], Emax = kW*dur;
+      var peaks = [], disTot = 0, maxEvt = 0;
+      for(j=0;j<bills.length;j++){
+        var c = curves[j];
+        /* deepest shave this month supports: limited by power AND by
+           per-event energy (monthly above-threshold energy / event count) */
+        var T = Math.max(c.pmin, bills[j].peak - kW);
+        var lo = T, hi = bills[j].peak, k;
+        for(k=0;k<18;k++){
+          var mid = (lo+hi)/2;
+          var eAbove = energyAbove(c, mid);
+          var perEvt = eAbove/evtMo;
+          if(perEvt <= Emax && (bills[j].peak-mid) <= kW) hi = mid; else lo = mid;
+        }
+        var achieved = hi;
+        peaks.push(achieved);
+        disTot += energyAbove(c, achieved);
+        var pe = energyAbove(c, achieved)/evtMo;
+        if(pe > maxEvt) maxEvt = pe;
+      }
+      var billed = applyRatchet(peaks, ratchet);
+      var cost = 0;
+      for(j=0;j<bills.length;j++) cost += billed[j]*bills[j].rate;
+      var sav = baseCost - cost;
+      var ann = sav*(12/bills.length);
+      var lossKwh = disTot*(1/rte-1)*(12/bills.length);
+      var e = econ(kW, Emax, ann, lossKwh*nv('eRate',0.075));
+      e.dur = dur; e.peaks = peaks; e.billed = billed;
+      e.periodSav = sav; e.maxEvt = maxEvt; e.disAnn = disTot*(12/bills.length);
+      sweep.push(e);
+    }
+  }
+  var best = pickBest(sweep);
+  RESULT = {
+    mode:'bill', sweep:sweep, best:best, baseBilled:baseBilled, baseCost:baseCost,
+    maxPeak:maxPeak, months:bills, curves:curves, dRate:nv('dRate',18.5), nMon:bills.length
+  };
+  render();
+}
+
+/* ============================================================
+   RENDER
+   ============================================================ */
+function render(){
+  var R = RESULT, b = R.best, i;
+  var head = Math.round(nv('headroom',10));
+  var recKW = b.kW*(1+head/100);
+  var recKWh = b.kWh*(1+head/100);
+  var dod = nv('dod',90)/100;
+  var h = '';
+  /* Headroom is insurance, not revenue: it costs more but saves the same.
+     Price the system we actually recommend. */
+  var REC = econ(recKW, recKWh, b.annSav, b.lossCost);
+  R.rec = REC;
+
+  /* ---- spec block ---- */
+  h += '<div class="card-b tight"><div class="spec">'
+    +  '<div class="lbl" data-help="rSpec">Recommended system</div>'
+    +  '<div class="big">'+fmt(recKW)+' <em>kW</em> / '+fmt(recKWh)+' <em>kWh</em></div>'
+    +  '<div class="sub">'+b.dur+'-hour duration &middot; '+fmt(recKWh/dod)+' kWh nameplate at '+fmt(dod*100)+'% usable DoD &middot; '
+    +  fmt(recKW/(recKWh/dod),2)+'C discharge<br>'
+    +  'Includes '+head+'% sizing headroom over the '+fmt(b.kW)+' kW / '+fmt(b.kWh)+' kWh modeled optimum.</div>'
+    +  '</div>';
+
+  /* ---- KPIs ---- */
+  var billedAfter0 = applyRatchet(b.peaks, nv('ratchet',0));
+  var maxCut = 0, cutMon = '';
+  for(i=0;i<R.months.length;i++){
+    var cc = R.baseBilled[i]-billedAfter0[i];
+    if(cc > maxCut){ maxCut = cc; cutMon = R.months[i].label; }
+  }
+  var pctShave = (R.maxPeak>0) ? (maxCut/R.maxPeak*100) : 0;
+  h += '<div class="kpis" style="border:1px solid var(--border);border-radius:4px;overflow:hidden">'
+    +  kpi('Annual savings', money(b.annSav), '', money(REC.yr1)+' net of O&amp;M and losses', true, 'rSav')
+    +  kpi('Simple payback', isFinite(REC.payback)?fmt(REC.payback,1):'--', isFinite(REC.payback)?'yrs':'', money(REC.net)+' net cost after ITC', false, 'rPay')
+    +  kpi(nv('term',10)+'-yr NPV', money(REC.npv), '', 'at '+fmt(nv('disc',8),1)+'% discount', false, 'rNpv')
+    +  kpi('Deepest cut', fmt(maxCut), 'kW', (cutMon?cutMon+' \u00b7 ':'')+fmt(pctShave,1)+'% of site peak', false, 'rCut')
+    +  '</div>';
+
+  /* ---- single / short period callout ---- */
+  if(R.nMon < 12) h += shortPeriodCallout(R, b);
+
+  /* ---- monthly table ---- */
+  h += '<div style="height:14px"></div>';
+  h += '<div class="card-h" style="border-top:1px solid var(--border2);margin:0 -14px;padding-left:14px" data-help="rMonth">Month by month</div>';
+  h += '<div class="scrollx" style="margin:0 -14px"><table class="t"><thead><tr>'
+    +  '<th>Period</th><th class="num">Peak kW</th><th class="num">Billed kW</th><th class="num">With BESS</th>'
+    +  '<th class="num">kW cut</th><th class="num">Demand cost</th><th class="num">New cost</th><th class="num">Saved</th>'
+    +  '</tr></thead><tbody>';
+  var tB=0,tN=0,tS=0;
+  var billedAfter = applyRatchet(b.peaks, nv('ratchet',0));
+  for(i=0;i<R.months.length;i++){
+    var m = R.months[i];
+    var rate = (R.mode==='bill') ? m.rate : R.dRate;
+    var cb = R.baseBilled[i]*rate, cn = billedAfter[i]*rate, sv = cb-cn;
+    tB+=cb; tN+=cn; tS+=sv;
+    h += '<tr><td class="tx">'+m.label+'</td>'
+      +  '<td class="num">'+fmt(m.peak)+'</td>'
+      +  '<td class="num">'+fmt(R.baseBilled[i])+'</td>'
+      +  '<td class="num">'+fmt(billedAfter[i])+'</td>'
+      +  '<td class="num" style="color:var(--teal-dk);font-weight:600">'+fmt(R.baseBilled[i]-billedAfter[i])+'</td>'
+      +  '<td class="num">'+money(cb)+'</td><td class="num">'+money(cn)+'</td>'
+      +  '<td class="num" style="color:var(--teal-dk);font-weight:600">'+money(sv)+'</td></tr>';
+  }
+  h += '<tr class="tot"><td class="tx">Total ('+R.nMon+' mo)</td><td class="num">'+fmt(R.maxPeak)+'</td><td></td><td></td><td></td>'
+    +  '<td class="num">'+money(tB)+'</td><td class="num">'+money(tN)+'</td><td class="num">'+money(tS)+'</td></tr>';
+  h += '</tbody></table></div>';
+
+  /* ---- charts ---- */
+  h += '<div style="height:16px"></div>';
+  h += '<div class="card-h" style="border-top:1px solid var(--border2);margin:0 -14px;padding-left:14px" data-help="rChartMon">Demand by month</div>';
+  h += '<div style="padding-top:12px"><canvas id="cMon" height="230"></canvas>'
+    +  '<div class="legend"><span><i style="background:#B9C7D3"></i>Billed demand today</span><span><i style="background:#0E9E8F"></i>With BESS</span></div></div>';
+
+  h += '<div style="height:16px"></div>';
+  h += '<div class="card-h" style="border-top:1px solid var(--border2);margin:0 -14px;padding-left:14px" data-help="rSweep">Sizing curve</div>';
+  h += '<div style="padding-top:12px"><canvas id="cSweep" height="230"></canvas>'
+    +  '<div class="legend"><span><i style="background:#0E9E8F"></i>Annual savings</span><span><i style="background:#C98A16"></i>Payback (yrs)</span><span><i style="background:#0E1C2B"></i>Selected size</span></div>'
+    +  '<div class="hint">Savings flatten once the battery covers the tallest peaks. Past the knee you buy kWh that only serve a few hours a year.</div></div>';
+
+  if(R.mode==='interval'){
+    h += '<div style="height:16px"></div>';
+    h += '<div class="card-h" style="border-top:1px solid var(--border2);margin:0 -14px;padding-left:14px" data-help="rDay">Peak day \u00b7 '+peakDayLabel()+'</div>';
+    h += '<div style="padding-top:12px"><canvas id="cDay" height="230"></canvas>'
+      +  '<div class="legend"><span><i style="background:#B9C7D3"></i>Site load</span><span><i style="background:#0E9E8F"></i>Net after BESS</span><span><i style="background:#C0453B"></i>Target</span></div></div>';
+  }
+
+  /* ---- size options table ---- */
+  h += '<div style="height:16px"></div>';
+  h += '<div class="card-h" style="border-top:1px solid var(--border2);margin:0 -14px;padding-left:14px" data-help="rAlt">Alternatives</div>';
+  h += '<div class="scrollx" style="margin:0 -14px"><table class="t"><thead><tr>'
+    +  '<th>kW</th><th class="num">kWh</th><th class="num">Dur</th><th class="num">Net cost</th>'
+    +  '<th class="num">Annual</th><th class="num">Payback</th><th class="num">NPV</th><th></th></tr></thead><tbody>';
+  var alts = R.sweep.slice(0).sort(function(a,c){ return c.npv-a.npv; }).slice(0,10);
+  alts.sort(function(a,c){ return a.kW-c.kW || a.dur-c.dur; });
+  for(i=0;i<alts.length;i++){
+    var a = alts[i], sel = (a===b);
+    h += '<tr'+(sel?' style="background:#F0FAF9"':'')+'>'
+      +  '<td>'+fmt(a.kW)+'</td><td class="num">'+fmt(a.kWh)+'</td><td class="num">'+a.dur+'h</td>'
+      +  '<td class="num">'+money(a.net)+'</td><td class="num">'+money(a.annSav)+'</td>'
+      +  '<td class="num">'+(isFinite(a.payback)?fmt(a.payback,1):'--')+'</td>'
+      +  '<td class="num">'+money(a.npv)+'</td>'
+      +  '<td>'+(sel?'<span class="pill g">Selected</span>':'')+'</td></tr>';
+  }
+  h += '</tbody></table></div>';
+
+  /* ---- assumptions ---- */
+  h += '<div style="height:16px"></div>';
+  h += '<div class="card-h" style="border-top:1px solid var(--border2);margin:0 -14px;padding-left:14px" data-help="rBasis">Basis</div>';
+  h += '<div class="scrollx" style="margin:0 -14px"><table class="t"><tbody>';
+  h += bRow('Data source', R.mode==='interval' ? (fmt(SERIES.kw.length)+' intervals at '+SERIES.dtMin+' min') : (R.nMon+' utility bill'+(R.nMon>1?'s':'')+' (modeled load shape)'));
+  h += bRow('Billing months analyzed', String(R.nMon) + (R.nMon<12 ? ' \u2014 annualized \u00d7'+fmt(12/R.nMon,2) : ''));
+  h += bRow('Demand charge', R.mode==='bill' ? 'per-month, as entered' : money(R.dRate,2)+' /kW-mo');
+  h += bRow('Ratchet', nv('ratchet',0) ? fmt(nv('ratchet',0))+'% of prior 11-month peak' : 'none');
+  h += bRow('Round-trip efficiency', fmt(nv('rte',88))+'% \u2014 '+fmt(b.disAnn)+' kWh/yr discharged, '+money(b.lossCost)+'/yr in losses');
+  h += bRow('Largest discharge event', fmt(b.maxEvt)+' kWh ('+fmt(b.maxEvt/b.kWh*100)+'% of usable)');
+  h += bRow('Modeled optimum', fmt(b.kW)+' kW / '+fmt(b.kWh)+' kWh \u2014 built out to '+fmt(recKW)+' kW / '+fmt(recKWh)+' kWh at '+head+'% headroom');
+  h += bRow('Installed cost', money(REC.capex)+' gross \u00b7 '+money(REC.net)+' after '+fmt(nv('itc',30))+'% ITC');
+  h += bRow('O&amp;M', money(REC.om)+'/yr at '+money(nv('om',10),2)+'/kW-yr');
+  h += bRow('Headroom treatment', 'priced as built, credited with no additional savings');
+  h += '</tbody></table></div>';
+  h += '</div>';
+
+  $('out').innerHTML = h;
+  wireHelp($('out'));
+  drawMonthly();
+  drawSweep();
+  if(R.mode==='interval') drawPeakDay();
+}
+
+function kpi(k,v,u,s,hl,hk){
+  return '<div class="kpi'+(hl?' hl':'')+'"><div class="k"'+(hk?' data-help="'+hk+'"':'')+'>'+k+'</div><div class="v">'+v+(u?'<span class="u">'+u+'</span>':'')+'</div><div class="s">'+s+'</div></div>';
+}
+function bRow(k,v){ return '<tr><td class="tx" style="color:var(--sub)">'+k+'</td><td class="num" style="text-align:left;padding-left:20px">'+v+'</td></tr>'; }
+
+/* ---- the "one month of data" answer ---- */
+function shortPeriodCallout(R, b){
+  var i, h = '';
+  var head = Math.round(nv('headroom',10));
+  var billedAfter = applyRatchet(b.peaks, nv('ratchet',0));
+
+  if(R.nMon === 1){
+    var m = R.months[0];
+    var rate = (R.mode==='bill') ? m.rate : R.dRate;
+    var cost = R.baseBilled[0]*rate;
+    var newCost = billedAfter[0]*rate;
+    h += '<div style="height:14px"></div>';
+    h += '<div class="card-h" style="border-top:1px solid var(--border2);margin:0 -14px;padding-left:14px" data-help="rOne">What '+m.label+' alone would have taken</div>';
+    h += '<div class="note ok" style="margin-top:12px"><b>'+m.label+':</b> billed demand of '+fmt(m.peak)+' kW at '+money(rate,2)+'/kW cost '
+      +  money(cost)+'. A '+fmt(b.kW*(1+head/100))+' kW / '+fmt(b.kWh*(1+head/100))+' kWh battery would have held the meter to '
+      +  fmt(billedAfter[0])+' kW &mdash; a bill of '+money(newCost)+', saving <b>'+money(cost-newCost)+'</b> that month.</div>';
+
+    /* shave-depth ladder */
+    h += '<div class="scrollx" style="margin:0 -14px"><table class="t"><thead><tr>'
+      +  '<th data-help="rLadder">Shave</th><th class="num">Target kW</th><th class="num">Battery kW</th><th class="num">Usable kWh</th>'
+      +  '<th class="num">Duration</th><th class="num">Saved this month</th><th class="num">If every month</th></tr></thead><tbody>';
+    var impractical = 0;
+    var depths = [0.05,0.10,0.15,0.20,0.25,0.30,0.40];
+    for(i=0;i<depths.length;i++){
+      var kW = m.peak*depths[i];
+      var T = m.peak - kW;
+      var kWh, ach;
+      if(R.mode==='interval'){
+        /* find the kWh that actually holds T, then confirm by simulation */
+        var need = energyNeeded(m, T);
+        kWh = need*1.15;
+        var r = simMonth(m.load, m.dt, T, kW, kWh, nv('rte',88)/100);
+        ach = Math.max(r.peak, T);
+      } else {
+        var c = R.curves[0];
+        var perEvt = energyAbove(c, T)/nv('evtMo',22);
+        kWh = perEvt*1.15;
+        ach = Math.max(T, c.pmin);
+      }
+      var rate2 = (R.mode==='bill') ? m.rate : R.dRate;
+      var sv = (m.peak - ach)*rate2;
+      var dur = kW>0 ? kWh/kW : 0;
+      var bad = dur > 8;
+      if(bad) impractical++;
+      h += '<tr'+(bad?' style="opacity:.55"':'')+'><td class="tx">'+fmt(depths[i]*100)+'%</td><td class="num">'+fmt(T)+'</td>'
+        +  '<td class="num">'+fmt(kW)+'</td><td class="num">'+fmt(kWh)+'</td>'
+        +  '<td class="num">'+fmt(dur,1)+'h'+(bad?' <span class="pill r">long</span>':'')+'</td>'
+        +  '<td class="num">'+money(sv)+'</td><td class="num" style="color:var(--sub)">'+money(sv*12)+'</td></tr>';
+    }
+    h += '</tbody></table></div>';
+    if(impractical) h += '<div class="hint" style="padding:0 0 4px">Rows marked <span class="pill r">long</span> need more than 8 hours of duration to hold the target. That is a flat load profile, not a peak-shaving opportunity &mdash; the energy cost of those rows will not pencil against demand charges alone.</div>';
+    h += '<div class="note bad"><b>Do not size a system on this.</b> One month sets a floor, not a rating. If '+m.label
+      +  ' is not your highest-demand month, the annual peak is higher and this battery will be short on power exactly when it matters. '
+      +  'The "if every month" column assumes an identical peak all twelve months, which no site does. Get 12 months of bills, or better, a year of interval data, before this number goes in a proposal.</div>';
+  } else {
+    h += '<div class="note" data-help="rShort"><b>'+R.nMon+' months of data.</b> Annual figures scale the observed savings by '+fmt(12/R.nMon,2)
+      +  '\u00d7. Demand charges are driven by the single worst interval in each period, so if these months exclude the seasonal peak, '
+      +  'both the savings and the required power rating are understated.</div>';
+  }
+  return h;
+}
+
+/* Energy above a threshold within the worst contiguous event of a month. */
+function energyNeeded(m, T){
+  var i, evt=0, mx=0;
+  for(i=0;i<m.load.length;i++){
+    if(m.load[i] > T) evt += (m.load[i]-T)*m.dt;
+    else { if(evt>mx) mx=evt; evt=0; }
+  }
+  if(evt>mx) mx=evt;
+  return mx;
+}
+
+/* ============================================================
+   CHARTS
+   ============================================================ */
+function prep(id, hCss){
+  var c = $(id); if(!c) return null;
+  var dpr = window.devicePixelRatio || 1;
+  var w = c.clientWidth || 600;
+  var hh = hCss || c.height;
+  c.width = Math.round(w*dpr); c.height = Math.round(hh*dpr);
+  c.style.height = hh+'px';
+  var g = c.getContext ? c.getContext('2d') : null;
+  if(!g) return null;
+  g.setTransform(dpr,0,0,dpr,0,0);
+  g.clearRect(0,0,w,hh);
+  g.font = "10px 'IBM Plex Mono', monospace";
+  return { g:g, w:w, h:hh };
+}
+function axes(g,w,h,pad,yMax,yLab){
+  g.strokeStyle = '#E8EDF2'; g.lineWidth = 1;
+  g.fillStyle = '#64788A';
+  var i;
+  for(i=0;i<=4;i++){
+    var y = pad.t + (h-pad.t-pad.b)*i/4;
+    g.beginPath(); g.moveTo(pad.l, y+0.5); g.lineTo(w-pad.r, y+0.5); g.stroke();
+    var v = yMax*(1-i/4);
+    g.textAlign='right'; g.textBaseline='middle';
+    g.fillText(shortNum(v), pad.l-6, y);
+  }
+  if(yLab){ g.save(); g.translate(9, pad.t+(h-pad.t-pad.b)/2); g.rotate(-Math.PI/2);
+    g.textAlign='center'; g.fillText(yLab,0,0); g.restore(); }
+}
+function shortNum(v){
+  if(Math.abs(v) >= 1000000) return (v/1000000).toFixed(1)+'M';
+  if(Math.abs(v) >= 1000) return Math.round(v/1000)+'k';
+  return Math.round(v);
+}
+
+function drawMonthly(){
+  var P = prep('cMon',230); if(!P) return;
+  var g=P.g, w=P.w, h=P.h, R=RESULT, b=R.best;
+  var pad = {l:44,r:14,t:12,b:26};
+  var billedAfter = applyRatchet(b.peaks, nv('ratchet',0));
+  var mx = 0, i;
+  for(i=0;i<R.baseBilled.length;i++) if(R.baseBilled[i]>mx) mx = R.baseBilled[i];
+  mx = niceMax(mx);
+  axes(g,w,h,pad,mx,'kW');
+  var n = R.months.length;
+  var iw = (w-pad.l-pad.r)/n, bw = Math.min(iw*0.62, 42);
+  var y0 = h-pad.b;
+  for(i=0;i<n;i++){
+    var cx = pad.l + iw*(i+0.5);
+    var hb = (R.baseBilled[i]/mx)*(h-pad.t-pad.b);
+    var ha = (billedAfter[i]/mx)*(h-pad.t-pad.b);
+    g.fillStyle = '#B9C7D3'; g.fillRect(cx-bw/2, y0-hb, bw, hb);
+    g.fillStyle = '#0E9E8F'; g.fillRect(cx-bw/2, y0-ha, bw, ha);
+    g.fillStyle = '#64788A'; g.textAlign='center'; g.textBaseline='top';
+    if(n<=13 || i%2===0) g.fillText(String(R.months[i].label).split(' ')[0], cx, y0+6);
+  }
+  g.strokeStyle='#D7DFE7'; g.beginPath(); g.moveTo(pad.l,y0+0.5); g.lineTo(w-pad.r,y0+0.5); g.stroke();
+}
+
+function drawSweep(){
+  var P = prep('cSweep',230); if(!P) return;
+  var g=P.g,w=P.w,h=P.h,R=RESULT,b=R.best, i;
+  var pad = {l:48,r:46,t:12,b:30};
+  var pts = [];
+  for(i=0;i<R.sweep.length;i++) if(R.sweep[i].dur===b.dur) pts.push(R.sweep[i]);
+  pts.sort(function(a,c){ return a.kW-c.kW; });
+  if(pts.length<2) return;
+  var mxS=0, mxP=0;
+  for(i=0;i<pts.length;i++){
+    if(pts[i].annSav>mxS) mxS=pts[i].annSav;
+    if(isFinite(pts[i].payback) && pts[i].payback<40 && pts[i].payback>mxP) mxP=pts[i].payback;
+  }
+  mxS = niceMax(mxS); mxP = niceMax(Math.max(mxP,4));
+  axes(g,w,h,pad,mxS,'$/yr');
+
+  /* right axis */
+  g.fillStyle='#C98A16'; g.textAlign='left'; g.textBaseline='middle';
+  for(i=0;i<=4;i++){
+    var y = pad.t + (h-pad.t-pad.b)*i/4;
+    g.fillText(fmt(mxP*(1-i/4),0)+'y', w-pad.r+6, y);
+  }
+  function X(kw){ var mn=pts[0].kW, mxx=pts[pts.length-1].kW; return pad.l + (kw-mn)/(mxx-mn)*(w-pad.l-pad.r); }
+  function YS(v){ return h-pad.b - (v/mxS)*(h-pad.t-pad.b); }
+  function YP(v){ return h-pad.b - (Math.min(v,mxP)/mxP)*(h-pad.t-pad.b); }
+
+  /* payback */
+  g.strokeStyle='#C98A16'; g.lineWidth=1.5; g.setLineDash([4,3]); g.beginPath();
+  var started=false;
+  for(i=0;i<pts.length;i++){
+    if(!isFinite(pts[i].payback)) continue;
+    var x=X(pts[i].kW), y=YP(pts[i].payback);
+    if(!started){ g.moveTo(x,y); started=true; } else g.lineTo(x,y);
+  }
+  g.stroke(); g.setLineDash([]);
+
+  /* savings */
+  g.strokeStyle='#0E9E8F'; g.lineWidth=2; g.beginPath();
+  for(i=0;i<pts.length;i++){
+    var x2=X(pts[i].kW), y2=YS(pts[i].annSav);
+    if(i===0) g.moveTo(x2,y2); else g.lineTo(x2,y2);
+  }
+  g.stroke();
+
+  /* selected marker */
+  var bx = X(b.kW);
+  g.strokeStyle='#0E1C2B'; g.lineWidth=1; g.setLineDash([2,3]);
+  g.beginPath(); g.moveTo(bx, pad.t); g.lineTo(bx, h-pad.b); g.stroke(); g.setLineDash([]);
+  g.fillStyle='#0E1C2B'; g.beginPath(); g.arc(bx, YS(b.annSav), 4, 0, 6.2832); g.fill();
+
+  /* x labels */
+  g.fillStyle='#64788A'; g.textAlign='center'; g.textBaseline='top';
+  for(i=0;i<pts.length;i+=Math.ceil(pts.length/6)){
+    g.fillText(fmt(pts[i].kW)+'kW', X(pts[i].kW), h-pad.b+6);
+  }
+  g.strokeStyle='#D7DFE7'; g.beginPath(); g.moveTo(pad.l,h-pad.b+0.5); g.lineTo(w-pad.r,h-pad.b+0.5); g.stroke();
+}
+
+function peakDayIndex(){
+  var s=SERIES, i, mx=-1, at=0;
+  for(i=0;i<s.kw.length;i++) if(s.kw[i]>mx){ mx=s.kw[i]; at=i; }
+  return at;
+}
+function peakDayLabel(){
+  var at = peakDayIndex(), d = SERIES.t[at];
+  return MONNAMES[d.getMonth()]+' '+d.getDate()+', '+d.getFullYear();
+}
+function drawPeakDay(){
+  var P = prep('cDay',230); if(!P) return;
+  var g=P.g,w=P.w,h=P.h,s=SERIES,R=RESULT,b=R.best;
+  var pad={l:46,r:14,t:12,b:26};
+  var at = peakDayIndex();
+  var perDay = Math.round(24/s.dt);
+  var d0 = SERIES.t[at];
+  var start = at - Math.round((d0.getHours()+d0.getMinutes()/60)/s.dt);
+  if(start<0) start=0;
+  var end = Math.min(start+perDay, s.kw.length);
+  var day = s.kw.slice(start,end), i;
+
+  /* which month is this and what target did we land on */
+  var key = d0.getFullYear()+'-'+(d0.getMonth()<9?'0':'')+(d0.getMonth()+1);
+  var mi = 0;
+  for(i=0;i<R.months.length;i++) if(R.months[i].key===key) mi=i;
+  var T = b.peaks[mi];
+
+  /* replay dispatch across the day for the net line */
+  var soc = b.kWh, rte = nv('rte',88)/100, net=[];
+  for(i=0;i<day.length;i++){
+    var p=day[i], v;
+    if(p>T){ var o=Math.min(p-T,b.kW,soc/s.dt); v=p-o; soc-=o*s.dt; }
+    else { var c=Math.min(T-p,b.kW,(b.kWh-soc)/(s.dt*rte)); if(c<0)c=0; v=p+c; soc+=c*s.dt*rte; }
+    net.push(v);
+  }
+  var mx=0;
+  for(i=0;i<day.length;i++){ if(day[i]>mx)mx=day[i]; if(net[i]>mx)mx=net[i]; }
+  mx = niceMax(mx);
+  axes(g,w,h,pad,mx,'kW');
+  function X(i){ return pad.l + i/(day.length-1)*(w-pad.l-pad.r); }
+  function Y(v){ return h-pad.b - (v/mx)*(h-pad.t-pad.b); }
+
+  g.strokeStyle='#B9C7D3'; g.lineWidth=2; g.beginPath();
+  for(i=0;i<day.length;i++){ if(i===0)g.moveTo(X(i),Y(day[i])); else g.lineTo(X(i),Y(day[i])); }
+  g.stroke();
+  g.strokeStyle='#0E9E8F'; g.lineWidth=2; g.beginPath();
+  for(i=0;i<net.length;i++){ if(i===0)g.moveTo(X(i),Y(net[i])); else g.lineTo(X(i),Y(net[i])); }
+  g.stroke();
+  g.strokeStyle='#C0453B'; g.lineWidth=1; g.setLineDash([5,4]);
+  g.beginPath(); g.moveTo(pad.l,Y(T)); g.lineTo(w-pad.r,Y(T)); g.stroke(); g.setLineDash([]);
+  g.fillStyle='#C0453B'; g.textAlign='left'; g.textBaseline='bottom';
+  g.fillText(fmt(T)+' kW target', pad.l+4, Y(T)-3);
+
+  g.fillStyle='#64788A'; g.textAlign='center'; g.textBaseline='top';
+  for(i=0;i<day.length;i+=Math.max(1,Math.round(day.length/8))){
+    var hr = Math.round(i*s.dt);
+    g.fillText(((hr%24)<10?'0':'')+(hr%24)+':00', X(i), h-pad.b+6);
+  }
+  g.strokeStyle='#D7DFE7'; g.beginPath(); g.moveTo(pad.l,h-pad.b+0.5); g.lineTo(w-pad.r,h-pad.b+0.5); g.stroke();
+}
+
+function niceMax(v){
+  if(v<=0) return 1;
+  var mag = Math.pow(10, Math.floor(Math.log(v)/Math.LN10));
+  var n = v/mag;
+  var step = n<=1?1:(n<=2?2:(n<=2.5?2.5:(n<=5?5:10)));
+  return step*mag;
+}
+window.addEventListener('resize', function(){
+  if(!RESULT) return;
+  clearTimeout(window.__rz);
+  window.__rz = setTimeout(function(){
+    drawMonthly(); drawSweep();
+    if(RESULT.mode==='interval') drawPeakDay();
+  }, 150);
+});
+
+/* ============================================================
+   EXPORT
+   ============================================================ */
+function exportCSV(){
+  if(!RESULT){ alert('Run the sizing first.'); return; }
+  var R=RESULT, b=R.best, i, L=[];
+  var head = Math.round(nv('headroom',10));
+  function q(s){ return '"'+String(s).replace(/"/g,'""')+'"'; }
+  L.push('ClearSky OMEGA - Battery Sizer');
+  L.push('Generated,'+new Date().toString());
+  L.push('');
+  L.push('RECOMMENDED SYSTEM');
+  L.push('Power kW,'+ (b.kW*(1+head/100)).toFixed(0));
+  L.push('Usable energy kWh,'+ (b.kWh*(1+head/100)).toFixed(0));
+  L.push('Nameplate kWh,'+ (b.kWh*(1+head/100)/(nv('dod',90)/100)).toFixed(0));
+  L.push('Duration h,'+b.dur);
+  L.push('Sizing headroom %,'+head);
+  L.push('');
+  var REC = R.rec || b;
+  L.push('Modeled optimum kW,'+b.kW.toFixed(0));
+  L.push('Modeled optimum kWh,'+b.kWh.toFixed(0));
+  L.push('');
+  L.push('ECONOMICS (as recommended)');
+  L.push('Gross capex,'+REC.capex.toFixed(0));
+  L.push('Net after ITC,'+REC.net.toFixed(0));
+  L.push('Annual demand savings,'+b.annSav.toFixed(0));
+  L.push('Efficiency loss cost,'+b.lossCost.toFixed(0));
+  L.push('O&M,'+REC.om.toFixed(0));
+  L.push('Year 1 net,'+REC.yr1.toFixed(0));
+  L.push('Simple payback yrs,'+(isFinite(REC.payback)?REC.payback.toFixed(2):'n/a'));
+  L.push('NPV,'+REC.npv.toFixed(0));
+  L.push('');
+  L.push('MONTHLY');
+  L.push('Period,Peak kW,Billed kW,With BESS kW,kW cut,Demand cost,New cost,Saved');
+  var billedAfter = applyRatchet(b.peaks, nv('ratchet',0));
+  for(i=0;i<R.months.length;i++){
+    var m=R.months[i], rate=(R.mode==='bill')?m.rate:R.dRate;
+    var cb=R.baseBilled[i]*rate, cn=billedAfter[i]*rate;
+    L.push([q(m.label), m.peak.toFixed(1), R.baseBilled[i].toFixed(1), billedAfter[i].toFixed(1),
+            (R.baseBilled[i]-billedAfter[i]).toFixed(1), cb.toFixed(0), cn.toFixed(0), (cb-cn).toFixed(0)].join(','));
+  }
+  L.push('');
+  L.push('SIZING SWEEP');
+  L.push('kW,Usable kWh,Duration h,Net cost,Annual savings,Payback yrs,NPV');
+  var sw = R.sweep.slice(0).sort(function(a,c){ return a.dur-c.dur || a.kW-c.kW; });
+  for(i=0;i<sw.length;i++){
+    var s=sw[i];
+    L.push([s.kW.toFixed(0), s.kWh.toFixed(0), s.dur, s.net.toFixed(0), s.annSav.toFixed(0),
+            (isFinite(s.payback)?s.payback.toFixed(2):''), s.npv.toFixed(0)].join(','));
+  }
+  var blob = new Blob([L.join('\n')], {type:'text/csv;charset=utf-8'});
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'omega-battery-sizing.csv';
+  document.body.appendChild(a); a.click();
+  setTimeout(function(){ document.body.removeChild(a); URL.revokeObjectURL(a.href); }, 400);
+}
+</script>
+</body>
+</html>

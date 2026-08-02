@@ -551,6 +551,108 @@ code{font-family:var(--mono);font-size:11.5px;background:var(--cs-card-2);paddin
   .drawer{width:100%}
   .sheet-wrap{max-height:none}
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   STORAGE SIZER  —  stacked above the deal dialog (z-index 90 > modal's 70)
+   so the half-filled Submit-a-deal form stays mounted underneath and the
+   sponsor never loses what they typed.
+   ═══════════════════════════════════════════════════════════════════════════ */
+.p-unsized{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10.5px;font-weight:600;
+  background:var(--cs-violet-dim);color:var(--cs-violet);white-space:nowrap}
+.readiness{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1px;
+  background:var(--cs-border);border:1px solid var(--cs-border);border-radius:10px;overflow:hidden;margin-top:6px}
+.readiness .r{background:var(--cs-card);padding:11px 13px}
+.readiness .r .k{font-size:9.5px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;
+  color:var(--cs-muted-2);margin-bottom:3px}
+.readiness .r .v{font-size:12.5px;line-height:1.35}
+.readiness .r.none .v{color:var(--cs-muted-2)}
+.readiness .r.done .v{color:var(--cs-green);font-weight:600}
+.szr-back{position:fixed;inset:0;background:rgba(14,26,36,.62);backdrop-filter:blur(3px);
+  -webkit-backdrop-filter:blur(3px);z-index:90;display:none;align-items:flex-start;
+  justify-content:center;padding:34px 18px;overflow-y:auto}
+.szr-back.show{display:flex}
+.szr{background:var(--cs-card);border-radius:14px;width:100%;max-width:940px;
+  box-shadow:0 24px 70px rgba(14,26,36,.30);overflow:hidden}
+.szr-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;
+  padding:22px 26px 16px;border-bottom:1px solid var(--cs-border)}
+.szr-head h2{font-family:'Syne',sans-serif;font-size:19px;font-weight:700;letter-spacing:-.4px;margin:0}
+.szr-head .sub{font-size:12.5px;color:var(--cs-muted);margin-top:4px;line-height:1.5}
+.szr-body{padding:20px 26px;display:grid;grid-template-columns:300px 1fr;gap:22px;align-items:start}
+@media(max-width:820px){.szr-body{grid-template-columns:1fr}}
+.szr-foot{padding:15px 26px 20px;display:flex;justify-content:flex-end;gap:10px;
+  border-top:1px solid var(--cs-border);flex-wrap:wrap;align-items:center}
+
+.szr-lbl{display:block;font-size:10px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;
+  color:var(--cs-muted-2);margin:0 0 5px}
+.szr-h4{font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--cs-muted-2);margin:0 0 10px}
+.szr-in{width:100%;padding:8px 10px;border:1px solid var(--cs-border);border-radius:8px;
+  background:var(--cs-card);color:var(--cs-ink);font-size:13.5px}
+.szr-in:focus{outline:none;border-color:var(--cs-blue);box-shadow:0 0 0 3px var(--cs-blue-dim)}
+input.szr-in[type=number]{font-family:var(--mono)}
+.szr-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:11px}
+.szr-row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:11px}
+.szr-f{margin-bottom:11px}
+.szr-note{font-size:11.5px;color:var(--cs-muted);line-height:1.5;margin:6px 0 0}
+.szr-rule{height:1px;background:var(--cs-border);margin:16px 0}
+
+.szr-src{display:flex;flex-direction:column;gap:7px;margin-bottom:14px}
+.szr-src label{display:flex;align-items:flex-start;gap:9px;padding:10px 12px;border-radius:9px;
+  border:1px solid var(--cs-border);cursor:pointer;font-size:13px;background:var(--cs-card)}
+.szr-src label:hover{border-color:var(--cs-border-blue)}
+.szr-src label.on{border-color:var(--cs-blue);background:var(--cs-blue-dim)}
+.szr-src input{margin-top:2px;accent-color:var(--cs-blue)}
+.szr-src .t{font-weight:600}
+.szr-src .d{font-size:11.5px;color:var(--cs-muted);margin-top:2px;line-height:1.45}
+.szr-src label.off{opacity:.5;cursor:not-allowed}
+
+.szr-drop{border:1.5px dashed var(--cs-border);border-radius:10px;background:var(--cs-card-2);
+  padding:18px 12px;text-align:center;cursor:pointer;font-size:12.5px}
+.szr-drop:hover,.szr-drop.over{border-color:var(--cs-blue);background:var(--cs-blue-dim)}
+.szr-drop b{display:block;font-size:13px;margin-bottom:3px}
+.szr-drop span{color:var(--cs-muted)}
+
+.szr-tbl{width:100%;border-collapse:collapse;font-size:12px}
+.szr-tbl th{text-align:left;font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--cs-muted-2);font-weight:700;padding:6px 7px;border-bottom:1px solid var(--cs-border);white-space:nowrap}
+.szr-tbl td{padding:5px 7px;border-bottom:1px solid var(--cs-border);font-family:var(--mono);
+  font-size:11.5px;white-space:nowrap}
+.szr-tbl td.tx{font-family:'Inter',sans-serif}
+.szr-tbl .num{text-align:right}
+.szr-tbl tr:last-child td{border-bottom:none}
+.szr-tbl input{width:100%;padding:4px 6px;font-size:11.5px;border:1px solid var(--cs-border);
+  border-radius:5px;font-family:var(--mono);background:var(--cs-card);color:var(--cs-ink)}
+.szr-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+
+.szr-spec{background:var(--cs-navy);color:#fff;border-radius:11px;padding:16px 18px;margin-bottom:14px}
+.szr-spec .l{font-size:9.5px;letter-spacing:.11em;text-transform:uppercase;color:rgba(255,255,255,.55);margin-bottom:6px}
+.szr-spec .v{font-family:'Syne',sans-serif;font-size:25px;font-weight:800;letter-spacing:-.7px;line-height:1.15}
+.szr-spec .v em{font-style:normal;color:var(--cs-blue-bright)}
+.szr-spec .s{font-size:11.5px;color:rgba(255,255,255,.65);margin-top:7px;line-height:1.5}
+
+.szr-kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--cs-border);
+  border:1px solid var(--cs-border);border-radius:10px;overflow:hidden;margin-bottom:14px}
+@media(max-width:560px){.szr-kpis{grid-template-columns:1fr}}
+.szr-kpi{background:var(--cs-card);padding:12px 13px}
+.szr-kpi .k{font-size:9.5px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--cs-muted-2);margin-bottom:4px}
+.szr-kpi .v{font-family:'Syne',sans-serif;font-size:19px;font-weight:700;letter-spacing:-.4px}
+.szr-kpi .s{font-size:11px;color:var(--cs-muted);margin-top:2px}
+
+.szr-flag{border-left:3px solid var(--cs-amber);background:var(--cs-amber-dim);padding:9px 12px;
+  border-radius:0 7px 7px 0;font-size:12px;line-height:1.5;margin:12px 0}
+.szr-flag.ok{border-left-color:var(--cs-green);background:var(--cs-green-dim)}
+.szr-flag.bad{border-left-color:var(--cs-red);background:var(--cs-red-dim)}
+.szr-empty{padding:44px 20px;text-align:center;color:var(--cs-muted);font-size:12.5px;line-height:1.6}
+.szr-empty b{display:block;color:var(--cs-ink);font-size:13.5px;margin-bottom:5px}
+.szr-canvas{width:100%;display:block;border-radius:8px}
+.szr-legend{display:flex;gap:14px;flex-wrap:wrap;font-size:10.5px;color:var(--cs-muted);margin-top:7px}
+.szr-legend i{display:inline-block;width:10px;height:3px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.szr-prog{padding:12px 0}
+.szr-prog .bar{height:4px;background:var(--cs-border);border-radius:3px;overflow:hidden}
+.szr-prog .fill{height:100%;width:0%;background:var(--cs-blue);transition:width .1s}
+.szr-prog .t{font-size:11.5px;color:var(--cs-muted);margin-top:6px;font-family:var(--mono)}
+.szr-apply{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--cs-muted);margin-right:auto}
+.szr-apply input{accent-color:var(--cs-blue);width:15px;height:15px}
 </style>
 </head>
 <body>
@@ -707,6 +809,11 @@ code{font-family:var(--mono);font-size:11.5px;background:var(--cs-card-2);paddin
 <!-- modal -->
 <div class="modal-back" id="modalBack">
   <div class="modal" id="modalEl"></div>
+</div>
+
+<!-- storage sizer — stacks above the deal dialog so the form keeps its state -->
+<div class="szr-back" id="sizerBack">
+  <div class="szr" id="sizerEl"></div>
 </div>
 
 <div id="toast" role="status" aria-live="polite"></div>
@@ -868,6 +975,38 @@ const TECHS = [
 const TECH_BY_ID = Object.fromEntries(TECHS.map(t => [t.id, t]));
 
 const STAGES = ['Submitted','Screening','Diligence','Term sheet','Closed'];
+
+/* Where the *project* stands, as distinct from where the financing stands.
+   A referral partner often has nothing but an introduction, and forcing them
+   to invent a nameplate to file it is how bad numbers enter the pipeline. */
+const DEV_STAGES = [
+  'Opportunity introduced',
+  'Qualifying — gathering utility data',
+  'Proposal issued',
+  'Contract executed',
+  'Notice to proceed',
+  'In construction',
+  'Energized'
+];
+const SITE_CONTROL = [
+  'None — introduction only',
+  'Owner aware, nothing signed',
+  'Letter of intent',
+  'Option or term sheet',
+  'Executed host agreement',
+  'Executed lease or easement',
+  'Sponsor owns the site'
+];
+const INTERCONNECT_STATES = [
+  'Not started', 'Feasibility only', 'Pre-application', 'Application filed',
+  'Study underway', 'Queue position held', 'Agreement executed'
+];
+const PERMIT_STATES = [
+  'Not started', 'Pre-application', 'Filed', 'Zoning approved', 'Fully permitted'
+];
+/* One place decides whether a deal's size is real, so the table, the drawer
+   and the exports can never disagree about it. */
+const unsized = d => !!d.sizePending || !(d.mw > 0);
 const STAGE_COLOR = {'Submitted':'#8A98A6','Screening':'#5B4BC4','Diligence':'#00AEEF','Term sheet':'#C77A00','Closed':'#12805C'};
 
 const OFFTAKES = ['Behind-the-meter savings share · 15 yr','Investment-grade PPA · 20 yr','Municipal PPA · 25 yr',
@@ -949,7 +1088,9 @@ function buildDeal(spec) {
   spec.originator = spec.originator || spec.developer || '—';
   spec.stage      = STAGES.indexOf(spec.stage) === -1 ? 'Submitted' : spec.stage;
   spec.status     = ['active','won','declined','withdrawn'].indexOf(spec.status) === -1 ? 'active' : spec.status;
-  spec.mw         = Number(spec.mw) > 0 ? Number(spec.mw) : 0.1;
+  /* An unsized opportunity has no nameplate. Substituting 0.1 MW to keep the
+     arithmetic happy is what made "0.1 MW" appear on real screening tables. */
+  spec.mw         = Number(spec.mw) > 0 ? Number(spec.mw) : (spec.sizePending ? 0 : 0.1);
   spec.ask        = Number(spec.ask) >= 0 ? Number(spec.ask) : 0;
   spec.ppaRate    = Number(spec.ppaRate) || 0;
   spec.submitted  = /^\d{4}-\d{2}-\d{2}$/.test(spec.submitted || '') ? spec.submitted : iso(TODAY);
@@ -961,7 +1102,8 @@ function buildDeal(spec) {
   if (!Array.isArray(spec.links)) spec.links = [];
   const d = Object.assign({
     mwh:0, offers:0, bidders:0, wonBy:null, lead:null, declineReason:null,
-    decided:null, links:[], bill:null, irr:11.5, dscr:1.35, fsStatus:null,
+    decided:null, links:[], bill:null, sizing:null, sizePending:false,
+    devStage:DEV_STAGES[0], irr:11.5, dscr:1.35, fsStatus:null,
     orgKey:null, submittedBy:null, draft:false,
     cf: (t.id === 'solar' || t.id === 'hybrid') ? .245 : .44
   }, spec);
@@ -972,7 +1114,7 @@ function buildDeal(spec) {
      `ref` is only ever displayed. */
   d.ref = spec.ref || spec.id || newRef();
   d.id  = spec.id  || d.ref;
-  d.ppw = d.ask / (d.mw * 1e6);
+  d.ppw = d.mw > 0 ? d.ask / (d.mw * 1e6) : 0;
   d.ageDays = daysBetween(d.submitted, iso(TODAY));
   d.cycleDays = d.decided ? daysBetween(d.submitted, d.decided) : null;
 
@@ -1609,13 +1751,13 @@ const COLS = [
   {key:'name',      lab:'Deal',        cls:'c-name'},
   {key:'state',     lab:'State'},
   {key:'techName',  lab:'Technology'},
-  {key:'mw',        lab:'Size',        cls:'num', fmt:d => num(d.mw) + ' MW'},
-  {key:'ask',       lab:'Capital ask', cls:'num', fmt:d => usd(d.ask)},
-  {key:'ppw',       lab:'$/W',         cls:'num', fmt:d => '$' + d.ppw.toFixed(2)},
+  {key:'mw',        lab:'Size',        cls:'num', fmt:d => unsized(d) ? '<span class="p-unsized">Not sized</span>' : num(d.mw) + ' MW'},
+  {key:'ask',       lab:'Capital ask', cls:'num', fmt:d => unsized(d) && !(d.ask > 0) ? '—' : usd(d.ask)},
+  {key:'ppw',       lab:'$/W',         cls:'num', fmt:d => unsized(d) ? '—' : '$' + d.ppw.toFixed(2)},
   {key:'stage',     lab:'Stage'},
   {key:'status',    lab:'Outcome'},
   {key:'savings',   lab:'Bill savings', cls:'num', fmt:d => d.savings == null ? '—' : pct(d.savings * 100)},
-  {key:'irr',       lab:'IRR',         cls:'num', fmt:d => d.irr.toFixed(1) + '%'},
+  {key:'irr',       lab:'IRR',         cls:'num', fmt:d => unsized(d) ? '—' : d.irr.toFixed(1) + '%'},
   {key:'submittedBy',lab:'Submitted by'},
   {key:'developer', lab:'Developer'},
   {key:'submitted', lab:'Submitted',   cls:'num', fmt:d => dt(d.submitted)}
@@ -2207,6 +2349,7 @@ function drawerBody(d) {
       <span class="pill ${cls}">${lab}</span>
       <span class="pill ${STAGE_PILL[d.stage]}">${d.stage}</span>
       <span class="tag" style="color:${d.techColor};background:${d.techColor}18">${esc(d.techName)}</span>
+      ${unsized(d) ? '<span class="p-unsized">Not sized</span>' : ''}
     </div>
     ${isDraft(d) ? `<div class="verdict fair" style="margin-bottom:20px">
       <div class="vd-top"><span class="vd-badge">Draft</span><h5>Not yet sent to capital partners</h5></div>
@@ -2223,13 +2366,36 @@ function drawerBody(d) {
       <div class="vd-top"><span class="vd-badge">Declined</span><h5>${esc(d.declineReason)}</h5></div>
       <p>Returned after ${d.cycleDays} days in ${d.stage.toLowerCase()}. Resubmission is allowed once the underlying issue is documented.</p></div>` : ''}
     <div class="sec">
+      <h4>Where this stands</h4>
+      <div class="readiness">
+        <div class="r"><div class="k">Development stage</div><div class="v">${esc(d.devStage || DEV_STAGES[0])}</div></div>
+        <div class="r ${/^(None|Owner aware)/.test(d.siteControl || '') ? 'none' : 'done'}">
+          <div class="k">Site control</div><div class="v">${esc(d.siteControl)}</div></div>
+        <div class="r ${/^(Not started|—)/.test(d.interconnect || '') ? 'none' : 'done'}">
+          <div class="k">Interconnection</div><div class="v">${esc(d.interconnect)}</div></div>
+        <div class="r ${/^(Not started|—)/.test(d.permits || '') ? 'none' : 'done'}">
+          <div class="k">Permits</div><div class="v">${esc(d.permits)}</div></div>
+      </div>
+    </div>
+    ${unsized(d) ? `<div class="verdict fair" style="margin-bottom:20px">
+      <div class="vd-top"><span class="vd-badge">Not sized</span><h5>No nameplate or capital ask yet</h5></div>
+      <p>The sponsor filed this as an early opportunity rather than guess at a number. Cost per watt, IRR and
+        DSCR are withheld here because there is nothing real to compute them from.
+        ${d.bill ? 'Utility statements are attached, so it can be sized on request.' : 'Ask for 12 months of utility statements to size it.'}</p>
+      ${canEdit(d) ? `<button class="btn btn-primary btn-sm" style="margin-top:12px" data-act="edit-deal" data-val="${d.id}">Add the sizing</button>` : ''}
+    </div>` : ''}
+    <div class="sec">
       <h4>Deal terms</h4>
       <div class="kv-list">
-        <div class="kv"><span class="k">Capital ask</span><span class="v mono">${usd(d.ask)}</span></div>
-        <div class="kv"><span class="k">All-in cost</span><span class="v mono">$${d.ppw.toFixed(2)}/W <span style="font-weight:400;color:var(--cs-muted-2)">· median $${BENCH[d.tech].median.toFixed(2)}</span></span></div>
-        <div class="kv"><span class="k">Sponsor IRR</span><span class="v mono">${d.irr.toFixed(1)}%</span></div>
-        <div class="kv"><span class="k">DSCR</span><span class="v mono">${d.dscr.toFixed(2)}x</span></div>
+        <div class="kv"><span class="k">Capital ask</span><span class="v mono">${unsized(d) && !(d.ask > 0) ? '—' : usd(d.ask)}</span></div>
+        <div class="kv"><span class="k">All-in cost</span><span class="v mono">${unsized(d) ? '—' : `$${d.ppw.toFixed(2)}/W <span style="font-weight:400;color:var(--cs-muted-2)">· median $${BENCH[d.tech].median.toFixed(2)}</span>`}</span></div>
+        <div class="kv"><span class="k">Sponsor IRR</span><span class="v mono">${unsized(d) ? '—' : d.irr.toFixed(1) + '%'}</span></div>
+        <div class="kv"><span class="k">DSCR</span><span class="v mono">${unsized(d) ? '—' : d.dscr.toFixed(2) + 'x'}</span></div>
         <div class="kv"><span class="k">Offtake</span><span class="v">${esc(d.offtake)}</span></div>
+        ${d.sizing ? `<div class="kv"><span class="k">Storage sized</span><span class="v mono">${
+          d.sizing.kw.toLocaleString()} kW / ${d.sizing.mwh.toFixed(2)} MWh <span style="font-weight:400;color:var(--cs-muted-2)">· ${
+          d.sizing.duration}h · ${usdC(d.sizing.annualSavings)}/yr${
+          d.sizing.monthsAnalyzed < 12 ? ' · <span style="color:var(--cs-amber)">' + d.sizing.monthsAnalyzed + '-month basis</span>' : ''}</span></span></div>` : ''}
         <div class="kv"><span class="k">Target COD</span><span class="v">${dt(d.cod)}</span></div>
         ${d.docId ? `<div class="kv"><span class="k">Marketplace</span><span class="v">${
           isPublished(d) ? '<span style="color:var(--cs-green)">Visible to capital partners</span>'
@@ -2270,7 +2436,7 @@ function drawerBody(d) {
     <div class="sec">
       <h4>Generation &amp; storage</h4>
       <div class="kv-list">
-        <div class="kv"><span class="k">Nameplate</span><span class="v mono">${num(d.mw)} MW</span></div>
+        <div class="kv"><span class="k">Nameplate</span><span class="v mono">${unsized(d) ? '<span class="p-unsized">Not sized</span>' : num(d.mw) + ' MW'}</span></div>
         ${d.mwh ? `<div class="kv"><span class="k">Storage</span><span class="v mono">${num(d.mwh)} MWh · ${num(d.mwh / d.mw, 1)}h duration</span></div>` : ''}
         <div class="kv"><span class="k">Technology</span><span class="v">${esc(d.techName)}</span></div>
         <div class="kv"><span class="k">Proposed offtake rate</span><span class="v mono">$${d.ppaRate.toFixed(4)}/kWh</span></div>
@@ -2414,10 +2580,11 @@ function renderDrawer() {
 const stamp = () => iso(TODAY).replace(/-/g, '');
 
 function exportDeals(list) {
-  const rows = [['Deal ID','Name','City','State','Technology','MW','MWh','Capital ask (USD)','$/W','Stage','Outcome','Decline reason','Developer','Originator','Bidders','Offers','Sponsor IRR %','DSCR','Offtake','Site control','Permits','Interconnection','Submitted','Decided','Days in process','Target COD','Shared links']];
+  const rows = [['Deal ID','Name','City','State','Technology','MW','MWh','Capital ask (USD)','$/W','Stage','Outcome','Decline reason','Developer','Originator','Bidders','Offers','Sponsor IRR %','DSCR','Offtake','Development stage','Sizing','Site control','Permits','Interconnection','Submitted','Decided','Days in process','Target COD','Shared links']];
   list.forEach(d => rows.push([d.ref, d.name, d.city, d.state, d.techName, d.mw, d.mwh || '', d.ask, d.ppw.toFixed(3), d.stage,
     STATUS_PILL[d.status][1], d.declineReason || '', d.developer, d.originator, d.bidders, d.offers, d.irr, d.dscr,
-    d.offtake, d.siteControl, d.permits, d.interconnect, d.submitted, d.decided || '', d.cycleDays || d.ageDays, d.cod,
+    d.offtake, d.devStage || '', unsized(d) ? 'not sized' : 'sized',
+    d.siteControl, d.permits, d.interconnect, d.submitted, d.decided || '', d.cycleDays || d.ageDays, d.cod,
     (d.links || []).map(l => l.label + ': ' + l.url).join(' | ')]));
   downloadCSV(`omega-deal-details-${stamp()}.csv`, rows);
 }
@@ -2532,7 +2699,7 @@ function modalErr(msg) {
 }
 
 function openModal(html) { $('#modalEl').innerHTML = html; $('#modalBack').classList.add('show'); }
-function closeModal() { $('#modalBack').classList.remove('show'); $('#modalEl').innerHTML = ''; pendingBill = null; editingId = null; }
+function closeModal() { $('#modalBack').classList.remove('show'); $('#modalEl').innerHTML = ''; pendingBill = null; editingId = null; pendingSizing = null; }
 
 let editingId = null;
 
@@ -2540,6 +2707,7 @@ function submitModal(dealId) {
   const ed = dealId ? allDeals().find(x => x.id === dealId) : null;
   editingId = ed ? ed.id : null;
   pendingBill = ed ? ed.bill : null;
+  pendingSizing = null;
   const val = v => v == null ? '' : esc(String(v));
   const sel = (a, b) => a === b ? ' selected' : '';
 
@@ -2564,10 +2732,38 @@ function submitModal(dealId) {
       <div class="field"><label for="nfMwh">Storage (MWh)</label><input id="nfMwh" type="number" step="0.1" min="0" placeholder="0" value="${ed ? val(ed.mwh) : ''}"></div>
       <div class="field"><label for="nfAsk">Capital ask (USD)</label><input id="nfAsk" type="number" step="100000" min="0" placeholder="58400000" value="${ed ? val(ed.ask) : ''}"></div>
     </div>
+    <label class="szr-apply" style="margin:2px 0 6px;color:var(--cs-ink);font-size:13px">
+      <input type="checkbox" id="nfSizePending" data-act="toggle-pending"${ed && ed.sizePending ? ' checked' : ''}>
+      <span>Size not determined yet — file this as an early opportunity</span></label>
+    <p class="field-note" id="nfPendingNote" style="margin:0 0 10px;display:none">
+      Nameplate and capital ask are left blank. The deal reaches capital partners marked
+      <b>Not sized</b>, so nobody screens it against a number you had to invent. Fill them in later,
+      or size it from utility data below.</p>
+    <button class="link-btn" data-act="open-sizer" style="margin:-4px 0 4px">
+      Size the storage from utility data &rarr;</button>
+    <p class="field-note" style="margin:0 0 4px">Works from the statements below, from bills you type in,
+      or from an interval export. The result fills in Storage (MWh) and travels with the deal.</p>
     <div class="field-row">
       <div class="field"><label for="nfRate">Proposed offtake rate ($/kWh)</label><input id="nfRate" type="number" step="0.001" min="0" placeholder="0.089" value="${ed ? val(ed.ppaRate ? ed.ppaRate.toFixed(4) : '') : ''}"></div>
       <div class="field"><label for="nfOfftake">Offtake structure</label><select id="nfOfftake">${OFFTAKES.map(o => `<option${ed ? sel(o, ed.offtake) : ''}>${o}</option>`).join('')}</select></div>
     </div>
+    <div class="form-rule"></div>
+    <h4 style="font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--cs-muted-2);margin-bottom:5px">Where this stands</h4>
+    <p class="field-note" style="margin:0 0 12px">Capital partners screen on maturity as hard as they screen on size.
+      An honest early-stage entry gets a faster read than an optimistic one.</p>
+    <div class="field-row">
+      <div class="field"><label for="nfDevStage">Development stage</label><select id="nfDevStage">${
+        DEV_STAGES.map(x => `<option${ed ? sel(x, ed.devStage) : ''}>${x}</option>`).join('')}</select></div>
+      <div class="field"><label for="nfSite">Site control / host agreement</label><select id="nfSite">${
+        SITE_CONTROL.map(x => `<option${ed ? sel(x, ed.siteControl) : ''}>${x}</option>`).join('')}</select></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label for="nfIx">Interconnection</label><select id="nfIx">${
+        INTERCONNECT_STATES.map(x => `<option${ed ? sel(x, ed.interconnect) : ''}>${x}</option>`).join('')}</select></div>
+      <div class="field"><label for="nfPermits">Permits</label><select id="nfPermits">${
+        PERMIT_STATES.map(x => `<option${ed ? sel(x, ed.permits) : ''}>${x}</option>`).join('')}</select></div>
+    </div>
+
     <div class="form-rule"></div>
     <h4 style="font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--cs-muted-2);margin-bottom:11px">Utility bills</h4>
     <div class="file-drop" id="billDrop">
@@ -2599,6 +2795,7 @@ function submitModal(dealId) {
     <button class="btn btn-primary" data-act="save-deal">${ed ? 'Save changes' : 'Submit to marketplace'}</button>
   </div>`);
 
+  syncPending();
   if (ed && ed.links && ed.links.length) ed.links.forEach(l => addLinkRow(l.label, l.url));
   else ['Utility bills', 'Site details', 'Diligence folder'].forEach(l => addLinkRow(l));
   const drop = $('#billDrop'), input = $('#billFile');
@@ -2608,8 +2805,36 @@ function submitModal(dealId) {
   input.addEventListener('change', () => handleBills(input.files));
 }
 
+/* The size inputs and the "not sized yet" flag must never disagree on screen —
+   a greyed field that still holds a number is how a stale nameplate ships. */
+function syncPending() {
+  const box = $('#nfSizePending');
+  if (!box) return;
+  const on = box.checked;
+  ['nfMw', 'nfMwh', 'nfAsk', 'nfRate'].forEach(id => {
+    const el = $('#' + id);
+    if (!el) return;
+    el.disabled = on;
+    el.style.opacity = on ? .45 : 1;
+    if (on) el.value = '';
+  });
+  const note = $('#nfPendingNote');
+  if (note) note.style.display = on ? 'block' : 'none';
+}
+
 function handleBills(files) {
   if (!files || !files.length) return;
+  /* Real statements go to the sizer's reader, which parses them. The
+     estimator below only models a plausible bill and must never be fed a
+     file the sponsor believes was read. */
+  const pdfs = Array.from(files).filter(f => /\.pdf$/i.test(f.name));
+  if (pdfs.length) {
+    openSizer();
+    SZ.src = 'pdf';
+    szrRenderInputs();
+    szPdfFiles(pdfs);
+    return;
+  }
   const state = $('#nfState').value, mw = parseFloat($('#nfMw').value);
   if (!mw || mw <= 0) { toast('Enter the nameplate MW first — the extractor validates against it.', true); return; }
   const names = Array.from(files).map(f => f.name);
@@ -2646,6 +2871,7 @@ function handleBills(files) {
             <div style="font-family:Syne;font-size:15px;font-weight:700;margin-top:2px">${usdC(b.totalCost)}</div></div>
         </div>
         <p class="field-note" style="margin-top:11px">Utility read as <b>${esc(b.utility)}</b>. This becomes the baseline every partner is scored against.</p>
+        <button class="btn btn-ghost btn-sm" data-act="open-sizer" style="margin-top:12px">Size storage from these bills</button>
       </div>`;
       toast('Extracted 12 statements — blended rate $' + b.blended.toFixed(4) + '/kWh');
     }
@@ -2661,9 +2887,10 @@ async function saveDeal(asDraft) {
      started before the sizing is known. Everything a capital partner screens
      on is required to publish it. */
   if (!name) return modalErr('Give the project a name.');
-  if (!asDraft) {
-    if (!mw || mw <= 0) return modalErr('Nameplate MW is needed before capital partners can see this. Save it as a draft if you do not have it yet.');
-    if (!ask || ask <= 0) return modalErr('Capital ask is needed before capital partners can see this. Save it as a draft if you do not have it yet.');
+  const sizePending = !!($('#nfSizePending') && $('#nfSizePending').checked);
+  if (!asDraft && !sizePending) {
+    if (!mw || mw <= 0) return modalErr('Nameplate MW is needed before capital partners can see this — or tick "Size not determined yet" to file it as an early opportunity.');
+    if (!ask || ask <= 0) return modalErr('Capital ask is needed before capital partners can see this — or tick "Size not determined yet" to file it as an early opportunity.');
   }
 
   const {links, bad} = collectLinks();
@@ -2674,11 +2901,15 @@ async function saveDeal(asDraft) {
     const existing = allDeals().find(x => x.id === editingId);
     const patch = {
       name, state, city: $('#nfCity').value.trim() || (existing ? existing.city : '—'),
-      tech: tech.id, mw, mwh: parseFloat($('#nfMwh').value) || 0, ask,
+      tech: tech.id, mw: sizePending ? 0 : mw, mwh: parseFloat($('#nfMwh').value) || 0,
+      ask: sizePending ? 0 : ask, sizePending,
       ppaRate: parseFloat($('#nfRate').value) || (existing ? existing.ppaRate : 0),
-      offtake: $('#nfOfftake').value, links
+      offtake: $('#nfOfftake').value, links,
+      devStage: $('#nfDevStage').value, siteControl: $('#nfSite').value,
+      interconnect: $('#nfIx').value, permits: $('#nfPermits').value
     };
     if (pendingBill) patch.bill = pendingBill;
+    if (pendingSizing) patch.sizing = pendingSizing;
 
     if (existing && existing.docId && FB.ready) {
       const btn = $('[data-act="save-deal"]'), label = btn.textContent;
@@ -2711,14 +2942,16 @@ async function saveDeal(asDraft) {
     name, state, city: $('#nfCity').value.trim() || (marketOf(state).cities[0] || '—'),
     developer: SESSION.org, originator: SESSION.name,
     submittedBy: SESSION.name, orgKey: myOrgKey(),
-    tech: tech.id, mw, mwh: parseFloat($('#nfMwh').value) || 0, ask,
+    tech: tech.id, mw: sizePending ? 0 : mw, mwh: parseFloat($('#nfMwh').value) || 0,
+    ask: sizePending ? 0 : ask, sizePending,
     stage:'Submitted', status:'active', submitted: iso(TODAY),
     draft: !!asDraft,
     offtake: $('#nfOfftake').value,
-    interconnect:'Feasibility only', permits:'Pre-application', siteControl:'Letter of intent',
+    devStage: $('#nfDevStage').value,
+    interconnect: $('#nfIx').value, permits: $('#nfPermits').value, siteControl: $('#nfSite').value,
     cod: iso(addDays(TODAY, 540)),
     ppaRate: parseFloat($('#nfRate').value) || (pendingBill ? pendingBill.blended * .82 : marketOf(state).rate * .8),
-    bill: pendingBill, links
+    bill: pendingBill, links, sizing: pendingSizing
   });
 
   /* With a backend, don't close the dialog until the write is confirmed —
@@ -2754,6 +2987,1122 @@ async function saveDeal(asDraft) {
   render();
   toast(`${name} is live on the marketplace — ${usdC(ask)} sought.`);
   setTimeout(() => openDeal(d.id), 400);
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   12b. STORAGE SIZER
+
+   A sponsor filling in "Storage (MWh)" is usually guessing. This sizes it
+   against real billing data instead, and hands the deal back a defensible
+   number plus the basis a capital partner will ask for.
+
+   Three ways in, in order of how much they can be trusted:
+     · the 12 statements already extracted on this deal   (best)
+     · monthly bill figures typed by hand
+     · an interval / 8760 export, which is the only source that shows
+       where the peaks actually sit
+
+   Peak shaving only. No arbitrage, capacity market or resiliency value —
+   those need a tariff read, and overstating them is how storage deals die
+   in diligence.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+let pendingSizing = null;
+
+const SZ = {
+  src: 'bill',        // bill | manual | interval
+  months: [],         // [{label, kwh, kw, rate, days}]
+  series: null,       // {kw:[], dt, months:[{label, load:[], dt, peak, min}]}
+  result: null,
+  busy: false
+};
+
+const SZ_DEF = {
+  demandRate: 16.00, energyRate: 0.075, ratchet: 0, headroom: 10,
+  baseFrac: 35, evtMo: 22, rte: 88, dod: 90, fade: 2,
+  costKwh: 450, itc: 30, om: 10, term: 10, disc: 8
+};
+
+const szNum = (id, d) => { const e = $('#' + id); const v = e ? parseFloat(e.value) : NaN; return isFinite(v) ? v : d; };
+const szF = (n, d = 0) => !isFinite(n) ? '—'
+  : (n < 0 ? '-' : '') + Math.abs(n).toFixed(d).replace(/\B(?=(\d{3})+(?!\d))/g, ',').replace(/,(\d*\.)/, '$1');
+
+/* ── load duration curve inferred from a monthly bill ─────────────────────
+   p(x) = Pmin + (Ppk-Pmin)(1-x)^k across the billing period, with k solved
+   so the curve's mean matches the billed load factor. Crude, but it is the
+   only honest thing to do with a total and a peak. */
+function szLdc(m, baseFrac) {
+  const hours = (m.days || 30.4) * 24;
+  let lf = m.kwh / (m.kw * hours);
+  if (lf >= 0.99) lf = 0.99;
+  let f = baseFrac;
+  if (f >= lf) f = lf * 0.85;
+  if (f < 0.02) f = 0.02;
+  let k = (1 - f) / (lf - f) - 1;
+  if (!isFinite(k) || k < 0.05) k = 0.05;
+  if (k > 60) k = 60;
+  return { pmin: f * m.kw, ppk: m.kw, k, hours, lf };
+}
+function szEnergyAbove(c, T) {
+  if (T >= c.ppk) return 0;
+  if (T < c.pmin) T = c.pmin;
+  const N = 1200;
+  let s = 0;
+  for (let i = 0; i < N; i++) {
+    const p = c.pmin + (c.ppk - c.pmin) * Math.pow(1 - (i + 0.5) / N, c.k);
+    if (p > T) s += p - T;
+  }
+  return s / N * c.hours;
+}
+
+/* ── interval dispatch ────────────────────────────────────────────────────
+   Charging is capped at the target so the battery can never set a new peak
+   while refilling. That single constraint is what separates a model from a
+   system that actually works on site. */
+function szSim(load, dt, T, pMax, eMax, rte) {
+  let soc = eMax, peak = 0, dis = 0, evt = 0, maxEvt = 0;
+  for (let i = 0; i < load.length; i++) {
+    const p = load[i];
+    let net;
+    if (p > T) {
+      let out = Math.min(p - T, pMax, soc / dt);
+      net = p - out; soc -= out * dt; dis += out * dt; evt += out * dt;
+    } else {
+      if (evt > maxEvt) maxEvt = evt;
+      evt = 0;
+      let chg = Math.min(T - p, pMax, (eMax - soc) / (dt * rte));
+      if (chg < 0) chg = 0;
+      net = p + chg; soc += chg * dt * rte;
+    }
+    if (net > peak) peak = net;
+  }
+  if (evt > maxEvt) maxEvt = evt;
+  return { peak, dis, maxEvt };
+}
+function szSolve(m, pMax, eMax, rte) {
+  let lo = m.min, hi = m.peak, best = m.peak, bestR = null;
+  for (let i = 0; i < 15; i++) {
+    const mid = (lo + hi) / 2;
+    const r = szSim(m.load, m.dt, mid, pMax, eMax, rte);
+    if (r.peak <= mid * 1.0008) { hi = mid; best = mid; bestR = r; } else lo = mid;
+  }
+  if (!bestR) bestR = szSim(m.load, m.dt, m.peak, pMax, eMax, rte);
+  return { peak: Math.min(bestR.peak, m.peak), dis: bestR.dis, maxEvt: bestR.maxEvt };
+}
+
+function szRatchet(peaks, pct) {
+  if (!pct) return peaks.slice();
+  return peaks.map((p, i) => {
+    let hi = 0;
+    for (let j = Math.max(0, i - 11); j < i; j++) if (peaks[j] > hi) hi = peaks[j];
+    return Math.max(p, hi * pct / 100);
+  });
+}
+
+function szEcon(kW, kWhUsable, annSav, lossCost) {
+  const dod = szNum('szDod', SZ_DEF.dod) / 100;
+  const nameplate = kWhUsable / dod;
+  const capex = nameplate * szNum('szCostKwh', SZ_DEF.costKwh);
+  const net = capex * (1 - szNum('szItc', SZ_DEF.itc) / 100);
+  const om = kW * szNum('szOm', SZ_DEF.om);
+  const yr1 = annSav - lossCost - om;
+  const term = Math.round(szNum('szTerm', SZ_DEF.term));
+  const disc = szNum('szDisc', SZ_DEF.disc) / 100;
+  const fade = szNum('szFade', SZ_DEF.fade) / 100;
+  let npv = -net;
+  for (let i = 1; i <= term; i++) npv += ((annSav * Math.pow(1 - fade, i - 1)) - lossCost - om) / Math.pow(1 + disc, i);
+  return { kW, kWh: kWhUsable, nameplate, capex, net, om, annSav, lossCost, yr1,
+           payback: yr1 > 0 ? net / yr1 : Infinity, npv };
+}
+
+/* ── interval CSV ingest ──────────────────────────────────────────────── */
+function szParseCsv(txt) {
+  txt = txt.replace(/^\uFEFF/, '').replace(/\r\n?/g, '\n');
+  const lines = txt.split('\n').filter(l => l.replace(/\s/g, '') !== '');
+  if (!lines.length) return [];
+  const probe = lines[0];
+  const counts = { ',': 0, '\t': 0, ';': 0, '|': 0 };
+  for (const ch of probe) if (counts[ch] !== undefined) counts[ch]++;
+  const delim = Object.keys(counts).reduce((a, b) => counts[b] > counts[a] ? b : a, ',');
+  return lines.map(ln => {
+    const cells = []; let cur = '', q = false;
+    for (let j = 0; j < ln.length; j++) {
+      const c = ln[j];
+      if (q) { if (c === '"') { if (ln[j + 1] === '"') { cur += '"'; j++; } else q = false; } else cur += c; }
+      else if (c === '"') q = true;
+      else if (c === delim) { cells.push(cur); cur = ''; }
+      else cur += c;
+    }
+    cells.push(cur);
+    return cells.map(s => s.trim());
+  });
+}
+function szTs(s) {
+  if (!s) return null;
+  let m = String(s).match(/^(\d{4})-(\d{1,2})-(\d{1,2})[T ]?(\d{1,2})?:?(\d{2})?/);
+  if (m) return new Date(+m[1], +m[2] - 1, +m[3], +(m[4] || 0), +(m[5] || 0));
+  m = String(s).match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})[T ,]*(\d{1,2})?:?(\d{2})?\s*(AM|PM|am|pm)?/);
+  if (m) {
+    let yr = +m[3]; if (yr < 100) yr += yr < 70 ? 2000 : 1900;
+    let hh = +(m[4] || 0);
+    const ap = (m[6] || '').toUpperCase();
+    if (ap === 'PM' && hh < 12) hh += 12;
+    if (ap === 'AM' && hh === 12) hh = 0;
+    return new Date(yr, +m[1] - 1, +m[2], hh, +(m[5] || 0));
+  }
+  const d = new Date(s);
+  return isNaN(d.getTime()) ? null : d;
+}
+function szIngestInterval(txt) {
+  const rows = szParseCsv(txt);
+  if (rows.length < 24) { toast('That file has too few rows to read as interval data.', true); return; }
+  const numeric = s => s !== '' && /^-?[\d,]*\.?\d+$/.test(String(s).replace(/[$\s]/g, ''));
+  const hdrRow = rows[0].some(c => c !== '' && !numeric(c) && !szTs(c));
+  const header = hdrRow ? rows[0] : rows[0].map((_, i) => 'Column ' + (i + 1));
+  const body = hdrRow ? rows.slice(1) : rows;
+
+  let ti = header.findIndex(h => /date|time|stamp|interval|start|period|read/i.test(h));
+  let vi = header.findIndex(h => /kw|kwh|demand|usage|load|consum|power|energy|value/i.test(h));
+  const probe = body[Math.min(2, body.length - 1)] || [];
+  if (ti < 0) ti = probe.findIndex(c => !numeric(c) && szTs(c));
+  if (vi < 0) vi = probe.findIndex((c, i) => i !== ti && numeric(c));
+  if (vi < 0) vi = Math.min(1, header.length - 1);
+
+  const ts = [], kw = [];
+  for (const r of body) {
+    if (!r) continue;
+    const v = parseFloat(String(r[vi]).replace(/[$,\s]/g, ''));
+    if (!isFinite(v)) continue;
+    let t = null;
+    if (ti >= 0) { t = szTs(r[ti]); if (!t) continue; }
+    ts.push(t); kw.push(v);
+  }
+  if (kw.length < 24) { toast('Could not find a usable demand column in that file.', true); return; }
+
+  /* interval length from the median gap, or from the row count */
+  let dtMin;
+  if (ti >= 0 && ts.length > 10) {
+    const diffs = [];
+    for (let i = 1; i < Math.min(ts.length, 500); i++) {
+      const d = (ts[i] - ts[i - 1]) / 60000;
+      if (d > 0 && d <= 1440) diffs.push(d);
+    }
+    diffs.sort((a, b) => a - b);
+    dtMin = diffs.length ? diffs[Math.floor(diffs.length / 2)] : 60;
+  } else dtMin = kw.length > 30000 ? 15 : kw.length > 15000 ? 30 : 60;
+  dtMin = [5, 10, 15, 30, 60].reduce((b, c) => Math.abs(c - dtMin) < Math.abs(b - dtMin) ? c : b, 60);
+
+  if (ti < 0 || !ts[0]) {
+    const base = new Date(new Date().getFullYear() - 1, 0, 1);
+    for (let i = 0; i < kw.length; i++) ts[i] = new Date(base.getTime() + i * dtMin * 60000);
+  }
+  /* kWh per interval reads ~4x low on 15-minute data — convert on the header */
+  const hn = String(header[vi] || '').toLowerCase();
+  const isEnergy = /kwh|wh\b|energy|consum/.test(hn) && !/\bkw\b|demand|power/.test(hn);
+  const dt = dtMin / 60;
+  const load = isEnergy ? kw.map(v => v / dt) : kw;
+
+  const map = new Map();
+  load.forEach((v, i) => {
+    const d = ts[i];
+    const key = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+    if (!map.has(key)) map.set(key, { label: MON3[d.getMonth()] + ' ' + d.getFullYear(), load: [], dt });
+    map.get(key).load.push(v);
+  });
+  const months = [...map.values()].map(m => {
+    m.peak = Math.max(...m.load); m.min = Math.min(...m.load);
+    m.kwh = m.load.reduce((a, b) => a + b, 0) * m.dt;
+    m.days = m.load.length * m.dt / 24;
+    return m;
+  }).filter(m => m.days >= 5);
+
+  if (!months.length) { toast('That file does not cover a full billing period.', true); return; }
+  SZ.series = { dt, dtMin, n: load.length, months, isEnergy };
+  SZ.src = 'interval';
+  toast(`Read ${load.length.toLocaleString()} intervals at ${dtMin} min — ${months.length} billing month${months.length > 1 ? 's' : ''}.`);
+  szrRenderInputs();
+}
+const MON3 = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+
+/* ============================================================
+   PDF BILL READING
+
+   Utility statements have no common format, so nothing here is
+   trusted. Every value lands in the editable month table with a
+   note saying where it came from and what could not be found.
+   The person confirms it before it sizes anything.
+
+   Text layer only. A scanned bill or a phone photo carries no
+   text, and OCR in the browser is a different order of problem —
+   those get told plainly to type four numbers instead.
+   ============================================================ */
+
+var PDFJS_SRC    = window.PDFJS_SRC    || 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+var PDFJS_WORKER = window.PDFJS_WORKER || 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+var _pdfState = 0;   /* 0 unloaded, 1 loading, 2 ready, 3 failed */
+var _pdfQueue = [];
+
+function pdfEnsure(cb){
+  if(_pdfState === 2){ cb(true); return; }
+  if(_pdfState === 3){ cb(false); return; }
+  _pdfQueue.push(cb);
+  if(_pdfState === 1) return;
+  _pdfState = 1;
+  var s = document.createElement('script');
+  s.src = PDFJS_SRC;
+  s.onload = function(){
+    var lib = window.pdfjsLib || window['pdfjs-dist/build/pdf'];
+    if(!lib){ _pdfDone(false); return; }
+    window.pdfjsLib = lib;
+    try { lib.GlobalWorkerOptions.workerSrc = PDFJS_WORKER; } catch(e){}
+    _pdfDone(true);
+  };
+  s.onerror = function(){ _pdfDone(false); };
+  document.head.appendChild(s);
+}
+function _pdfDone(ok){
+  _pdfState = ok ? 2 : 3;
+  var q = _pdfQueue; _pdfQueue = [];
+  for(var i=0;i<q.length;i++) q[i](ok);
+}
+
+/* Rebuild visual lines from positioned glyph runs. Without this a
+   two-column layout reads as "Consumption / 398,000 / KWH" on three
+   separate lines and the number loses its label. */
+function pdfLines(tc){
+  var items = tc.items, buckets = {}, i;
+  for(i=0;i<items.length;i++){
+    var it = items[i];
+    if(!it.str || !it.str.replace(/\s/g,'')) continue;
+    var tr = it.transform || [1,0,0,1,0,0];
+    var y = Math.round(tr[5] / 2) * 2;      /* 2pt tolerance for baseline jitter */
+    var x = tr[4];
+    if(!buckets[y]) buckets[y] = [];
+    buckets[y].push({ x:x, s:it.str });
+  }
+  var keys = [];
+  for(var k in buckets) if(buckets.hasOwnProperty(k)) keys.push(parseFloat(k));
+  keys.sort(function(a,b){ return b-a; });        /* PDF origin is bottom-left */
+  var out = [];
+  for(i=0;i<keys.length;i++){
+    var row = buckets[keys[i]];
+    row.sort(function(a,b){ return a.x-b.x; });
+    var line = '';
+    for(var j=0;j<row.length;j++){
+      if(j && row[j].x - (row[j-1].x) > 2 && !/\s$/.test(line)) line += ' ';
+      line += row[j].s;
+    }
+    line = line.replace(/\s+/g,' ').replace(/^\s+|\s+$/g,'');
+    if(line) out.push(line);
+  }
+  return out;
+}
+
+var PDF_MON = ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
+var PDF_MON_FULL = ['january','february','march','april','may','june','july','august','september','october','november','december'];
+
+function pdfNum(s){
+  var v = parseFloat(String(s).replace(/[$,\s]/g,''));
+  return isFinite(v) ? v : NaN;
+}
+function pdfMonIdx(name){
+  var n = String(name).toLowerCase().substr(0,3);
+  for(var i=0;i<12;i++) if(PDF_MON[i] === n) return i;
+  return -1;
+}
+function pdfLabel(mi, yr){ return MON3[mi] + ' ' + yr; }
+
+/* ---- billing period -------------------------------------------------- */
+function pdfPeriod(text){
+  var m;
+  /* 07/01/2025 to 07/31/2025 */
+  m = text.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})\s*(?:to|-|through|thru|–)\s*(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/i);
+  if(m){
+    var y = +m[3]; if(y<100) y += 2000;
+    var y2 = +m[6]; if(y2<100) y2 += 2000;
+    var d1 = new Date(y, +m[1]-1, +m[2]), d2 = new Date(y2, +m[4]-1, +m[5]);
+    var days = Math.round((d2-d1)/86400000) + 1;
+    return { mi:+m[1]-1, yr:y, days:(days>15 && days<45)?days:null };
+  }
+  /* Jul 1, 2025 - Jul 31, 2025   |   July 1 2025 to July 31 2025 */
+  m = text.match(/([A-Za-z]{3,9})\s+(\d{1,2}),?\s+(\d{4})\s*(?:to|-|through|thru|–)\s*([A-Za-z]{3,9})\s+(\d{1,2}),?\s+(\d{4})/);
+  if(m){
+    var mi = pdfMonIdx(m[1]);
+    if(mi >= 0){
+      var a = new Date(+m[3], mi, +m[2]);
+      var mi2 = pdfMonIdx(m[4]);
+      var b = new Date(+m[6], mi2 < 0 ? mi : mi2, +m[5]);
+      var dd = Math.round((b-a)/86400000) + 1;
+      return { mi:mi, yr:+m[3], days:(dd>15 && dd<45)?dd:null };
+    }
+  }
+  /* last resort: a lone "Jul 2025" or "07/2025" */
+  m = text.match(/\b([A-Za-z]{3,9})\.?\s+(20\d\d)\b/);
+  if(m && pdfMonIdx(m[1]) >= 0) return { mi:pdfMonIdx(m[1]), yr:+m[2], days:null };
+  return null;
+}
+
+/* ---- scored field extraction ----------------------------------------- */
+function pdfScoreLine(line, good, bad){
+  var l = line.toLowerCase(), sc = 0, i;
+  for(i=0;i<good.length;i++) if(l.indexOf(good[i][0]) >= 0) sc += good[i][1];
+  for(i=0;i<bad.length;i++) if(l.indexOf(bad[i][0]) >= 0) sc += bad[i][1];
+  return sc;
+}
+
+function pdfFindKwh(lines){
+  var best = null, i, m, re;
+  for(i=0;i<lines.length;i++){
+    re = /([\d,]+(?:\.\d+)?)\s*(?:kwh|kw-hr|kilowatt[- ]hours?)\b/gi;
+    while((m = re.exec(lines[i]))){
+      var v = pdfNum(m[1]);
+      if(!isFinite(v) || v <= 0) continue;
+      var sc = pdfScoreLine(lines[i],
+        [['total',3],['energy',2],['consumption',3],['usage',2],['billed',2],['metered',2]],
+        [['history',-6],['prior',-4],['last year',-4],['average',-3],['per ',-3],['rate',-2],['@',-2],['x $',-2]]);
+      if(!best || sc > best.sc || (sc === best.sc && v > best.v)) best = { v:v, sc:sc, line:lines[i] };
+    }
+  }
+  return best;
+}
+
+function pdfFindKw(lines){
+  var best = null, i, m, re;
+  for(i=0;i<lines.length;i++){
+    /* kw but never kwh */
+    re = /([\d,]+(?:\.\d+)?)\s*kw(?!h)\b/gi;
+    while((m = re.exec(lines[i]))){
+      var v = pdfNum(m[1]);
+      if(!isFinite(v) || v <= 0) continue;
+      var sc = pdfScoreLine(lines[i],
+        [['billing demand',6],['billed demand',6],['maximum demand',4],['max demand',4],
+         ['peak demand',4],['on-peak demand',4],['on peak demand',4],['actual demand',3],['demand',1]],
+        [['off-peak',-5],['off peak',-5],['reactive',-6],['kvar',-6],['kva',-4],['history',-6],
+         ['per kw',-4],['/kw',-4],['ratchet',-2],['contract',-2]]);
+      if(!best || sc > best.sc || (sc === best.sc && v > best.v)) best = { v:v, sc:sc, line:lines[i] };
+    }
+  }
+  return best;
+}
+
+function pdfFindRate(lines){
+  var best = null, i, m, re, pats = [
+    /\$\s*([\d.]+)\s*(?:per|\/)\s*kw(?!h)/gi,
+    /(?:x|@|at)\s*\$\s*([\d.]+)\s*\/?\s*kw(?!h)/gi,
+    /kw(?!h)[^\n$]{0,18}\$\s*([\d.]+)\s*(?:per|\/)?\s*kw?(?!h)/gi
+  ];
+  for(i=0;i<lines.length;i++){
+    for(var p=0;p<pats.length;p++){
+      pats[p].lastIndex = 0;
+      while((m = pats[p].exec(lines[i]))){
+        var v = pdfNum(m[1]);
+        if(!isFinite(v) || v <= 0 || v > 200) continue;   /* $/kW above 200 is not a demand rate */
+        var sc = pdfScoreLine(lines[i], [['demand',3],['distribution',1],['transmission',1],['facilities',1]], [['energy',-3],['kwh',-3]]);
+        if(!best || sc > best.sc) best = { v:v, sc:sc, line:lines[i] };
+      }
+    }
+  }
+  return best;
+}
+
+function pdfFindDays(lines){
+  var i, m;
+  for(i=0;i<lines.length;i++){
+    m = lines[i].match(/days?\s*(?:in|of)?\s*(?:this\s*)?(?:billing\s*)?period\s*:?\s*(\d{1,2})/i);
+    if(m){ var v = +m[1]; if(v>15 && v<45) return v; }
+    m = lines[i].match(/(?:billing\s*)?days\s*:?\s*(\d{1,2})\b/i);
+    if(m){ var v2 = +m[1]; if(v2>15 && v2<45) return v2; }
+  }
+  return null;
+}
+
+/* ---- a 12-month history table beats twelve separate statements ------- */
+function pdfHistory(lines){
+  var rows = [], i, m;
+  for(i=0;i<lines.length;i++){
+    /* Jan 2025   268,000   488   $17,234.00     (amount optional) */
+    m = lines[i].match(/^([A-Za-z]{3,9})\.?\s*,?\s*(20\d\d)?\s+([\d,]{4,})\s+([\d,]+(?:\.\d+)?)\b/);
+    if(!m) continue;
+    var mi = pdfMonIdx(m[1]);
+    if(mi < 0) continue;
+    var kwh = pdfNum(m[3]), kw = pdfNum(m[4]);
+    /* a usage row always has far more kWh than kW; anything else is a coincidence */
+    if(!(kwh > 0) || !(kw > 0) || kwh < kw * 10) continue;
+    rows.push({ mi:mi, yr:m[2] ? +m[2] : null, kwh:kwh, kw:kw });
+  }
+  return rows.length >= 3 ? rows : null;
+}
+
+/* ---- one file -> statements ------------------------------------------ */
+function pdfParseDoc(lines, fname){
+  var joined = lines.join('\n');
+  var per = pdfPeriod(joined);
+  var out = [], i;
+
+  var hist = pdfHistory(lines);
+  if(hist){
+    var yr = per ? per.yr : new Date().getFullYear() - 1;
+    var rate = pdfFindRate(lines);
+    for(i=0;i<hist.length;i++){
+      out.push({
+        label: pdfLabel(hist[i].mi, hist[i].yr || yr),
+        kwh: hist[i].kwh, kw: hist[i].kw,
+        rate: rate ? rate.v : null,
+        days: null, file: fname, from: 'usage history table',
+        warn: rate ? null : 'no $/kW found'
+      });
+    }
+    return out;
+  }
+
+  var kwh = pdfFindKwh(lines), kw = pdfFindKw(lines), rate = pdfFindRate(lines);
+  var days = pdfFindDays(lines) || (per ? per.days : null);
+  var warn = [];
+  if(!per) warn.push('no billing period');
+  if(!kwh) warn.push('no kWh');
+  if(!kw) warn.push('no demand kW');
+  if(!rate) warn.push('no $/kW');
+  out.push({
+    label: per ? pdfLabel(per.mi, per.yr) : null,
+    kwh: kwh ? kwh.v : null,
+    kw: kw ? kw.v : null,
+    rate: rate ? rate.v : null,
+    days: days, file: fname, from: 'statement',
+    warn: warn.length ? warn.join(', ') : null
+  });
+  return out;
+}
+
+
+/* ---- driver: PDFs land in the sizer's own bill table ------------------ */
+function szPdfFiles(files){
+  var list = [], i;
+  for(i=0;i<files.length;i++) if(/\.pdf$/i.test(files[i].name)) list.push(files[i]);
+  if(!list.length) return false;
+  var box = $('#szPdfReport');
+  if(box) box.innerHTML = '<p class="szr-note">Loading the PDF reader\u2026</p>';
+  pdfEnsure(function(ok){
+    if(!ok){
+      if(box) box.innerHTML = '<div class="szr-flag bad">The PDF reader could not load \u2014 the network blocked it. '
+        + 'Type the numbers in below instead; kWh, peak kW and the demand rate are all the sizing needs.</div>';
+      return;
+    }
+    var done = 0, all = [], errs = [];
+    if(box) box.innerHTML = '<p class="szr-note">Reading ' + list.length + ' file' + (list.length>1?'s':'') + '\u2026</p>';
+    list.forEach(function(file){
+      var fr = new FileReader();
+      fr.onload = function(){
+        var task;
+        try { task = window.pdfjsLib.getDocument({data:new Uint8Array(fr.result)}); }
+        catch(e){ fin(file.name, null, 'could not open'); return; }
+        task.promise.then(function(doc){
+          var lines = [], p = 1;
+          (function next(){
+            if(p > doc.numPages){ fin(file.name, lines, null); return; }
+            doc.getPage(p++).then(function(pg){ return pg.getTextContent(); })
+              .then(function(tc){ lines = lines.concat(pdfLines(tc)); next(); })
+              ['catch'](function(){ fin(file.name, lines, null); });
+          })();
+        })['catch'](function(){ fin(file.name, null, 'could not open \u2014 encrypted or damaged'); });
+      };
+      fr.onerror = function(){ fin(file.name, null, 'could not read the file'); };
+      fr.readAsArrayBuffer(file);
+    });
+    function fin(name, lines, err){
+      if(err) errs.push({file:name, msg:err});
+      else if(!lines || !lines.length) errs.push({file:name, msg:'no text layer \u2014 this is a scan or a photo'});
+      else all = all.concat(pdfParseDoc(lines, name));
+      if(++done === list.length) szPdfApply(all, errs);
+    }
+  });
+  return true;
+}
+
+function szPdfApply(stmts, errs){
+  var seen = {}, keep = [];
+  stmts.forEach(function(s, i){
+    var k = s.label || ('?' + i);
+    if(seen[k]) return;
+    seen[k] = 1; keep.push(s);
+  });
+  keep.sort(function(a, b){
+    return (!a.label || !b.label) ? 0 : new Date(a.label + ' 1') - new Date(b.label + ' 1');
+  });
+  /* the sizer only handles complete rows; anything missing kWh or kW is
+     reported but not silently dropped into the table as a blank */
+  SZ.months = keep.filter(function(r){ return r.kwh > 0 && r.kw > 0; })
+    .map(function(r){
+      return {label:r.label || 'Unknown', kwh:r.kwh, kw:r.kw, days:r.days || 30.4,
+              rate:r.rate != null ? r.rate : szNum('szrDemandRate', SZ_DEF.demandRate)};
+    });
+  var firstRate = keep.filter(function(r){ return r.rate != null; })[0];
+  szrRenderInputs();
+  if(firstRate && $('#szrDemandRate')) $('#szrDemandRate').value = firstRate.v || firstRate.rate;
+  if($('#szrNMon') && SZ.months.length){
+    $('#szrNMon').value = String(Math.min(12, SZ.months.length));
+    szrBuildRows();
+    var trs = $$('#szrBillBody tr');
+    var off = Math.max(0, SZ.months.length - trs.length);
+    trs.forEach(function(tr, i){
+      var r = SZ.months[off + i];
+      if(!r) return;
+      tr.querySelector('.szK').value = Math.round(r.kwh);
+      tr.querySelector('.szP').value = Math.round(r.kw * 100) / 100;
+      tr.querySelector('.szR').value = r.rate;
+      tr.dataset.lab = r.label;
+      tr.cells[0].textContent = r.label;
+    });
+  }
+  var h = '';
+  if(errs.length) h += '<div class="szr-flag bad"><b>' + errs.length + ' file'
+    + (errs.length>1?'s':'') + ' could not be read.</b> '
+    + errs.map(function(e){ return esc(e.file) + ' \u2014 ' + esc(e.msg); }).join('<br>')
+    + '<br>A scan has no text to pull from. Type those months in below.</div>';
+  if(SZ.months.length) h += '<div class="szr-flag ok"><b>Read ' + SZ.months.length + ' billing period'
+    + (SZ.months.length>1?'s':'') + '.</b> Everything went into the table below and is editable. '
+    + 'Check it against the paper \u2014 bills have no standard format, so this is pattern matching, not a parser for your tariff.</div>';
+  else if(!errs.length) h += '<div class="szr-flag bad">Nothing usable was found in those files.</div>';
+  var box2 = $('#szPdfReport');
+  if(box2) box2.innerHTML = h;
+}
+
+/* ── open / close ─────────────────────────────────────────────────────── */
+function openSizer() {
+  SZ.result = null;
+  SZ.series = null;
+  SZ.src = pendingBill ? 'bill' : 'manual';
+  SZ.months = pendingBill
+    ? pendingBill.months.map(m => ({ label: m.label, kwh: m.kwh, kw: m.kw, days: 30.4,
+        rate: m.kw > 0 ? m.demand / m.kw : SZ_DEF.demandRate }))
+    : [];
+
+  $('#sizerEl').innerHTML = `
+    <div class="szr-head">
+      <div><h2>Size the storage</h2>
+        <div class="sub">Sizes a battery against billing data and writes the result back into the deal.
+          Peak shaving only — no arbitrage or capacity revenue, so treat it as the floor of the value stack.</div></div>
+      <button class="dr-x" data-act="close-sizer" aria-label="Close">&times;</button>
+    </div>
+    <div class="szr-body">
+      <div id="szrInputs"></div>
+      <div id="szrOut"><div class="szr-empty"><b>Nothing sized yet</b>
+        Pick a data source, check the tariff and cost figures, then size it.
+        With one month the tool reports what that month alone would have needed.</div></div>
+    </div>
+    <div class="szr-foot">
+      <label class="szr-apply" id="szrAskWrap" style="display:none">
+        <input type="checkbox" id="szrAddAsk"> <span id="szrAskTxt"></span></label>
+      <button class="btn btn-ghost" data-act="close-sizer">Cancel</button>
+      <button class="btn btn-primary" data-act="apply-sizing" id="szrApplyBtn" disabled>Use this size</button>
+    </div>`;
+  $('#sizerBack').classList.add('show');
+  szrRenderInputs();
+}
+function closeSizer() {
+  $('#sizerBack').classList.remove('show');
+  $('#sizerEl').innerHTML = '';
+  SZ.result = null; SZ.busy = false;
+}
+
+/* ── inputs panel ─────────────────────────────────────────────────────── */
+function szrRenderInputs() {
+  const hasBill = !!pendingBill;
+  const dRate = pendingBill && pendingBill.demandRate ? pendingBill.demandRate : SZ_DEF.demandRate;
+  const eRate = pendingBill && pendingBill.energyRate ? pendingBill.energyRate : SZ_DEF.energyRate;
+  const on = k => SZ.src === k ? ' on' : '';
+
+  $('#szrInputs').innerHTML = `
+    <h4 class="szr-h4">Data source</h4>
+    <div class="szr-src">
+      <label class="${hasBill ? on('bill') : 'off'}">
+        <input type="radio" name="szsrc" value="bill" ${SZ.src === 'bill' ? 'checked' : ''} ${hasBill ? '' : 'disabled'}>
+        <span><span class="t">Extracted statements</span>
+          <span class="d">${hasBill ? `${pendingBill.months.length} months already read off this deal` : 'Upload bills on the deal form first'}</span></span>
+      </label>
+      <label class="${on('manual')}">
+        <input type="radio" name="szsrc" value="manual" ${SZ.src === 'manual' ? 'checked' : ''}>
+        <span><span class="t">Type the bills in</span>
+          <span class="d">kWh and billed kW per month, straight off the invoices</span></span>
+      </label>
+      <label class="${on('pdf')}">
+        <input type="radio" name="szsrc" value="pdf" ${SZ.src === 'pdf' ? 'checked' : ''}>
+        <span><span class="t">Utility bill PDFs</span>
+          <span class="d">Reads the statements the utility emails out</span></span>
+      </label>
+      <label class="${on('interval')}">
+        <input type="radio" name="szsrc" value="interval" ${SZ.src === 'interval' ? 'checked' : ''}>
+        <span><span class="t">Interval / 8760 export</span>
+          <span class="d">${SZ.series ? `${SZ.series.n.toLocaleString()} intervals at ${SZ.series.dtMin} min loaded`
+            : 'The only source that shows where the peaks sit'}</span></span>
+      </label>
+    </div>
+
+    ${SZ.src === 'interval' ? `
+      <div class="szr-drop" id="szrDrop">
+        <b>Drop a CSV, or browse</b><span>Timestamp + demand column · 5/15/30/60 min</span>
+      </div>
+      <input type="file" id="szrFile" accept=".csv,.txt,.tsv" style="display:none">
+      ${SZ.series ? `<p class="szr-note">${SZ.series.months.length} billing month${SZ.series.months.length > 1 ? 's' : ''} ·
+        peak ${szF(Math.max(...SZ.series.months.map(m => m.peak)))} kW${SZ.series.isEnergy ? ' · read as kWh per interval and converted' : ''}</p>` : ''}` : ''}
+
+    ${SZ.src === 'pdf' ? `
+      <div class="szr-drop" id="szPdfDrop">
+        <b>Drop utility bill PDFs, or browse</b>
+        <span>One per month, or a single bill with a usage-history table</span>
+      </div>
+      <input type="file" id="szPdfFile" accept=".pdf,application/pdf" multiple style="display:none">
+      <div id="szPdfReport"></div>
+      <p class="szr-note">Text layer only. A scan or a phone photo has nothing to read \u2014 type those months in.</p>` : ''}
+
+    ${(SZ.src === 'manual' || (SZ.src === 'pdf' && SZ.months.length)) ? `
+      <div class="szr-f"><label class="szr-lbl">Months of bills you have</label>
+        <select class="szr-in" id="szrNMon">${[1,2,3,4,5,6,7,8,9,10,11,12].map(n =>
+          `<option value="${n}"${(SZ.months.length || 12) === n ? ' selected' : ''}>${n}</option>`).join('')}</select></div>
+      <div class="szr-scroll"><table class="szr-tbl" id="szrBillTbl"><thead><tr>
+        <th>Month</th><th class="num">kWh</th><th class="num">Peak kW</th><th class="num">$/kW</th>
+      </tr></thead><tbody id="szrBillBody"></tbody></table></div>
+      <p class="szr-note">Peak kW is the billed demand on the invoice. Add facilities, distribution and
+        transmission demand charges together for the rate.</p>` : ''}
+
+    ${SZ.src === 'bill' && hasBill ? `
+      <p class="szr-note" style="margin-bottom:12px">Using ${esc(pendingBill.utility)} · ${esc(pendingBill.period)} ·
+        peak ${szF(pendingBill.peakKw)} kW · load factor ${(pendingBill.loadFactor * 100).toFixed(0)}%.
+        These came from the extractor, so verify the demand rate below against the tariff.</p>` : ''}
+
+    <div class="szr-rule"></div>
+    <h4 class="szr-h4">Tariff</h4>
+    <div class="szr-row">
+      <div><label class="szr-lbl">Demand $/kW-mo</label><input class="szr-in" type="number" id="szrDemandRate" step="0.25" value="${dRate.toFixed(2)}"></div>
+      <div><label class="szr-lbl">Energy $/kWh</label><input class="szr-in" type="number" id="szrEnergyRate" step="0.005" value="${eRate.toFixed(3)}"></div>
+    </div>
+    <div class="szr-row">
+      <div><label class="szr-lbl">Ratchet %</label><input class="szr-in" type="number" id="szRatchet" min="0" max="100" step="5" value="${SZ_DEF.ratchet}"></div>
+      <div><label class="szr-lbl">Headroom %</label><input class="szr-in" type="number" id="szHead" min="0" max="50" step="5" value="${SZ_DEF.headroom}"></div>
+    </div>
+    <p class="szr-note">A ratchet bills you on a share of your highest peak from the prior 11 months and
+      caps what storage recovers in year one. Check the tariff before leaving it at zero.</p>
+
+    ${SZ.src !== 'interval' ? `
+      <div class="szr-rule"></div>
+      <h4 class="szr-h4">Load shape assumed</h4>
+      <div class="szr-row">
+        <div><label class="szr-lbl">Base load % of peak</label><input class="szr-in" type="number" id="szBase" min="5" max="90" value="${SZ_DEF.baseFrac}"></div>
+        <div><label class="szr-lbl">Peak events / month</label><input class="szr-in" type="number" id="szEvt" min="1" max="31" value="${SZ_DEF.evtMo}"></div>
+      </div>
+      <p class="szr-note">Bills give totals, not shape. A flat site is expensive to shave; a spiky one is cheap.
+        This moves the answer more than anything else here.</p>` : ''}
+
+    <div class="szr-rule"></div>
+    <h4 class="szr-h4">Equipment &amp; cost</h4>
+    <div class="szr-f"><label class="szr-lbl">Durations to evaluate</label>
+      <div style="display:flex;gap:13px;flex-wrap:wrap;font-size:12.5px">
+        ${[1,2,4,6].map(h => `<label style="display:flex;align-items:center;gap:5px;cursor:pointer">
+          <input type="checkbox" class="szDur" value="${h}"${h === 2 || h === 4 ? ' checked' : ''} style="accent-color:var(--cs-blue)"> ${h} h</label>`).join('')}
+      </div></div>
+    <div class="szr-row3">
+      <div><label class="szr-lbl">RTE %</label><input class="szr-in" type="number" id="szRte" min="70" max="98" value="${SZ_DEF.rte}"></div>
+      <div><label class="szr-lbl">DoD %</label><input class="szr-in" type="number" id="szDod" min="50" max="100" value="${SZ_DEF.dod}"></div>
+      <div><label class="szr-lbl">Fade %/yr</label><input class="szr-in" type="number" id="szFade" min="0" max="6" step="0.5" value="${SZ_DEF.fade}"></div>
+    </div>
+    <div class="szr-row3">
+      <div><label class="szr-lbl">$/kWh installed</label><input class="szr-in" type="number" id="szCostKwh" step="10" value="${SZ_DEF.costKwh}"></div>
+      <div><label class="szr-lbl">ITC %</label><input class="szr-in" type="number" id="szItc" min="0" max="70" step="5" value="${SZ_DEF.itc}"></div>
+      <div><label class="szr-lbl">O&amp;M $/kW-yr</label><input class="szr-in" type="number" id="szOm" min="0" value="${SZ_DEF.om}"></div>
+    </div>
+    <div class="szr-row3">
+      <div><label class="szr-lbl">Term yrs</label><input class="szr-in" type="number" id="szTerm" min="1" max="25" value="${SZ_DEF.term}"></div>
+      <div><label class="szr-lbl">Discount %</label><input class="szr-in" type="number" id="szDisc" min="0" max="25" step="0.5" value="${SZ_DEF.disc}"></div>
+      <div><label class="szr-lbl">Objective</label><select class="szr-in" id="szObj">
+        <option value="npv">Max NPV</option><option value="pay">Fastest payback</option></select></div>
+    </div>
+    <p class="szr-note">The $/kWh default is a placeholder. Put your landed cost in — nothing else moves the payback as much.</p>
+    <button class="btn btn-primary" id="szrRunBtn" data-act="run-sizing" style="width:100%;margin-top:14px;padding:11px">Size it</button>`;
+
+  if (SZ.src === 'manual' || (SZ.src === 'pdf' && SZ.months.length)) szrBuildRows();
+
+  if (SZ.src === 'pdf') {
+    const d2 = $('#szPdfDrop'), f2 = $('#szPdfFile');
+    d2.addEventListener('click', () => f2.click());
+    ['dragenter','dragover'].forEach(e => d2.addEventListener(e, ev => { ev.preventDefault(); d2.classList.add('over'); }));
+    ['dragleave','drop'].forEach(e => d2.addEventListener(e, ev => { ev.preventDefault(); d2.classList.remove('over'); }));
+    d2.addEventListener('drop', ev => { if (ev.dataTransfer.files.length) szPdfFiles(ev.dataTransfer.files); });
+    f2.addEventListener('change', () => { if (f2.files.length) szPdfFiles(f2.files); });
+  }
+
+  if (SZ.src === 'interval') {
+    const drop = $('#szrDrop'), file = $('#szrFile');
+    drop.addEventListener('click', () => file.click());
+    ['dragenter','dragover'].forEach(e => drop.addEventListener(e, ev => { ev.preventDefault(); drop.classList.add('over'); }));
+    ['dragleave','drop'].forEach(e => drop.addEventListener(e, ev => { ev.preventDefault(); drop.classList.remove('over'); }));
+    const read = f => { const r = new FileReader(); r.onload = () => szIngestInterval(String(r.result)); r.readAsText(f); };
+    drop.addEventListener('drop', ev => { const f = ev.dataTransfer.files[0]; if (f) read(f); });
+    file.addEventListener('change', () => { if (file.files[0]) read(file.files[0]); });
+  }
+}
+
+function szrBuildRows() {
+  const n = parseInt($('#szrNMon').value, 10);
+  const now = new Date().getMonth(), yr = new Date().getFullYear();
+  const prev = {};
+  SZ.months.forEach(m => prev[m.label] = m);
+  const rows = [];
+  for (let i = n - 1; i >= 0; i--) {
+    const mi = ((now - i) % 12 + 12) % 12;
+    const y = yr + (now - i < 0 ? -1 : 0);
+    const label = MON3[mi] + ' ' + y;
+    const p = prev[label] || {};
+    rows.push(`<tr data-lab="${label}">
+      <td class="tx" style="font-size:11px">${label}</td>
+      <td><input class="szK" type="number" value="${p.kwh || ''}" placeholder="0"></td>
+      <td><input class="szP" type="number" value="${p.kw || ''}" placeholder="0"></td>
+      <td><input class="szR" type="number" step="0.25" value="${p.rate != null ? p.rate.toFixed ? p.rate.toFixed(2) : p.rate : ''}" placeholder="${szNum('szrDemandRate', SZ_DEF.demandRate).toFixed(2)}"></td></tr>`);
+  }
+  $('#szrBillBody').innerHTML = rows.join('');
+}
+
+function szrCollect() {
+  const fallbackRate = szNum('szrDemandRate', SZ_DEF.demandRate);
+  if (SZ.src === 'bill' && pendingBill) {
+    return pendingBill.months.map(m => ({ label: m.label, kwh: m.kwh, kw: m.kw, days: 30.4,
+      rate: fallbackRate }));
+  }
+  if (SZ.src === 'manual' || SZ.src === 'pdf') {
+    const out = [];
+    $$('#szrBillBody tr').forEach(tr => {
+      const kwh = parseFloat(tr.querySelector('.szK').value);
+      const kw = parseFloat(tr.querySelector('.szP').value);
+      const rate = parseFloat(tr.querySelector('.szR').value);
+      if (!(kwh > 0) || !(kw > 0)) return;
+      out.push({ label: tr.dataset.lab, kwh, kw, days: 30.4, rate: isFinite(rate) ? rate : fallbackRate });
+    });
+    return out;
+  }
+  return [];
+}
+
+/* ── run ──────────────────────────────────────────────────────────────── */
+function szrRun() {
+  if (SZ.busy) return;
+  const durs = $$('.szDur').filter(c => c.checked).map(c => parseFloat(c.value));
+  if (!durs.length) { toast('Pick at least one duration.', true); return; }
+  const rte = szNum('szRte', SZ_DEF.rte) / 100;
+  const ratchet = szNum('szRatchet', SZ_DEF.ratchet);
+  const eRate = szNum('szrEnergyRate', SZ_DEF.energyRate);
+
+  if (SZ.src === 'interval') {
+    if (!SZ.series) { toast('Upload an interval file first.', true); return; }
+    szrRunInterval(durs, rte, ratchet, eRate);
+    return;
+  }
+  const months = szrCollect();
+  if (!months.length) { toast('Enter at least one month with kWh and peak kW.', true); return; }
+  SZ.months = months;
+
+  const baseFrac = szNum('szBase', SZ_DEF.baseFrac) / 100;
+  const evtMo = szNum('szEvt', SZ_DEF.evtMo);
+  const maxPeak = Math.max(...months.map(m => m.kw));
+  const curves = months.map(m => szLdc(m, baseFrac));
+  const basePeaks = months.map(m => m.kw);
+  const baseBilled = szRatchet(basePeaks, ratchet);
+  const baseCost = months.reduce((s, m, i) => s + baseBilled[i] * m.rate, 0);
+
+  const sweep = [];
+  for (const dur of durs) {
+    for (let i = 0; i < 40; i++) {
+      const kW = maxPeak * (0.015 + (0.70 - 0.015) * i / 39);
+      const eMax = kW * dur;
+      const peaks = [], evtE = [];
+      let disTot = 0;
+      months.forEach((m, j) => {
+        const c = curves[j];
+        let lo = Math.max(c.pmin, m.kw - kW), hi = m.kw;
+        for (let k = 0; k < 16; k++) {
+          const mid = (lo + hi) / 2;
+          if (szEnergyAbove(c, mid) / evtMo <= eMax && (m.kw - mid) <= kW) hi = mid; else lo = mid;
+        }
+        peaks.push(hi);
+        const e = szEnergyAbove(c, hi);
+        disTot += e; evtE.push(e / evtMo);
+      });
+      const billed = szRatchet(peaks, ratchet);
+      const cost = months.reduce((s, m, j) => s + billed[j] * m.rate, 0);
+      const ann = (baseCost - cost) * (12 / months.length);
+      const loss = disTot * (1 / rte - 1) * (12 / months.length) * eRate;
+      const e = szEcon(kW, eMax, ann, loss);
+      Object.assign(e, { dur, peaks, periodSav: baseCost - cost, maxEvt: Math.max(...evtE) });
+      sweep.push(e);
+    }
+  }
+  szrFinish(sweep, months, baseBilled, baseCost, maxPeak, 'bills');
+}
+
+function szrRunInterval(durs, rte, ratchet, eRate) {
+  const months = SZ.series.months;
+  const dRate = szNum('szrDemandRate', SZ_DEF.demandRate);
+  const maxPeak = Math.max(...months.map(m => m.peak));
+  const baseBilled = szRatchet(months.map(m => m.peak), ratchet);
+  const baseCost = baseBilled.reduce((s, p) => s + p * dRate, 0);
+
+  const jobs = [];
+  for (const dur of durs) for (let i = 0; i < 14; i++) jobs.push({ dur, kW: maxPeak * (0.02 + 0.68 * i / 13) });
+
+  const sweep = [];
+  let idx = 0, refined = false;
+  SZ.busy = true;
+  const out = $('#szrOut');
+  out.innerHTML = `<div class="szr-prog"><div class="bar"><div class="fill" id="szrFill"></div></div>
+    <div class="t" id="szrPT">Simulating dispatch…</div></div>`;
+
+  const step = () => {
+    const t0 = Date.now();
+    while (idx < jobs.length && Date.now() - t0 < 80) {
+      const j = jobs[idx++];
+      const eMax = j.kW * j.dur;
+      const peaks = []; let dis = 0, maxEvt = 0;
+      for (const m of months) {
+        const r = szSolve(m, j.kW, eMax, rte);
+        peaks.push(r.peak); dis += r.dis;
+        if (r.maxEvt > maxEvt) maxEvt = r.maxEvt;
+      }
+      const billed = szRatchet(peaks, ratchet);
+      const cost = billed.reduce((s, p) => s + p * dRate, 0);
+      const ann = (baseCost - cost) * (12 / months.length);
+      const loss = dis * (1 / rte - 1) * (12 / months.length) * eRate;
+      const e = szEcon(j.kW, eMax, ann, loss);
+      Object.assign(e, { dur: j.dur, peaks, periodSav: baseCost - cost, maxEvt });
+      sweep.push(e);
+    }
+    $('#szrFill').style.width = Math.round(idx / jobs.length * 100) + '%';
+    $('#szrPT').textContent = `Simulating dispatch · ${idx} of ${jobs.length} configurations`;
+    if (idx < jobs.length) { setTimeout(step, 0); return; }
+    if (!refined) {
+      refined = true;
+      const b0 = szrPick(sweep);
+      const stepW = maxPeak * 0.68 / 13;
+      for (const dur of durs) for (let q = 0; q < 6; q++)
+        jobs.push({ dur, kW: Math.max(maxPeak * 0.005, b0.kW - stepW) + (2 * stepW) * q / 5 });
+      $('#szrPT').textContent = 'Refining around the optimum';
+      setTimeout(step, 0); return;
+    }
+    SZ.busy = false;
+    const bMonths = months.map(m => ({ label: m.label, kwh: m.kwh, kw: m.peak, rate: dRate, days: m.days }));
+    szrFinish(sweep, bMonths, baseBilled, baseCost, maxPeak, 'interval');
+  };
+  setTimeout(step, 20);
+}
+
+function szrPick(sweep) {
+  const obj = ($('#szObj') || {}).value || 'npv';
+  let best = null;
+  for (const s of sweep) {
+    if (s.annSav <= 0) continue;
+    if (!best) { best = s; continue; }
+    if (obj === 'pay' ? s.payback < best.payback : s.npv > best.npv) best = s;
+  }
+  return best || sweep.reduce((a, b) => b.npv > a.npv ? b : a, sweep[0]);
+}
+
+function szrFinish(sweep, months, baseBilled, baseCost, maxPeak, basis) {
+  const best = szrPick(sweep);
+  const head = szNum('szHead', SZ_DEF.headroom);
+  const recKW = best.kW * (1 + head / 100);
+  const recKWh = best.kWh * (1 + head / 100);
+  const rec = szEcon(recKW, recKWh, best.annSav, best.lossCost);
+  SZ.result = { sweep, best, rec, months, baseBilled, baseCost, maxPeak, basis, recKW, recKWh, head };
+  szrRenderOut();
+}
+
+/* ── results ──────────────────────────────────────────────────────────── */
+function szrRenderOut() {
+  const R = SZ.result, b = R.best, rec = R.rec;
+  const dod = szNum('szDod', SZ_DEF.dod) / 100;
+  const after = szRatchet(b.peaks, szNum('szRatchet', SZ_DEF.ratchet));
+  const cuts = R.months.map((m, i) => R.baseBilled[i] - after[i]);
+  const maxCut = Math.max(...cuts);
+  const cutMon = R.months[cuts.indexOf(maxCut)].label;
+  const nMon = R.months.length;
+
+  let rows = '', tB = 0, tN = 0;
+  R.months.forEach((m, i) => {
+    const cb = R.baseBilled[i] * m.rate, cn = after[i] * m.rate;
+    tB += cb; tN += cn;
+    rows += `<tr><td class="tx">${esc(m.label)}</td>
+      <td class="num">${szF(m.kw)}</td><td class="num">${szF(after[i])}</td>
+      <td class="num" style="color:var(--cs-green);font-weight:600">${szF(R.baseBilled[i] - after[i])}</td>
+      <td class="num">${usd(cb)}</td>
+      <td class="num" style="color:var(--cs-green);font-weight:600">${usd(cb - cn)}</td></tr>`;
+  });
+
+  const oneMonth = nMon === 1 ? (() => {
+    const m = R.months[0];
+    const cb = R.baseBilled[0] * m.rate, cn = after[0] * m.rate;
+    return `<div class="szr-flag ok"><b>${esc(m.label)} on its own:</b> billed demand of ${szF(m.kw)} kW at
+      $${m.rate.toFixed(2)}/kW cost ${usd(cb)}. A ${szF(R.recKW)} kW / ${szF(R.recKWh)} kWh battery would have held
+      the meter to ${szF(after[0])} kW — a bill of ${usd(cn)}, saving <b>${usd(cb - cn)}</b> that month.</div>
+      <div class="szr-flag bad"><b>Do not submit this as a sized deal.</b> One month sets a floor, not a rating.
+      If ${esc(m.label)} is not the site's worst month, the annual peak is higher and this system will be short on
+      power exactly when it matters. Annual figures below are that one month × 12, which no site actually does.</div>`;
+  })() : nMon < 12 ? `<div class="szr-flag"><b>${nMon} months of data.</b> Annual figures scale by
+      ${(12 / nMon).toFixed(2)}×. Demand charges turn on the single worst interval in each period, so if these months
+      exclude the seasonal peak both the savings and the power rating are understated.</div>` : '';
+
+  const basisNote = R.basis === 'interval'
+    ? `Dispatch simulated across ${SZ.series.n.toLocaleString()} intervals at ${SZ.series.dtMin} min, with charging
+       capped at the target so the battery never sets a new peak.`
+    : `Load shape inferred from monthly totals — base load ${szNum('szBase', SZ_DEF.baseFrac)}% of peak,
+       ${szNum('szEvt', SZ_DEF.evtMo)} peak events per month. Confirm against interval data before diligence.`;
+
+  $('#szrOut').innerHTML = `
+    <div class="szr-spec">
+      <div class="l">Recommended storage</div>
+      <div class="v">${szF(R.recKW)} <em>kW</em> / ${(R.recKWh / 1000).toFixed(2)} <em>MWh</em></div>
+      <div class="s">${b.dur}-hour duration · ${szF(R.recKWh / dod)} kWh nameplate at ${szF(dod * 100)}% usable DoD ·
+        ${(R.recKW / (R.recKWh / dod)).toFixed(2)}C<br>
+        Includes ${R.head}% headroom over the ${szF(b.kW)} kW / ${szF(b.kWh)} kWh modeled optimum.</div>
+    </div>
+    <div class="szr-kpis">
+      <div class="szr-kpi"><div class="k">Annual demand savings</div><div class="v">${usdC(b.annSav)}</div>
+        <div class="s">${usdC(rec.yr1)} net of O&amp;M and losses</div></div>
+      <div class="szr-kpi"><div class="k">Simple payback</div>
+        <div class="v">${isFinite(rec.payback) ? rec.payback.toFixed(1) + ' yrs' : '—'}</div>
+        <div class="s">${usdC(rec.net)} net cost after ITC</div></div>
+      <div class="szr-kpi"><div class="k">Deepest cut</div><div class="v">${szF(maxCut)} kW</div>
+        <div class="s">${esc(cutMon)} · ${(maxCut / R.maxPeak * 100).toFixed(1)}% of site peak</div></div>
+    </div>
+    ${oneMonth}
+    <div class="szr-scroll"><table class="szr-tbl"><thead><tr>
+      <th>Period</th><th class="num">Peak kW</th><th class="num">With BESS</th>
+      <th class="num">kW cut</th><th class="num">Demand cost</th><th class="num">Saved</th>
+    </tr></thead><tbody>${rows}
+      <tr style="border-top:1px solid var(--cs-border)"><td class="tx" style="font-weight:600">Total · ${nMon} mo</td>
+        <td class="num">${szF(R.maxPeak)}</td><td></td><td></td>
+        <td class="num" style="font-weight:600">${usd(tB)}</td>
+        <td class="num" style="font-weight:600;color:var(--cs-green)">${usd(tB - tN)}</td></tr>
+    </tbody></table></div>
+    <h4 class="szr-h4" style="margin:18px 0 8px">Sizing curve</h4>
+    <canvas class="szr-canvas" id="szrChart" height="190"></canvas>
+    <div class="szr-legend"><span><i style="background:var(--cs-blue)"></i>Annual savings</span>
+      <span><i style="background:var(--cs-amber)"></i>Payback (yrs)</span>
+      <span><i style="background:var(--cs-navy)"></i>Selected size</span></div>
+    <p class="szr-note">Savings flatten at the knee. Past it you are buying kWh that serve a few hours a year —
+      capital partners price that as dead weight.</p>
+    <p class="szr-note" style="margin-top:10px">${basisNote}</p>`;
+
+  szrChart();
+  const btn = $('#szrApplyBtn');
+  btn.disabled = false;
+  $('#szrAskWrap').style.display = '';
+  $('#szrAskTxt').textContent = `Add ${usdC(rec.capex)} to the capital ask`;
+}
+
+function szrChart() {
+  const c = $('#szrChart');
+  if (!c) return;
+  const dpr = window.devicePixelRatio || 1;
+  const w = c.clientWidth || 560, h = 190;
+  c.width = Math.round(w * dpr); c.height = Math.round(h * dpr);
+  c.style.height = h + 'px';
+  const g = c.getContext('2d');
+  if (!g) return;
+  g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  g.clearRect(0, 0, w, h);
+  g.font = "10px 'IBM Plex Mono', monospace";
+
+  const R = SZ.result, b = R.best;
+  const pts = R.sweep.filter(s => s.dur === b.dur).sort((a, z) => a.kW - z.kW);
+  if (pts.length < 2) return;
+  const pad = { l: 46, r: 42, t: 10, b: 26 };
+  const nice = v => { if (v <= 0) return 1; const m = Math.pow(10, Math.floor(Math.log10(v))); const n = v / m;
+    return (n <= 1 ? 1 : n <= 2 ? 2 : n <= 5 ? 5 : 10) * m; };
+  const mxS = nice(Math.max(...pts.map(p => p.annSav)));
+  const mxP = nice(Math.max(4, ...pts.filter(p => isFinite(p.payback) && p.payback < 40).map(p => p.payback)));
+
+  g.strokeStyle = 'rgba(14,26,36,.10)'; g.fillStyle = '#8A98A6'; g.lineWidth = 1;
+  for (let i = 0; i <= 4; i++) {
+    const y = pad.t + (h - pad.t - pad.b) * i / 4;
+    g.beginPath(); g.moveTo(pad.l, y + .5); g.lineTo(w - pad.r, y + .5); g.stroke();
+    const v = mxS * (1 - i / 4);
+    g.textAlign = 'right'; g.textBaseline = 'middle';
+    g.fillText(v >= 1000 ? Math.round(v / 1000) + 'k' : Math.round(v), pad.l - 6, y);
+    g.fillStyle = '#C77A00'; g.textAlign = 'left';
+    g.fillText((mxP * (1 - i / 4)).toFixed(0) + 'y', w - pad.r + 6, y);
+    g.fillStyle = '#8A98A6';
+  }
+  const lo = pts[0].kW, hi = pts[pts.length - 1].kW;
+  const X = kw => pad.l + (kw - lo) / (hi - lo) * (w - pad.l - pad.r);
+  const YS = v => h - pad.b - v / mxS * (h - pad.t - pad.b);
+  const YP = v => h - pad.b - Math.min(v, mxP) / mxP * (h - pad.t - pad.b);
+
+  g.strokeStyle = '#C77A00'; g.lineWidth = 1.4; g.setLineDash([4, 3]); g.beginPath();
+  let started = false;
+  pts.forEach(p => { if (!isFinite(p.payback)) return;
+    const x = X(p.kW), y = YP(p.payback);
+    started ? g.lineTo(x, y) : (g.moveTo(x, y), started = true); });
+  g.stroke(); g.setLineDash([]);
+
+  g.strokeStyle = '#0089BD'; g.lineWidth = 2; g.beginPath();
+  pts.forEach((p, i) => { const x = X(p.kW), y = YS(p.annSav); i ? g.lineTo(x, y) : g.moveTo(x, y); });
+  g.stroke();
+
+  g.strokeStyle = '#0E1A24'; g.lineWidth = 1; g.setLineDash([2, 3]);
+  g.beginPath(); g.moveTo(X(b.kW), pad.t); g.lineTo(X(b.kW), h - pad.b); g.stroke(); g.setLineDash([]);
+  g.fillStyle = '#0E1A24'; g.beginPath(); g.arc(X(b.kW), YS(b.annSav), 3.6, 0, 6.2832); g.fill();
+
+  g.fillStyle = '#8A98A6'; g.textAlign = 'center'; g.textBaseline = 'top';
+  for (let i = 0; i < pts.length; i += Math.ceil(pts.length / 6))
+    g.fillText(szF(pts[i].kW) + 'kW', X(pts[i].kW), h - pad.b + 6);
+}
+
+/* ── hand the number back to the deal ─────────────────────────────────── */
+function applySizing() {
+  const R = SZ.result;
+  if (!R) return;
+  const rec = R.rec;
+  const mwh = R.recKWh / 1000;
+
+  /* Once there is a real number the deal is no longer an early opportunity. */
+  const box = $('#nfSizePending');
+  if (box && box.checked) { box.checked = false; syncPending(); }
+
+  const mwhEl = $('#nfMwh');
+  if (mwhEl) mwhEl.value = mwh.toFixed(2);
+
+  /* For a standalone battery the nameplate is the inverter rating, so a deal
+     sized here becomes publishable. On solar or hybrid the nameplate is the PV
+     array and has nothing to do with the battery — leave it to the sponsor. */
+  const techEl = $('#nfTech'), mwEl = $('#nfMw');
+  if (techEl && mwEl && techEl.value === 'bess' && !(parseFloat(mwEl.value) > 0))
+    mwEl.value = (R.recKW / 1000).toFixed(2);
+
+  if ($('#szrAddAsk') && $('#szrAddAsk').checked) {
+    const askEl = $('#nfAsk');
+    const cur = parseFloat(askEl.value) || 0;
+    askEl.value = Math.round(cur + rec.capex);
+  }
+
+  pendingSizing = {
+    kw: Math.round(R.recKW), kwh: Math.round(R.recKWh), mwh: +mwh.toFixed(3),
+    duration: R.best.dur, nameplateKwh: Math.round(R.recKWh / (szNum('szDod', SZ_DEF.dod) / 100)),
+    annualSavings: Math.round(R.best.annSav), capex: Math.round(rec.capex),
+    netCost: Math.round(rec.net),
+    payback: isFinite(rec.payback) ? +rec.payback.toFixed(2) : null,
+    npv: Math.round(rec.npv),
+    demandRate: szNum('szrDemandRate', SZ_DEF.demandRate),
+    ratchet: szNum('szRatchet', SZ_DEF.ratchet),
+    headroom: R.head,
+    monthsAnalyzed: R.months.length,
+    basis: R.basis === 'interval'
+      ? `${SZ.series.n} intervals at ${SZ.series.dtMin} min`
+      : `${R.months.length} monthly bill${R.months.length > 1 ? 's' : ''}, modeled load shape`,
+    sizedOn: iso(TODAY)
+  };
+
+  closeSizer();
+  toast(R.months.length < 12
+    ? `Storage set to ${mwh.toFixed(2)} MWh — flagged as sized on ${R.months.length} month${R.months.length > 1 ? 's' : ''} of data.`
+    : `Storage set to ${mwh.toFixed(2)} MWh · ${usdC(R.best.annSav)}/yr in demand savings.`);
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -2902,6 +4251,11 @@ document.addEventListener('click', e => {
       }
       render(); break;
     }
+    case 'toggle-pending': syncPending(); break;
+    case 'open-sizer':   openSizer(); break;
+    case 'close-sizer':  closeSizer(); break;
+    case 'run-sizing':   szrRun(); break;
+    case 'apply-sizing': applySizing(); break;
     case 'settings':     settingsModal(); break;
     case 'toggle-approve': { const p = PEOPLE.find(x => x.uid === val); setApproved(val, !(p && p.approved !== false)); break; }
     case 'toggle-suspend': { const p = PEOPLE.find(x => x.uid === val); setSuspended(val, !(p && p.suspended)); break; }
@@ -2996,9 +4350,22 @@ $('#roleSwitch').addEventListener('click', e => {
 /* drawer + modal dismissal */
 $('#drClose').addEventListener('click', closeDeal);
 $('#drawerBack').addEventListener('click', closeDeal);
-$('#modalBack').addEventListener('click', e => { if (e.target === $('#modalBack')) closeModal(); });
+$('#modalBack').addEventListener('click', e => {
+  if (e.target === $('#modalBack') && !$('#sizerBack').classList.contains('show')) closeModal();
+});
+$('#sizerBack').addEventListener('click', e => { if (e.target === $('#sizerBack')) closeSizer(); });
+/* source radios + month count live inside re-rendered markup, so delegate */
+document.addEventListener('change', e => {
+  if (e.target.name === 'szsrc') { SZ.src = e.target.value; szrRenderInputs(); return; }
+  if (e.target.id === 'szrNMon') { SZ.months = szrCollect(); szrBuildRows(); }
+});
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') { closeDeal(); closeModal(); }
+  if (e.key === 'Escape') {
+    /* the sizer sits on top — it must swallow Escape, or dismissing it would
+       also throw away the half-filled deal form underneath */
+    if ($('#sizerBack').classList.contains('show')) { closeSizer(); return; }
+    closeDeal(); closeModal();
+  }
   if (e.key === 'Enter' || e.key === ' ') {
     const el = e.target.closest('[role="button"][data-act]');
     if (el) { e.preventDefault(); el.click(); }
@@ -3178,6 +4545,9 @@ function dealToDoc(d, uid) {
     stage: d.stage, submitted: d.submitted, decided: d.decided || null,
     offtake: d.offtake, interconnect: d.interconnect, permits: d.permits,
     siteControl: d.siteControl, cod: d.cod,
+    devStage: d.devStage || DEV_STAGES[0],
+    sizePending: !!d.sizePending,
+    sizing: d.sizing || null,
     developer: d.developer, originator: d.originator,
     irr: d.irr, dscr: d.dscr, bidders: d.bidders || 0, offers: d.offers || 0,
     links: d.links || [], bill: d.bill || null,
