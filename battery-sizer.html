@@ -53,6 +53,7 @@ body{
 .tb-back:hover{background:rgba(255,255,255,.18)}
 .tb-back:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
 .tb-back.on{display:inline-flex}
+.tb-div{width:1px;height:20px;background:rgba(255,255,255,.18);margin:0 2px;flex-shrink:0}
 .tb-tool{
   font-size:11px;font-weight:600;letter-spacing:1.2px;text-transform:uppercase;
   color:#9FB3C4;border-left:1px solid #33485C;padding-left:10px;margin-left:2px;white-space:nowrap;
@@ -248,9 +249,10 @@ body.nohelp .hb{display:none}
   <img src="/clearsky-omega-mark-white.png" alt="OMEGA" class="tb-omega" onerror="this.style.display='none'">
   <span class="tb-logo-txt">Clear<span>Sky</span> OMEGA</span>
   <span class="tb-tool">Battery Sizer</span>
+  <span class="sp"></span>
   <button class="tb-back" id="backBtn" onclick="goPortal()" aria-label="Return to your portal">
     <span aria-hidden="true">&#8592;</span> <span id="backTxt">Portal</span></button>
-  <span class="sp"></span>
+  <span class="tb-div" id="backDiv" style="display:none"></span>
   <button class="btn btn-ghost btn-sm" id="tipBtn" onclick="toggleTips()">Tips on</button>
   <button class="btn btn-ghost btn-sm" onclick="exportCSV()">Export CSV</button>
   <button class="btn btn-ghost btn-sm" onclick="window.print()">Print</button>
@@ -725,6 +727,8 @@ var PORTAL_URL = null;
   var b = $('backBtn');
   if(!b) return;
   b.className = 'tb-back on';
+  var dv = $('backDiv');
+  if(dv) dv.style.display = 'block';
   /* Deliberately not the tenant name: deriving it from the org domain
      mis-capitalises brands (SunESol became "Sunesol"), and there is no
      reliable source for the right casing from inside a shared tool. */
