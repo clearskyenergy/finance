@@ -974,6 +974,7 @@ const TECHS = [
   {id:'bess',       name:'Standalone BESS',     color:'#5B4BC4', cf:.44,  side:'gen'},
   {id:'ev',         name:'EV Charging Hub',     color:'#12805C', cf:.15,  side:'load'},
   {id:'datacenter', name:'Data Center / Edge Compute', color:'#B4318A', cf:.85, side:'load'},
+  {id:'land',       name:'Powered Land / Site',  color:'#0F6E63', cf:0,    side:'site'},
   {id:'micro',      name:'Microgrid',           color:'#C77A00', cf:.44,  side:'gen'},
   {id:'chp',        name:'Fuel Cell / CHP',     color:'#8A98A6', cf:.80,  side:'gen'}
 ];
@@ -989,6 +990,9 @@ const isLoadSide = tech => (TECH_BY_ID[tech] || {}).side === 'load';
    field correctly is the difference between a lender reading the number the
    sponsor meant and one reading the number the form implied. */
 const TECH_LABELS = {
+  land:       {mw:'Deliverable capacity (MW)', mwh:'On-site storage (MWh)',
+               rate:'Indicative power cost ($/kWh)',
+               mwHint:'Interconnection headroom the site can actually deliver today, before network upgrades. Leave blank if no study has been run — it is derived from the POI headroom below.'},
   datacenter: {mw:'Facility load (MW)',        mwh:'UPS / battery storage (MWh)',
                rate:'Power cost, all-in ($/kWh)',
                mwHint:'Total incoming service including cooling and losses — critical IT load goes in the section below.'},
@@ -1043,7 +1047,11 @@ const OFFTAKES = ['Behind-the-meter savings share · 15 yr','Investment-grade PP
                   'Compute capacity contract · 5 yr','Speculative — no signed tenant',
                   /* EV charging */
                   'Retail dispensing · merchant','Charging-as-a-service contract · 10 yr',
-                  'Fleet charging agreement · 8 yr','Site host revenue share · 10 yr'];
+                  'Fleet charging agreement · 8 yr','Site host revenue share · 10 yr',
+                  /* powered land */
+                  'Land sale at closing','Option to purchase · 24 mo','Ground lease · 50 yr',
+                  'Ground lease · 99 yr','Land contribution to JV','Powered land resale',
+                  'No offtake — land basis only'];
 const DOC_PRESETS = ['Utility bills','Site details','Interconnection','Offtake / PPA','Permits','Diligence folder',
                      'Tenant lease or LOI','Program award letter','Equipment quotes'];
 
@@ -1058,8 +1066,34 @@ const BENCH = {
   bess:  {median:2.31, basis:'nameplate'},  ev:     {median:0.85, basis:'connected load'},
   micro: {median:2.64, basis:'nameplate'},  chp:    {median:3.18, basis:'nameplate'},
   datacenter: {median:7.50, basis:'facility load', itMedian:9.60,
-               note:'Turnkey fitout runs $9–13/W of critical IT load; powered shell $1.50–3.00/W. Scope drives this more than geography.'}
+               /* Scope moves $/W of IT load by more than four times — a powered
+                  shell and a turnkey hall are different products sold by the
+                  same word. Screening both against one median is how a shell
+                  deal looks like a bargain and a fitout looks overpriced. */
+               itByScope: {
+                 'Powered shell only':                  {median:2.25, range:'$1.50–3.00'},
+                 'Turnkey fitout, shell exists':        {median:7.20, range:'$6.00–8.50'},
+                 'Shell + turnkey fitout (greenfield)': {median:9.60, range:'$9.00–13.00'},
+                 'Modular / prefabricated deployment':  {median:8.40, range:'$7.00–10.50'},
+                 'Retrofit or expansion of existing hall': {median:6.10, range:'$4.50–7.50'}
+               },
+               note:'Turnkey fitout runs $9–13/W of critical IT load; powered shell $1.50–3.00/W. Scope drives this more than geography.'},
+  /* Powered land does not have a national median worth printing. What a site
+     trades for is set by how much capacity is deliverable, how soon, and who
+     else is bidding in that county — three things a nationwide number hides.
+     `indicative` tells the drawer to report the arithmetic and stay quiet
+     about where it sits against "the market". */
+  land: {median:0.55, basis:'deliverable capacity', indicative:true,
+         note:'Powered land is priced on deliverable MW and timing, not on a national average. The figures here are arithmetic on what the sponsor entered — treat them as a starting point for a broker check, not a valuation.'}
 };
+
+/* The scope-specific median where one was stated, the blended one otherwise. */
+function dcBenchmark(spec) {
+  const s = spec && spec.scope;
+  const hit = s && BENCH.datacenter.itByScope[s];
+  return hit ? {median:hit.median, range:hit.range, scope:s}
+             : {median:BENCH.datacenter.itMedian, range:null, scope:null};
+}
 
 /* Reference points a lender screens an EV hub against, Q2 2026. Per-port is the
    number a charging sponsor actually negotiates on — $/W of connected load is
@@ -1074,6 +1108,14 @@ const EV_BENCH = {perDcPort:235000, perL2Port:9500, utilization:.14};
    in one `assetSpec` map that only exists on the deals that need it. It
    round-trips through Firestore as a nested object, so no rules change and no
    migration is required. */
+const ISO_RTOS   = ['Not determined','ERCOT','MISO','PJM','SPP','CAISO','NYISO','ISO-NE','WECC (non-ISO)','Southeast (non-ISO)','Other / vertically integrated'];
+const IX_SCENARIO= ['Not determined','ERIS withdrawal, summer peak','ERIS withdrawal, shoulder','ERIS injection, summer peak',
+                    'NRIS withdrawal','NRIS injection','LLI charging','Utility load study','Utility verbal only'];
+const DILIGENCE  = ['Not started','In progress','Complete','Complete and third-party reviewed'];
+const YESNO      = ['Not determined','Yes','No'];
+const DC_SCOPE   = ['Not determined','Powered shell only','Turnkey fitout, shell exists',
+                    'Shell + turnkey fitout (greenfield)','Modular / prefabricated deployment',
+                    'Retrofit or expansion of existing hall'];
 const DC_TIERS   = ['Not determined','N — no redundancy','N+1','2N','2N+1','Tier III certified','Tier IV certified'];
 const DC_COOLING = ['Not determined','Air / CRAC','Air with containment','Rear-door heat exchanger',
                     'Direct-to-chip liquid','Immersion','Hybrid air + liquid'];
@@ -1089,11 +1131,68 @@ const EV_PROGRAMS= ['Not determined','None — no program award','NEVI corridor 
                     'Multiple programs stacked'];
 
 const ASSET_FIELDS = {
+  /* ── Powered land ────────────────────────────────────────────────────────
+     Modelled on what actually appears in a site binder: acreage, a studied
+     point of interconnection with a headroom number, a gas lateral, fiber,
+     water, and a diligence stack. A capital partner screening powered land is
+     buying deliverable megawatts and a date — everything here exists to make
+     those two things checkable. */
+  land: [
+    {g:'Land',        k:'grossAcres',    l:'Gross acres',              t:'number', step:'1', ph:'1046', req:true},
+    {g:'Land',        k:'netAcres',      l:'Net usable acres',         t:'number', step:'1', ph:'833',
+     hint:'After wetlands, floodplain, easements and setbacks. The number a site plan can actually use.'},
+    {g:'Land',        k:'expansionAcres',l:'Adjacent expansion acres', t:'number', step:'1', ph:'2215',
+     hint:'Contiguous land under option or available, not yet controlled.'},
+    {g:'Land',        k:'jurisdiction',  l:'Jurisdiction / ETJ',       t:'text',   ph:'Walker County — unincorporated'},
+    {g:'Land',        k:'zoning',        l:'Zoning / air attainment',  t:'text',   ph:'Unzoned county, attainment zone'},
+    {g:'Land',        k:'railAccess',    l:'Rail frontage',            t:'select', o:YESNO},
+    {g:'Land',        k:'highway',       l:'Highway access',           t:'text',   ph:'I-45, 2 mi'},
+
+    {g:'Interconnection', k:'poiName',   l:'POI / substation',         t:'text',   ph:'J4104_POI'},
+    {g:'Interconnection', k:'poiUtility',l:'Transmission owner',       t:'text',   ph:'Entergy Texas'},
+    {g:'Interconnection', k:'iso',       l:'ISO / RTO',                t:'select', o:ISO_RTOS},
+    {g:'Interconnection', k:'poiKv',     l:'POI voltage (kV)',         t:'number', step:'1', ph:'345'},
+    {g:'Interconnection', k:'headroomMw',l:'Studied headroom (MW)',    t:'number', step:'0.1', ph:'705.9', req:true,
+     hint:'Deliverable before network upgrades. This is the number the whole deal turns on.'},
+    {g:'Interconnection', k:'scenario',  l:'Study scenario',           t:'select', o:IX_SCENARIO,
+     hint:'Withdrawal and injection headroom are different numbers. Naming the scenario stops them being read as one.'},
+    {g:'Interconnection', k:'studyYear', l:'Base case year',           t:'number', step:'1', ph:'2030'},
+    {g:'Interconnection', k:'preIssues', l:'Pre-existing issues',      t:'number', step:'1', ph:'0',
+     hint:'Overloads already present at the node. If these are not cleared by the study year, deliverable capacity can be zero.'},
+    {g:'Interconnection', k:'queuePos',  l:'Queue position held',      t:'text',   ph:'None, or J2897'},
+    {g:'Interconnection', k:'energizeBy',l:'Interconnection date',     t:'text',   ph:'Q1 2027, or guaranteed by TSP'},
+    {g:'Interconnection', k:'upgradeMw', l:'Capacity after upgrades (MW)', t:'number', step:'1', ph:'1500'},
+    {g:'Interconnection', k:'upgradeCost',l:'Upgrade cost to reach it ($MM)', t:'number', step:'0.1', ph:'680'},
+    {g:'Interconnection', k:'onsiteGenMw',l:'On-site generation permitted (MW)', t:'number', step:'1', ph:'400'},
+
+    {g:'Gas',   k:'gasOperator', l:'Pipeline operator',           t:'text',   ph:'Kinder Morgan — Trident'},
+    {g:'Gas',   k:'gasDiameter', l:'Line diameter (in)',          t:'number', step:'1', ph:'42'},
+    {g:'Gas',   k:'gasDistance', l:'Distance to tap (mi)',        t:'number', step:'0.01', ph:'1.59'},
+    {g:'Gas',   k:'gasCapacity', l:'Capacity available (MMBtu/d)',t:'number', step:'1000', ph:'250000'},
+    {g:'Gas',   k:'gasCost',     l:'Transport cost ($/MMBtu)',    t:'number', step:'0.01', ph:'0.40'},
+    {g:'Gas',   k:'heatRate',    l:'Assumed heat rate (Btu/kWh)', t:'number', step:'100', ph:'8500',
+     hint:'Used to convert gas capacity into megawatts. Left blank, 8,500 is assumed and labelled as such.'},
+    {g:'Gas',   k:'gasInService',l:'Lateral in service',          t:'text',   ph:'Phase 1 Feb 2027'},
+
+    {g:'Fiber & water', k:'fiberProvider', l:'Fiber provider(s)',      t:'text',   ph:'Lumen / Level 3 longhaul'},
+    {g:'Fiber & water', k:'fiberDistance', l:'Distance to fiber (mi)', t:'number', step:'0.01', ph:'5.81'},
+    {g:'Fiber & water', k:'waterSource',   l:'Water source',           t:'text',   ph:'County CCN, 12in main'},
+    {g:'Fiber & water', k:'waterGpm',      l:'Available flow (GPM)',   t:'number', step:'10', ph:'2000'},
+    {g:'Fiber & water', k:'sewer',         l:'Sewer / effluent',       t:'text',   ph:'On-site septic, or municipal'},
+
+    {g:'Diligence', k:'survey',    l:'ALTA survey',        t:'select', o:DILIGENCE},
+    {g:'Diligence', k:'title',     l:'Title commitment',   t:'select', o:DILIGENCE},
+    {g:'Diligence', k:'environmental', l:'Phase I ESA',    t:'select', o:DILIGENCE},
+    {g:'Diligence', k:'geotech',   l:'Geotech',            t:'select', o:DILIGENCE},
+    {g:'Diligence', k:'incentives',l:'Incentives / abatement', t:'text', ph:'County 10-yr abatement under discussion'}
+  ],
   datacenter: [
     {k:'itLoadMw',   l:'Critical IT load (MW)',      t:'number', step:'0.1',  ph:'8',    req:true,
      hint:'The denominator every data-centre lender underwrites on. Enter IT load, not incoming service.'},
     {k:'phase1Mw',   l:'Phase 1 IT load (MW)',       t:'number', step:'0.1',  ph:'2.5',
      hint:'What this capital actually builds, if the campus is staged.'},
+    {k:'scope',      l:'Delivery scope',             t:'select', o:DC_SCOPE,
+     hint:'Sets which cost benchmark this is screened against. Shell and turnkey differ by roughly four times per IT watt.'},
     {k:'pue',        l:'Design PUE',                 t:'number', step:'0.01', ph:'1.25'},
     {k:'rackKw',     l:'Rack density (kW/rack)',     t:'number', step:'0.5',  ph:'35'},
     {k:'tier',       l:'Redundancy',                 t:'select', o:DC_TIERS},
@@ -1252,6 +1351,53 @@ function assetMetrics(d) {
   const a = d.assetSpec || {};
   const n = k => { const v = Number(a[k]); return isFinite(v) && v > 0 ? v : null; };
 
+  if (d.tech === 'land') {
+    const gross = n('grossAcres'), net = n('netAcres');
+    const head = n('headroomMw');
+    const upMw = n('upgradeMw'), upCost = n('upgradeCost');
+    const gasMmbtu = n('gasCapacity');
+    /* A binder quotes gas in MMBtu/day and power in MW, and the whole question
+       for these sites is whether the lateral can beat the wire. One conversion,
+       with the heat rate stated, makes them comparable. */
+    const hr = n('heatRate') || 8500;
+    const gasMw = gasMmbtu ? (gasMmbtu * 1e6 / 24) / hr / 1000 : null;
+    const gpm = n('waterGpm');
+    /* Only capacity that is studied and unencumbered is worth pricing against.
+       Pre-existing issues at the node are the standard way a headroom number
+       turns out not to be deliverable. */
+    const issues = a.preIssues === '' || a.preIssues == null ? null : Number(a.preIssues);
+    return {
+      kind: 'land',
+      grossAcres: gross, netAcres: net, expansionAcres: n('expansionAcres'),
+      usablePct: gross && net ? net / gross : null,
+      headroomMw: head,
+      preIssues: issues,
+      poiKv: n('poiKv'),
+      perAcre: gross && d.ask > 0 ? d.ask / gross : null,
+      perNetAcre: net && d.ask > 0 ? d.ask / net : null,
+      perMw: head && d.ask > 0 ? d.ask / head : null,
+      ppwCapacity: head && d.ask > 0 ? d.ask / (head * 1e6) : null,
+      mwPerAcre: head && net ? head / net : null,
+      upgradeMw: upMw, upgradeCost: upCost,
+      /* Cost of the *next* tranche, not of the whole thing — a sponsor deciding
+         whether to fund upgrades is buying incremental megawatts. */
+      incrementalMw: upMw && head && upMw > head ? upMw - head : null,
+      upgradePerMw: upMw && head && upCost && upMw > head
+        ? (upCost * 1e6) / (upMw - head) : null,
+      onsiteGenMw: n('onsiteGenMw'),
+      gasMmbtu, gasMw, heatRate: hr, heatRateAssumed: !n('heatRate'),
+      gasDistance: n('gasDistance'), gasDiameter: n('gasDiameter'),
+      fiberDistance: n('fiberDistance'),
+      waterGpm: gpm,
+      waterGpd: gpm ? gpm * 60 * 24 : null,
+      /* Total power the site could host if the wire and the lateral are both
+         built out — the number that decides what class of tenant fits. */
+      totalPotentialMw: (upMw || head) != null || gasMw != null
+        ? Math.max(upMw || head || 0, 0) + (n('onsiteGenMw') || 0) || null
+        : null
+    };
+  }
+
   if (d.tech === 'datacenter') {
     const it = n('itLoadMw'), pue = n('pue'), rackKw = n('rackKw');
     const facility = it && pue ? it * pue : (d.mw > 0 ? d.mw : null);
@@ -1259,14 +1405,22 @@ function assetMetrics(d) {
     const pre = a.preLeased != null && a.preLeased !== '' ? Math.max(0, Math.min(100, Number(a.preLeased))) : null;
     const colo = n('coloRate');
     const lease = n('leaseYears');
+    const bm = dcBenchmark(a);
+    const ppwIt = it && d.ask > 0 ? d.ask / (it * 1e6) : null;
     return {
       kind: 'datacenter',
       itLoadMw: it,
       phase1Mw: n('phase1Mw'),
       pue,
+      scope: a.scope || null,
+      itBench: bm.median,
+      itBenchRange: bm.range,
+      /* Only meaningful once a scope is stated — against the blended median it
+         says little, since the blended median describes no actual product. */
+      ppwVsScope: ppwIt && bm.scope ? (ppwIt - bm.median) / bm.median : null,
       facilityMw: facility,
       racks: it && rackKw ? Math.round(it * 1000 / rackKw) : null,
-      ppwIt: it && d.ask > 0 ? d.ask / (it * 1e6) : null,
+      ppwIt,
       annualMwh: facility ? facility * 8760 * (d.cf || .85) : null,
       /* Only the contracted share is revenue anyone will lend against. */
       contractedKw: itKw && pre != null ? itKw * pre / 100 : null,
@@ -1375,6 +1529,7 @@ const SAMPLE_TEMPLATES = [
        exact kind of invented number the rest of this form works to avoid. */
     assetSpec:{
       itLoadMw:12, phase1Mw:4, pue:1.28, rackKw:42,
+      scope:'Shell + turnkey fitout (greenfield)',
       tier:'2N', cooling:'Direct-to-chip liquid', onsiteGen:'Grid + BESS',
       waterSource:'Closed loop, community water supply makeup',
       anchor:'Unsigned — two LOIs in negotiation', credit:'BBB / BBB+',
@@ -1409,6 +1564,36 @@ const SAMPLE_TEMPLATES = [
       {label:'Program award letter', url:'https://www.dropbox.com/scl/fi/gateway-corridor-nevi-award.pdf'},
       {label:'Equipment quotes',     url:'https://www.dropbox.com/scl/fo/gateway-corridor-charger-quotes'},
       {label:'Diligence folder',     url:'https://www.dropbox.com/scl/fo/gateway-corridor-diligence'}
+    ]
+  },
+  {
+    id:'CS-2407', name:'Walker County Powered Land',
+    developer:'Northgate Clean Assets', originator:'Dana Reyes',
+    state:'TX', city:'Huntsville', tech:'land', mw:705.9, ask:62000000,
+    stage:'Submitted', status:'active', submitted:'2026-07-14',
+    bidders:2, offers:0,
+    irr:0, dscr:0, offtake:'Option to purchase · 24 mo',
+    interconnect:'Feasibility only', permits:'Not started', siteControl:'Option or term sheet',
+    cod:'2029-06-30', ppaRate:0.0620, sizePending:false,
+    assetSpec:{
+      grossAcres:1046, netAcres:833, expansionAcres:2215,
+      jurisdiction:'Walker County — unincorporated', zoning:'Unzoned county, attainment zone',
+      railAccess:'No', highway:'I-45, 8 mi',
+      poiName:'J4104_POI', poiUtility:'Entergy Texas', iso:'MISO', poiKv:345,
+      headroomMw:705.9, scenario:'ERIS withdrawal, summer peak', studyYear:2030, preIssues:0,
+      queuePos:'None held', energizeBy:'Not committed — regional study required',
+      upgradeMw:1500, upgradeCost:680,
+      gasOperator:'Kinder Morgan — Trident', gasDiameter:42, gasDistance:0.5,
+      gasCapacity:250000, gasCost:0.40, gasInService:'Phase 1 Feb 2027',
+      fiberProvider:'Lumen / Level 3 longhaul backbone', fiberDistance:1.85,
+      waterSource:'Walker County CCN, 6in main on FM 1696', waterGpm:0,
+      survey:'Not started', title:'Not started', environmental:'Not started', geotech:'Not started',
+      incentives:'County discussions not yet opened'
+    },
+    links:[
+      {label:'Site details',     url:'https://drive.google.com/drive/folders/1walker-county-binder'},
+      {label:'Interconnection',  url:'https://drive.google.com/file/d/1walker-county-capacity-report/view'},
+      {label:'Diligence folder', url:'https://drive.google.com/drive/folders/1walker-county-diligence'}
     ]
   },
   {
@@ -2221,6 +2406,7 @@ function partnerReports() {
         <button class="btn btn-ghost btn-sm" data-act="export-states">State rollup (${byState.length} rows)</button>
         ${list.filter(d => d.tech === 'datacenter').length ? `<button class="btn btn-ghost btn-sm" data-act="export-datacenters">Data center detail (${list.filter(d => d.tech === 'datacenter').length} rows)</button>` : ''}
         ${list.filter(d => d.tech === 'ev').length ? `<button class="btn btn-ghost btn-sm" data-act="export-charging">EV charging detail (${list.filter(d => d.tech === 'ev').length} rows)</button>` : ''}
+        ${list.filter(d => d.tech === 'land').length ? `<button class="btn btn-ghost btn-sm" data-act="export-land">Powered land detail (${list.filter(d => d.tech === 'land').length} rows)</button>` : ''}
       </div>
     </div>
   </div>`;
@@ -2621,6 +2807,85 @@ function assetSection(d) {
   const kvm = (k, v) => `<div class="kv"><span class="k">${k}</span><span class="v mono">${v}</span></div>`;
   const nz = v => v == null ? '<span class="p-unsized">Not stated</span>' : v;
 
+  if (m.kind === 'land') {
+    /* The two findings that decide whether a site binder is worth a site visit:
+       whether the headroom number is encumbered, and whether the capacity is
+       big enough to matter for the tenant class the sponsor is chasing. */
+    const issueNote = m.preIssues == null
+      ? `<p class="note" style="margin-top:12px">The count of pre-existing issues at this node is not stated. Headroom is only deliverable if the node is clear — ask for the study page before pricing the capacity.</p>`
+      : m.preIssues > 0
+      ? `<p class="note" style="margin-top:12px">${m.preIssues} pre-existing issue${m.preIssues > 1 ? 's' : ''} at the node. If these are not resolved by the study year, deliverable capacity at this POI can be zero regardless of the headroom figure above.</p>`
+      : '';
+    const upgradeNote = m.upgradePerMw
+      ? `<p class="note" style="margin-top:12px">Reaching ${num(m.upgradeMw, 0)} MW costs ${usdC(m.upgradeCost * 1e6)} in network upgrades — ${usdC(m.upgradePerMw)} per incremental MW against ${
+          m.perMw ? usdC(m.perMw) + ' per MW for the land itself' : 'the land cost'}. Whether that is worth funding is the central question on this deal.</p>`
+      : '';
+    const gasNote = m.gasMw && m.headroomMw
+      ? `<p class="note" style="margin-top:12px">The gas lateral could support roughly ${num(m.gasMw, 0)} MW of on-site generation at ${num(m.heatRate, 0)} Btu/kWh${m.heatRateAssumed ? ' (assumed — not stated by the sponsor)' : ''}, against ${num(m.headroomMw, 0)} MW of studied wire headroom. ${
+          m.gasMw > m.headroomMw * 1.5 ? 'Gas is the larger path here, which changes what this site is worth and who should be bidding on it.'
+          : 'Behind-the-meter generation is a bridge rather than the main path on this site.'}</p>`
+      : '';
+    return `
+    <div class="sec">
+      <h4>Land</h4>
+      <div class="kv-list">
+        ${kvm('Gross acres', nz(m.grossAcres ? num(m.grossAcres, 0) + ' AC' : null))}
+        ${kvm('Net usable', nz(m.netAcres ? num(m.netAcres, 0) + ' AC' + (m.usablePct ? ` <span style="font-weight:400;color:var(--cs-muted-2)">· ${pct(m.usablePct * 100, 0)} of gross</span>` : '') : null))}
+        ${m.expansionAcres ? kvm('Adjacent expansion', num(m.expansionAcres, 0) + ' AC <span style="font-weight:400;color:var(--cs-muted-2)">· not controlled</span>') : ''}
+        ${kv('Jurisdiction', txt('jurisdiction'))}
+        ${kv('Zoning / attainment', txt('zoning'))}
+        ${kv('Rail frontage', txt('railAccess'))}
+        ${kv('Highway access', txt('highway'))}
+        ${kvm('Price per gross acre', nz(m.perAcre ? usdC(m.perAcre) : null))}
+        ${m.perNetAcre ? kvm('Price per usable acre', usdC(m.perNetAcre)) : ''}
+      </div>
+      <h4 style="margin-top:22px">Interconnection</h4>
+      <div class="kv-list">
+        ${kv('POI / substation', txt('poiName'))}
+        ${kv('Transmission owner', txt('poiUtility'))}
+        ${kv('ISO / RTO', txt('iso'))}
+        ${kvm('POI voltage', nz(m.poiKv ? num(m.poiKv, 0) + ' kV' : null))}
+        ${kvm('Studied headroom', nz(m.headroomMw ? num(m.headroomMw, 1) + ' MW' : null))}
+        ${kv('Study scenario', txt('scenario'))}
+        ${kv('Base case year', txt('studyYear'))}
+        ${kvm('Pre-existing issues', m.preIssues == null ? '<span class="p-unsized">Not stated</span>'
+          : m.preIssues === 0 ? '<span style="color:var(--cs-green)">None at this node</span>' : String(m.preIssues))}
+        ${kv('Queue position', txt('queuePos'))}
+        ${kv('Interconnection date', txt('energizeBy'))}
+        ${kvm('Price per deliverable MW', nz(m.perMw ? usdC(m.perMw) + (m.ppwCapacity ? ` <span style="font-weight:400;color:var(--cs-muted-2)">· $${m.ppwCapacity.toFixed(2)}/W</span>` : '') : null))}
+        ${kvm('Capacity density', nz(m.mwPerAcre ? num(m.mwPerAcre, 2) + ' MW per usable acre' : null))}
+        ${m.upgradeMw ? kvm('After network upgrades', num(m.upgradeMw, 0) + ' MW' + (m.incrementalMw ? ` <span style="font-weight:400;color:var(--cs-muted-2)">· +${num(m.incrementalMw, 0)} MW</span>` : '')) : ''}
+        ${m.upgradePerMw ? kvm('Upgrade cost per MW', usdC(m.upgradePerMw)) : ''}
+        ${m.onsiteGenMw ? kvm('On-site generation permitted', num(m.onsiteGenMw, 0) + ' MW') : ''}
+      </div>
+      ${issueNote}${upgradeNote}
+      <h4 style="margin-top:22px">Gas, fiber &amp; water</h4>
+      <div class="kv-list">
+        ${kv('Pipeline operator', txt('gasOperator'))}
+        ${kvm('Line', nz(m.gasDiameter ? num(m.gasDiameter, 0) + '&quot;' + (m.gasDistance ? ` at ${num(m.gasDistance, 2)} mi` : '') : (m.gasDistance ? num(m.gasDistance, 2) + ' mi' : null)))}
+        ${kvm('Capacity available', nz(m.gasMmbtu ? num(m.gasMmbtu, 0) + ' MMBtu/d' : null))}
+        ${kvm('Gas as generation', nz(m.gasMw ? '~' + num(m.gasMw, 0) + ' MW' + ` <span style="font-weight:400;color:var(--cs-muted-2)">· at ${num(m.heatRate, 0)} Btu/kWh${m.heatRateAssumed ? ', assumed' : ''}</span>` : null))}
+        ${kv('Transport cost', txt('gasCost') === '<span class="p-unsized">Not stated</span>' ? txt('gasCost') : '$' + txt('gasCost') + '/MMBtu')}
+        ${kv('Lateral in service', txt('gasInService'))}
+        ${kv('Fiber provider', txt('fiberProvider'))}
+        ${kvm('Distance to fiber', nz(m.fiberDistance ? num(m.fiberDistance, 2) + ' mi' : null))}
+        ${kv('Water source', txt('waterSource'))}
+        ${kvm('Available flow', nz(m.waterGpm ? num(m.waterGpm, 0) + ' GPM' + (m.waterGpd ? ` <span style="font-weight:400;color:var(--cs-muted-2)">· ${num(m.waterGpd / 1000, 0)}k gal/day</span>` : '') : null))}
+        ${kv('Sewer / effluent', txt('sewer'))}
+      </div>
+      ${gasNote}
+      <h4 style="margin-top:22px">Diligence</h4>
+      <div class="kv-list">
+        ${kv('ALTA survey', txt('survey'))}
+        ${kv('Title commitment', txt('title'))}
+        ${kv('Phase I ESA', txt('environmental'))}
+        ${kv('Geotech', txt('geotech'))}
+        ${kv('Incentives', txt('incentives'))}
+      </div>
+      <p class="note" style="margin-top:12px">${esc(BENCH.land.note)}</p>
+    </div>`;
+  }
+
   if (m.kind === 'datacenter') {
     /* A campus with no signed tenant is financeable, but only if it says so. */
     const spec = m.preLeased;
@@ -2638,6 +2903,10 @@ function assetSection(d) {
         ${kvm('Critical IT load', nz(m.itLoadMw ? num(m.itLoadMw, 2) + ' MW' : null))}
         ${m.phase1Mw ? kvm('Phase 1 IT load', num(m.phase1Mw, 2) + ' MW <span style="font-weight:400;color:var(--cs-muted-2)">· staged build</span>') : ''}
         ${kvm('Design PUE', nz(m.pue ? m.pue.toFixed(2) : null))}
+        ${kv('Delivery scope', txt('scope'))}
+        ${m.ppwIt ? kvm('Cost per IT watt', '$' + m.ppwIt.toFixed(2) + '/W' + (m.scope
+          ? ` <span style="font-weight:400;color:var(--cs-muted-2)">· ${esc(m.itBenchRange)}/W typical for this scope</span>`
+          : ' <span style="font-weight:400;color:var(--cs-muted-2)">· no scope stated, so no like-for-like benchmark</span>')) : ''}
         ${kvm('Facility load', nz(m.facilityMw ? num(m.facilityMw, 2) + ' MW' + (m.pue ? ' <span style="font-weight:400;color:var(--cs-muted-2)">· IT × PUE</span>' : '') : null))}
         ${kvm('Rack density', nz(has('rackKw') ? num(a.rackKw, 1) + ' kW/rack' + (m.racks ? ` <span style="font-weight:400;color:var(--cs-muted-2)">· ~${m.racks.toLocaleString()} racks</span>` : '') : null))}
         ${kv('Redundancy', txt('tier'))}
@@ -2661,7 +2930,14 @@ function assetSection(d) {
         ${kvm('Contract value', nz(m.contractValue ? usdC(m.contractValue) : null))}
       </div>
       ${leaseNote}
-      <p class="note" style="margin-top:12px">${esc(BENCH.datacenter.note)}</p>
+      ${m.scope && m.ppwVsScope != null && Math.abs(m.ppwVsScope) >= .25
+        ? `<p class="note" style="margin-top:12px">At $${m.ppwIt.toFixed(2)}/W of IT load this sits ${pct(Math.abs(m.ppwVsScope) * 100, 0)}
+           ${m.ppwVsScope > 0 ? 'above' : 'below'} the ${esc(m.scope.toLowerCase())} median of $${m.itBench.toFixed(2)}/W.
+           ${m.ppwVsScope > 0
+             ? 'Worth showing the cost stack before this goes to committee — density, cooling and redundancy all justify a premium, but they have to be named.'
+             : 'A figure this far below scope is usually a sign that something sits outside the ask. Confirm what the capital actually covers.'}</p>`
+        : !m.scope
+        ? `<p class="note" style="margin-top:12px">${esc(BENCH.datacenter.note)}</p>` : ''}
     </div>`;
   }
 
@@ -2754,9 +3030,12 @@ function drawerBody(d) {
       <h4>Deal terms</h4>
       <div class="kv-list">
         <div class="kv"><span class="k">Capital ask</span><span class="v mono">${unsized(d) && !(d.ask > 0) ? '—' : usd(d.ask)}</span></div>
-        <div class="kv"><span class="k">All-in cost</span><span class="v mono">${unsized(d) ? '—' : `$${d.ppw.toFixed(2)}/W <span style="font-weight:400;color:var(--cs-muted-2)">· ${esc(BENCH[d.tech].basis || 'nameplate')} · median $${BENCH[d.tech].median.toFixed(2)}</span>`}</span></div>
+        <div class="kv"><span class="k">All-in cost</span><span class="v mono">${unsized(d) ? '—' : `$${d.ppw.toFixed(2)}/W <span style="font-weight:400;color:var(--cs-muted-2)">· ${esc(BENCH[d.tech].basis || 'nameplate')}${
+          BENCH[d.tech].indicative ? ', no national median' : ' · median $' + BENCH[d.tech].median.toFixed(2)}</span>`}</span></div>
         ${(() => { const m = assetMetrics(d); return m && m.kind === 'datacenter' && m.ppwIt
-          ? `<div class="kv"><span class="k">Cost per IT watt</span><span class="v mono">$${m.ppwIt.toFixed(2)}/W <span style="font-weight:400;color:var(--cs-muted-2)">· median $${BENCH.datacenter.itMedian.toFixed(2)}</span></span></div>`
+          ? `<div class="kv"><span class="k">Cost per IT watt</span><span class="v mono">$${m.ppwIt.toFixed(2)}/W <span style="font-weight:400;color:var(--cs-muted-2)">· ${
+              m.scope ? esc(m.scope.toLowerCase()) + ' median $' + m.itBench.toFixed(2)
+                      : 'blended median $' + m.itBench.toFixed(2) + ', no scope stated'}</span></span></div>`
           : m && m.kind === 'ev' && m.perDcPort
           ? `<div class="kv"><span class="k">Cost per DC port</span><span class="v mono">${usdC(m.perDcPort)} <span style="font-weight:400;color:var(--cs-muted-2)">· median ${usdC(EV_BENCH.perDcPort)}</span></span></div>`
           : ''; })()}
@@ -2806,6 +3085,28 @@ function drawerBody(d) {
     const am = assetMetrics(d);
     const L = techLabels(d.tech);
     const cf = d.cf || .24;
+    /* Powered land neither generates nor consumes — it hosts. Showing it an
+       annual MWh figure would invent an operating profile for an asset that
+       has no operator yet. */
+    if ((TECH_BY_ID[d.tech] || {}).side === 'site') {
+      const a = d.assetSpec || {};
+      return `
+      <div class="sec">
+        <h4>Deliverable capacity</h4>
+        <div class="kv-list">
+          <div class="kv"><span class="k">Studied headroom</span><span class="v mono">${
+            am && am.headroomMw ? num(am.headroomMw, 1) + ' MW'
+              : (d.mw > 0 ? num(d.mw) + ' MW' : '<span class="p-unsized">Not studied</span>')}</span></div>
+          ${am && am.upgradeMw ? `<div class="kv"><span class="k">After network upgrades</span><span class="v mono">${num(am.upgradeMw, 0)} MW</span></div>` : ''}
+          ${am && am.onsiteGenMw ? `<div class="kv"><span class="k">On-site generation permitted</span><span class="v mono">${num(am.onsiteGenMw, 0)} MW</span></div>` : ''}
+          ${am && am.gasMw ? `<div class="kv"><span class="k">Gas lateral, as generation</span><span class="v mono">~${num(am.gasMw, 0)} MW</span></div>` : ''}
+          <div class="kv"><span class="k">ISO / RTO</span><span class="v">${esc(a.iso || '—')}</span></div>
+          <div class="kv"><span class="k">Interconnection</span><span class="v">${esc(d.interconnect)}</span></div>
+        </div>
+        <p class="note" style="margin-top:12px">This site has no operating profile — there is no generation to forecast and no load to meter.
+          What it sells is capacity and a date, and both are on the overview tab.</p>
+      </div>`;
+    }
     /* A generator's annual number is output; a data centre's is consumption and
        a charging hub's is throughput. Labelling all three "expected output" is
        how a load-side asset ends up modelled as if it sold power to the grid. */
@@ -2995,16 +3296,18 @@ function exportDataCenters(list) {
   const sub = list.filter(d => d.tech === 'datacenter');
   if (!sub.length) return toast('No data center projects in the current selection.', true);
   const rows = [['Deal ID','Name','State','City','Sponsor','Stage','Development stage','Capital ask (USD)',
-    'Critical IT load (MW)','Phase 1 IT load (MW)','Design PUE','Facility load (MW)','Rack density (kW)','Racks',
-    '$/W of IT load','Redundancy','Cooling','Cooling water','Power configuration','Shell / land',
+    'Critical IT load (MW)','Phase 1 IT load (MW)','Delivery scope','Design PUE','Facility load (MW)','Rack density (kW)','Racks',
+    '$/W of IT load','Scope median $/W','Variance vs scope median (%)','Redundancy','Cooling','Cooling water','Power configuration','Shell / land',
     'Anchor tenant','Tenant credit','Pre-leased at COD (%)','Contracted kW','Contracted term (yrs)',
     'Colo rate ($/kW-mo)','Contracted revenue (USD/yr)','Revenue at full lease-up (USD/yr)','Contract value (USD)',
     'Annual consumption (MWh)','UPS storage (MWh)','Power cost ($/kWh)','Interconnection','Permits','Site control','Target COD']];
   sub.forEach(d => {
     const m = assetMetrics(d) || {}, a = d.assetSpec || {};
     rows.push([d.ref, d.name, d.state, d.city, d.developer, d.stage, d.devStage, d.ask,
-      m.itLoadMw || '', m.phase1Mw || '', m.pue || '', m.facilityMw ? m.facilityMw.toFixed(2) : '',
+      m.itLoadMw || '', m.phase1Mw || '', a.scope || '', m.pue || '', m.facilityMw ? m.facilityMw.toFixed(2) : '',
       a.rackKw || '', m.racks || '', m.ppwIt ? m.ppwIt.toFixed(2) : '',
+      m.scope ? m.itBench.toFixed(2) : '',
+      m.ppwVsScope == null ? '' : (m.ppwVsScope * 100).toFixed(1),
       a.tier || '', a.cooling || '', a.waterSource || '', a.onsiteGen || '', a.shellOwned || '',
       a.anchor || '', a.credit || '', m.preLeased == null ? '' : m.preLeased,
       m.contractedKw ? Math.round(m.contractedKw) : '', m.leaseYears || '', a.coloRate || '',
@@ -3014,6 +3317,42 @@ function exportDataCenters(list) {
       d.interconnect, d.permits, d.siteControl, d.cod]);
   });
   downloadCSV(`omega-data-center-projects-${stamp()}.csv`, rows);
+}
+
+function exportLand(list) {
+  const sub = list.filter(d => d.tech === 'land');
+  if (!sub.length) return toast('No powered land sites in the current selection.', true);
+  const rows = [['Deal ID','Name','State','County / city','Sponsor','Stage','Development stage','Capital ask (USD)',
+    'Gross acres','Net usable acres','Usable %','Expansion acres','Jurisdiction','Zoning / attainment','Rail','Highway',
+    'POI / substation','Transmission owner','ISO / RTO','POI kV','Studied headroom (MW)','Study scenario','Base case year',
+    'Pre-existing issues','Queue position','Interconnection date','Capacity after upgrades (MW)','Incremental MW',
+    'Upgrade cost ($MM)','Upgrade $/MW','On-site generation (MW)',
+    'Gas operator','Line diameter (in)','Distance to tap (mi)','Gas capacity (MMBtu/d)','Gas as generation (MW)',
+    'Heat rate (Btu/kWh)','Heat rate assumed','Transport cost ($/MMBtu)','Lateral in service',
+    'Fiber provider','Distance to fiber (mi)','Water source','Flow (GPM)','Flow (gal/day)','Sewer',
+    '$/gross acre','$/usable acre','$/deliverable MW','$/W of capacity','MW per usable acre',
+    'ALTA survey','Title','Phase I ESA','Geotech','Incentives','Offtake','Site control','Target COD']];
+  sub.forEach(d => {
+    const m = assetMetrics(d) || {}, a = d.assetSpec || {};
+    rows.push([d.ref, d.name, d.state, d.city, d.developer, d.stage, d.devStage, d.ask,
+      m.grossAcres || '', m.netAcres || '', m.usablePct ? (m.usablePct * 100).toFixed(1) : '', m.expansionAcres || '',
+      a.jurisdiction || '', a.zoning || '', a.railAccess || '', a.highway || '',
+      a.poiName || '', a.poiUtility || '', a.iso || '', m.poiKv || '', m.headroomMw || '',
+      a.scenario || '', a.studyYear || '', m.preIssues == null ? '' : m.preIssues,
+      a.queuePos || '', a.energizeBy || '', m.upgradeMw || '', m.incrementalMw || '',
+      m.upgradeCost || '', m.upgradePerMw ? Math.round(m.upgradePerMw) : '', m.onsiteGenMw || '',
+      a.gasOperator || '', m.gasDiameter || '', m.gasDistance || '', m.gasMmbtu || '',
+      m.gasMw ? Math.round(m.gasMw) : '', m.heatRate || '', m.heatRateAssumed ? 'assumed' : 'stated',
+      a.gasCost || '', a.gasInService || '',
+      a.fiberProvider || '', m.fiberDistance || '', a.waterSource || '', m.waterGpm || '',
+      m.waterGpd ? Math.round(m.waterGpd) : '', a.sewer || '',
+      m.perAcre ? Math.round(m.perAcre) : '', m.perNetAcre ? Math.round(m.perNetAcre) : '',
+      m.perMw ? Math.round(m.perMw) : '', m.ppwCapacity ? m.ppwCapacity.toFixed(3) : '',
+      m.mwPerAcre ? m.mwPerAcre.toFixed(3) : '',
+      a.survey || '', a.title || '', a.environmental || '', a.geotech || '', a.incentives || '',
+      d.offtake, d.siteControl, d.cod]);
+  });
+  downloadCSV(`omega-powered-land-sites-${stamp()}.csv`, rows);
 }
 
 function exportCharging(list) {
@@ -3286,27 +3625,45 @@ function syncTech(preset) {
   if (!fields) { box.innerHTML = ''; return; }
 
   const v = k => { const x = assetDraft[k]; return x == null ? '' : esc(String(x)); };
-  const isDC = tech === 'datacenter';
-  const rows = [];
-  for (let i = 0; i < fields.length; i += 2) rows.push(fields.slice(i, i + 2));
+  const heading = tech === 'datacenter' ? 'Data center detail'
+                : tech === 'ev' ? 'Charging hub detail' : 'Site detail';
+  const blurb = tech === 'datacenter'
+    ? 'A data center is underwritten on critical IT load and tenant credit, not on incoming service. Leave anything undetermined blank — a lender reads a blank as "not yet known" and a zero as a claim.'
+    : tech === 'ev'
+    ? 'A charging hub is underwritten on ports and utilisation. The utilisation figure is the one every capital partner will push back on, so enter what the pro forma actually assumes.'
+    : 'Powered land is bought for deliverable megawatts and a date. Everything below comes off a site binder — fill in what the binder states and leave the rest blank rather than estimating it.';
 
-  box.innerHTML = `
-    <div class="form-rule"></div>
-    <h4 style="font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--cs-muted-2);margin-bottom:5px">
-      ${isDC ? 'Data center detail' : 'Charging hub detail'}</h4>
-    <p class="field-note" style="margin:0 0 12px">${isDC
-      ? 'A data center is underwritten on critical IT load and tenant credit, not on incoming service. Leave anything undetermined blank — a lender reads a blank as "not yet known" and a zero as a claim.'
-      : 'A charging hub is underwritten on ports and utilisation. The utilisation figure is the one every capital partner will push back on, so enter what the pro forma actually assumes.'}</p>
-    ${rows.map(pair => `<div class="field-row${pair.length === 1 ? '' : ''}">${pair.map(f => `
+  /* Fields carry an optional group so a 38-field site binder reads as sections
+     rather than one undifferentiated wall of inputs. */
+  const groups = [];
+  fields.forEach(f => {
+    const g = f.g || '';
+    let bucket = groups.filter(x => x.name === g)[0];
+    if (!bucket) { bucket = {name:g, items:[]}; groups.push(bucket); }
+    bucket.items.push(f);
+  });
+
+  const fieldHtml = f => `
       <div class="field">
-        <label for="as_${f.k}">${f.l}${f.req ? '' : ''}</label>
+        <label for="as_${f.k}">${f.l}</label>
         ${f.t === 'select'
           ? `<select id="as_${f.k}" data-asset="${f.k}">${f.o.map(o =>
               `<option${assetDraft[f.k] === o ? ' selected' : ''}>${esc(o)}</option>`).join('')}</select>`
           : `<input id="as_${f.k}" data-asset="${f.k}" type="${f.t}"${f.step ? ` step="${f.step}"` : ''}${
               f.t === 'number' ? ' min="0"' : ''} placeholder="${esc(f.ph || '')}" value="${v(f.k)}">`}
         ${f.hint ? `<p class="field-note" style="margin:5px 0 0">${f.hint}</p>` : ''}
-      </div>`).join('')}</div>`).join('')}
+      </div>`;
+
+  box.innerHTML = `
+    <div class="form-rule"></div>
+    <h4 style="font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--cs-muted-2);margin-bottom:5px">${heading}</h4>
+    <p class="field-note" style="margin:0 0 12px">${blurb}</p>
+    ${groups.map(g => {
+      const rows = [];
+      for (let i = 0; i < g.items.length; i += 2) rows.push(g.items.slice(i, i + 2));
+      return (g.name ? `<h4 style="font-size:10px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--cs-muted-2);margin:14px 0 8px;opacity:.85">${esc(g.name)}</h4>` : '')
+        + rows.map(pair => `<div class="field-row">${pair.map(fieldHtml).join('')}</div>`).join('');
+    }).join('')}
     <div id="assetDerived"></div>`;
 
   box.addEventListener('input', renderAssetDerived);
@@ -3350,12 +3707,17 @@ function renderAssetDerived() {
      <div style="font-family:Syne;font-size:15px;font-weight:700;margin-top:2px">${v}</div></div>`;
 
   let cells = '';
-  if (m.kind === 'datacenter') {
+  if (m.kind === 'land') {
+    cells = cell('Per acre', m.perAcre ? usdC(m.perAcre) : null)
+          + cell('Per MW deliverable', m.perMw ? usdC(m.perMw) : null)
+          + cell('Gas equivalent', m.gasMw ? num(m.gasMw, 0) + ' MW' : null)
+          + cell('Density', m.mwPerAcre ? num(m.mwPerAcre, 2) + ' MW/ac' : null);
+  } else if (m.kind === 'datacenter') {
     cells = cell('Facility load', m.facilityMw ? num(m.facilityMw, 2) + ' MW' : null)
           + cell('Racks at density', m.racks ? m.racks.toLocaleString() : null)
-          + cell('$/W of IT load', m.ppwIt ? '$' + m.ppwIt.toFixed(2) : null)
+          + cell('$/W of IT load', m.ppwIt ? '$' + m.ppwIt.toFixed(2) + (m.scope ? ' vs $' + m.itBench.toFixed(2) : '') : null)
           + cell('Contracted colo', m.annualColo ? usdC(m.annualColo) + '/yr' : null);
-  } else {
+  } else if (m.kind === 'ev') {
     cells = cell('Connected capacity', m.connectedKw ? num(m.connectedKw, 0) + ' kW' : null)
           + cell('$/DC port', m.perDcPort ? usdC(m.perDcPort) : null)
           + cell('Annual dispensed', m.annualKwh ? num(m.annualKwh / 1000, 0) + ' MWh' : null)
@@ -3460,6 +3822,8 @@ async function saveDeal(asDraft) {
       mw = +(derived.itLoadMw * assetSpec.pue).toFixed(3);
     else if (derived && derived.kind === 'ev' && derived.connectedKw)
       mw = +(derived.connectedKw / 1000).toFixed(3);
+    else if (derived && derived.kind === 'land' && derived.headroomMw)
+      mw = +derived.headroomMw.toFixed(3);
     if (mw > 0 && $('#nfMw')) $('#nfMw').value = mw;
   }
 
@@ -4871,6 +5235,7 @@ document.addEventListener('click', e => {
     case 'export-energy':   exportEnergy(list); break;
     case 'export-datacenters': exportDataCenters(list); break;
     case 'export-charging': exportCharging(list); break;
+    case 'export-land':     exportLand(list); break;
     case 'export-bills':    exportBills(list); break;
     case 'export-equity':   exportEquity(list); break;
     case 'export-states':   exportStates(list); break;
