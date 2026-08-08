@@ -5613,6 +5613,10 @@ const periodLabel = p => {
 let ORG = null;              // my organisation's entitlement document
 let ORGS = [];               // administrators: every organisation
 let orgsErr = null;
+/* Emptiness is not the same question as "has this been fetched". Six
+   organisations with no entitlement document yet is a legitimate empty list,
+   and treating it as "not loaded" re-entered the fetch on every paint. */
+let orgsLoaded = false;
 let UNLOCKS = {};            // dealId -> unlock record, for my organisation
 let WATCH = new Set();       // deal ids on my watchlist
 let entUnsubs = [];
@@ -5915,8 +5919,11 @@ function lockedPanel(d) {
 /* ═══════════════════════════════════════════════════════════════════════════
    12d. ORGANISATIONS — administrator view: tiers, allowances, KPIs
    ═══════════════════════════════════════════════════════════════════════════ */
+let orgsLoading = false;
 async function loadOrgs() {
   if (!FB.ready || !isPlatformAdmin()) return;
+  if (orgsLoading) return;
+  orgsLoading = true;
   try {
     const snap = await FB.db.collection('fin_orgs').get();
     ORGS = snap.docs.map(d => Object.assign({orgKey:d.id}, d.data()));
@@ -5926,6 +5933,8 @@ async function loadOrgs() {
     orgsErr = explain(e)[0];
     ORGS = [];
   }
+  orgsLoaded = true;
+  orgsLoading = false;
   render();
 }
 
@@ -6029,15 +6038,25 @@ const capacity = mw => mw == null ? '\u2014'
 
 function orgsView() {
   if (orgsErr) return `<div class="empty"><h3>Organisations could not be loaded</h3><p>${esc(orgsErr)}</p></div>`;
-  if (!PEOPLE.length) return `<div class="empty"><p>Loading organisations\u2026</p></div>`;
+  if (!peopleLoaded || !orgsLoaded) return `<div class="empty"><p>Loading organisations\u2026</p></div>`;
+  if (!PEOPLE.length) return `<div class="empty">
+    <h3>No accounts yet</h3>
+    <p>Organisations appear here as soon as somebody signs up. Tiers can be set the moment they do.</p></div>`;
   const rows = orgKpis();
   const partners = rows.filter(r => r.partner);
   const totalUnlocks = sum(rows.map(r => r.used));
+  /* A deal filed before orgKey existed belongs to no organisation, so it drops
+     out of this rollup entirely. Showing 10 against a header that says 11 and
+     explaining neither is how a number quietly stops being trusted. */
+  const attributed = sum(rows.map(r => r.n));
+  const orphans = allDeals().filter(d => !d.orgKey).length;
 
   return `
   <div class="kpi-strip">
     ${kpi('Organizations', rows.length, '', `${plural(partners.length, 'capital partner')} \u00b7 ${rows.filter(r => r.sponsor).length} sponsors`, '')}
-    ${kpi('Deals on platform', sum(rows.map(r => r.n)), '', `${sum(rows.map(r => r.closed))} closed`, '')}
+    ${kpi('Deals on platform', attributed, '', orphans
+      ? `${sum(rows.map(r => r.closed))} closed \u00b7 ${plural(orphans, 'deal')} unattributed`
+      : `${sum(rows.map(r => r.closed))} closed`, '')}
     ${kpi('Unlocks this month', totalUnlocks, '', periodLabel(periodKey()), '')}
     ${kpi('Capacity filed', capacity(sum(rows.map(r => r.mw))), '', `${usdC(sum(rows.map(r => r.ask)))} sought`, '')}
   </div>
@@ -6079,7 +6098,9 @@ function orgsView() {
     <button class="btn btn-ghost btn-sm" data-act="export-orgs">Export organization KPIs</button>
     <button class="btn btn-ghost btn-sm" data-act="export-unlocks">Export unlock log</button>
   </div>
-  <p class="note" style="margin-top:12px">Average size is measured across deals that have a nameplate; deals filed without one are left out rather than counted as zero. Hover a category chip for its own averages.</p>`;
+  <p class="note" style="margin-top:12px">Average size is measured across deals that have a nameplate; deals filed without one are left out rather than counted as zero. Hover a category chip for its own averages.${orphans
+    ? ` <b>${plural(orphans, 'deal')}</b> ${orphans === 1 ? 'carries' : 'carry'} no organisation key \u2014 filed before organisations existed, or by an account with no <code>orgKey</code> \u2014 so ${orphans === 1 ? 'it is' : 'they are'} not counted in any row above. Opening and re-saving ${orphans === 1 ? 'it' : 'them'} stamps the key.`
+    : ''}</p>`;
 }
 
 function exportOrgs() {
@@ -6190,13 +6211,13 @@ function render() {
   const view = $('#view');
   if (S.tab === 'orgs') {
     view.innerHTML = orgsView();
-    if (!PEOPLE.length && !peopleErr) loadPeople();
-    if (!ORGS.length && !orgsErr) loadOrgs();
+    if (!peopleLoaded) loadPeople();
+    if (!orgsLoaded)   loadOrgs();
     return;
   }
   if (S.tab === 'people') {
     view.innerHTML = peopleView();
-    if (!PEOPLE.length && !peopleErr) loadPeople();
+    if (!peopleLoaded) loadPeople();
     return;
   }
   if (isDev && !myBook().length) {
@@ -6261,7 +6282,7 @@ document.addEventListener('click', e => {
       mapSel = null; clearFilters();
       toast('Sample data cleared. Your workspace is now empty.');
       break;
-    case 'refresh':    watchDeals(); toast('Refreshed.'); break;
+    case 'refresh':    orgsLoaded = peopleLoaded = false; watchDeals(); toast('Refreshed.'); break;
     case 'diagnostics': diagnosticsModal(); break;
     case 'copy-diag':  navigator.clipboard && navigator.clipboard.writeText(window.__diag || '')
                          .then(() => toast('Diagnostics copied.'), () => toast('Could not copy.', true)); break;
@@ -6810,9 +6831,13 @@ function watchMyProfile() {
 
 let PEOPLE = [];
 let peopleErr = null;
+let peopleLoaded = false;
+let peopleLoading = false;
 
 async function loadPeople() {
   if (!FB.ready || !isPlatformAdmin()) return;
+  if (peopleLoading) return;
+  peopleLoading = true;
   try {
     const snap = await FB.db.collection('fin_profiles').get();
     PEOPLE = snap.docs.map(d => Object.assign({uid: d.id}, d.data()));
@@ -6822,6 +6847,8 @@ async function loadPeople() {
     peopleErr = explain(e)[0];
     PEOPLE = [];
   }
+  peopleLoaded = true;
+  peopleLoading = false;
   render();
 }
 
