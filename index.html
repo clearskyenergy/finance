@@ -1466,13 +1466,40 @@ ASSET_FIELDS.datacenter = ASSET_FIELDS.datacenter
   .concat(SITE_BASICS, DC_SITE_POWER, QUALIFY_BLOCKS);
 
 /* ── The buy box ────────────────────────────────────────────────────────────
-   Twelve tests, drawn from what acquisition teams actually qualify on. Each
-   returns pass, fail, or unknown, and unknown is never counted as either — a
-   site with eight passes and four blanks is a site with four questions
-   outstanding, not a site that scored 8/12. Reporting it that way is the whole
-   point: it tells the originator exactly which four calls to make. */
-const TARGET_STATES = ['FL','GA','SC','NC','CT','VA','MD','NY','NJ','PA','TN','AL','TX'];
-const PRIORITY_CORRIDORS = ['I-4','I-75','I-95'];
+   Ten tests on whether a site is *developable*. Each returns pass, fail, or
+   unknown, and unknown is never counted as either — a site with six passes and
+   four blanks has four questions outstanding, not a score of 6/10. Reporting
+   it that way is the whole point: it tells the originator which four calls to
+   make.
+
+   WHAT IS DELIBERATELY NOT SCORED: where the site is. An earlier draft tested
+   the state against a target list and the corridor against I-4 / I-75 / I-95,
+   which is one buyer's footprint rather than a fact about the land. A 900-acre
+   by-right site with 300 MW in hand does not become a worse site because the
+   buyer looking at it this week works the southeast. Geography is still
+   captured — state, corridor, interstate, port, intermodal, airport, metro,
+   latency all remain fields, and all remain filterable — it just does not move
+   the score. Every buyer draws their own map; nobody disagrees about whether a
+   site can be built on.
+
+   Interstate distance is the one geography field still scored, and only as
+   logistics: how far a truck has to travel to reach the highway is a property
+   of the parcel. Which highway it is, is not.
+
+   THE THRESHOLDS LIVE HERE, in one block, so they can be tuned without going
+   near the scoring logic. They are sensible industrial and compute defaults,
+   not anybody's mandate. If a buyer's box genuinely differs, change the number
+   here rather than adding a second scorer. */
+const BUY_BOX = {
+  acresMin:      15,        // usable acres a ground-up program needs at minimum
+  buildingSf:    200000,    // single building, or total across phases
+  interstateMi:  3,         // to the interchange, not the right of way
+  fiberMi:       5,         // where fiber distance is given rather than a status
+  dcPowerMw:     50         // a data centre below this is not a data centre deal
+};
+/* Time to power is not here on purpose: it is scored against POWER_TIMING's
+   own options rather than a number, so the option list stays the single place
+   that decides what the choices are. */
 
 function buyBox(d) {
   if (!d || ['land','datacenter'].indexOf(d.tech) === -1) return null;
@@ -1485,44 +1512,34 @@ function buyBox(d) {
   const add = (key, label, state, detail, weight) =>
     checks.push({key, label, state, detail, weight: weight || 1});
 
-  /* 1. Geography */
-  add('state', 'Target state',
-      TARGET_STATES.indexOf(d.state) > -1 ? true : false,
-      TARGET_STATES.indexOf(d.state) > -1
-        ? STATE_NAME[d.state] + ' is on the target list.'
-        : STATE_NAME[d.state] + ' sits outside the stated footprint. Not fatal, but it needs a reason.');
-
-  /* 2. Corridor */
-  const corr = t('corridor');
-  add('corridor', 'Priority corridor',
-      corr == null ? null : PRIORITY_CORRIDORS.indexOf(corr) > -1 ? true : false,
-      corr == null ? 'No corridor stated.'
-        : PRIORITY_CORRIDORS.indexOf(corr) > -1 ? corr + ' \u2014 a priority corridor.'
-        : corr + '. Outside I-4, I-75 and I-95, so the location has to carry itself.');
-
-  /* 3. Interstate access */
+  /* 1. Interstate access — logistics, not preference. Which interstate it is
+     does not enter the score; how far the trucks drive does. */
   const im = n('interstateMi');
-  add('interstate', 'Within 3 miles of an interstate',
-      im == null ? null : im <= 3,
+  add('interstate', 'Within ' + BUY_BOX.interstateMi + ' miles of an interstate',
+      im == null ? null : im <= BUY_BOX.interstateMi,
       im == null ? 'Distance to the interstate not stated.'
-        : num(im, 1) + ' mi to ' + (t('interstate') || 'the nearest interstate') + '.');
+        : num(im, 1) + ' mi to ' + (t('interstate') || 'the nearest interstate')
+          + (t('corridor') && t('corridor') != 'Not on a target corridor' ? ' \u00b7 ' + t('corridor') : ''));
 
-  /* 4. Acreage */
+  /* 2. Acreage */
   const acres = n('netAcres') || n('grossAcres');
   add('acres', 'Site large enough',
-      acres == null ? null : acres >= 15,
+      acres == null ? null : acres >= BUY_BOX.acresMin,
       acres == null ? 'Acreage not stated.'
-        : num(acres, 0) + ' usable acres' + (acres >= 200 ? ' \u2014 campus scale.' : acres >= 15 ? '.' : ' \u2014 below the 15-acre floor.'));
+        : num(acres, 0) + ' usable acres'
+          + (acres >= 200 ? ' \u2014 campus scale.'
+            : acres >= BUY_BOX.acresMin ? '.'
+            : ' \u2014 below the ' + BUY_BOX.acresMin + '-acre floor.'));
 
-  /* 5. Building program */
+  /* 3. Building program */
   const bsf = n('maxBuildingSf'), tsf = n('totalSf');
-  add('program', 'Building program clears 200,000 SF',
-      bsf == null && tsf == null ? null : (bsf || 0) >= 200000 || (tsf || 0) >= 200000,
+  add('program', 'Building program clears ' + num(BUY_BOX.buildingSf, 0) + ' SF',
+      bsf == null && tsf == null ? null : (bsf || 0) >= BUY_BOX.buildingSf || (tsf || 0) >= BUY_BOX.buildingSf,
       bsf == null && tsf == null ? 'No building program stated.'
         : (bsf ? num(bsf, 0) + ' SF single building' : 'single building not stated')
           + (tsf ? ' \u00b7 ' + num(tsf, 0) + ' SF at full build' : ''));
 
-  /* 6. Zoning */
+  /* 4. Zoning */
   const br = t('byRight'), ent = t('entitleStatus');
   const zoneOk = br === 'Yes' || /^Entitled/.test(ent || '');
   const zoneBad = br === 'No' && /path unclear|denied/.test(ent || '');
@@ -1532,37 +1549,37 @@ function buyBox(d) {
         : [ent, br ? 'by-right: ' + br : null].filter(Boolean).join(' \u00b7 '),
       2);
 
-  /* 7. Power */
+  /* 5. Power */
   const mw = n('availableMw') || n('headroomMw') || (isDC ? null : (d.mw > 0 ? d.mw : null));
-  add('power', isDC ? 'At least 50 MW available' : 'Deliverable power established',
-      mw == null ? null : (isDC ? mw >= 50 : mw > 0),
+  add('power', isDC ? 'At least ' + BUY_BOX.dcPowerMw + ' MW available' : 'Deliverable power established',
+      mw == null ? null : (isDC ? mw >= BUY_BOX.dcPowerMw : mw > 0),
       mw == null ? 'No power figure stated.'
         : num(mw, 1) + ' MW' + (t('powerEvidence') ? ' \u2014 ' + t('powerEvidence') : ''),
       2);
 
-  /* 8. Time to power */
+  /* 6. Time to power */
   const pt = t('powerTiming') || (t('energizeBy') ? 'stated' : null);
   add('timing', 'Time to power stated',
       pt == null ? null : !/Over 36|Not studied/.test(pt),
       pt == null ? 'No delivery date. This is the question that kills the most compute deals.'
         : (pt === 'stated' ? t('energizeBy') : pt));
 
-  /* 9. Fiber */
+  /* 7. Fiber */
   const fb = t('fiberStatus'), fd = n('fiberDistance');
   add('fiber', 'Fiber access',
       fb == null && fd == null ? null
-        : fb ? !/None identified|distance unconfirmed/.test(fb) : fd <= 5,
+        : fb ? !/None identified|distance unconfirmed/.test(fb) : fd <= BUY_BOX.fiberMi,
       fb || (fd != null ? num(fd, 2) + ' mi to fiber' : 'Fiber not addressed.'),
       isDC ? 2 : 1);
 
-  /* 10. Water and sewer */
+  /* 8. Water and sewer */
   const water = t('waterUtility') || t('waterSource') || n('waterGpm'), sewer = t('sewer');
   add('utilities', 'Water and sewer identified',
       water == null && sewer == null ? null : !!(water && sewer),
       [water ? 'water: ' + (t('waterUtility') || t('waterSource') || num(n('waterGpm'), 0) + ' GPM') : null,
        sewer ? 'sewer: ' + sewer : null].filter(Boolean).join(' \u00b7 ') || 'Neither stated.');
 
-  /* 11. AHJ */
+  /* 9. AHJ */
   const post = t('ahjPosture'), opp = t('opposition'), mor = t('moratorium');
   const ahjBad = post === 'Opposed' || opp === 'Active litigation' || mor === 'In effect';
   add('ahj', 'AHJ and political environment',
@@ -1571,7 +1588,7 @@ function buyBox(d) {
         .filter(Boolean).join(' \u00b7 ') || 'AHJ posture not stated.',
       2);
 
-  /* 12. Site control */
+  /* 10. Site control */
   const sc = d.siteControl || '';
   add('control', 'Site control',
       /^(None|—|$)/.test(sc) ? false : /Owner aware/.test(sc) ? false : true,
