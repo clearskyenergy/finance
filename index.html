@@ -553,6 +553,114 @@ code{font-family:var(--mono);font-size:11.5px;background:var(--cs-card-2);paddin
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
+   ENTITLEMENTS — sealed rows, the NDA panel, allowance meters, the buy box
+   ═══════════════════════════════════════════════════════════════════════════ */
+.lk-name{display:inline-flex;align-items:center;gap:5px;font-weight:700;color:var(--cs-muted)}
+.lk-name svg{opacity:.7}
+.lk-band{font-variant-numeric:tabular-nums;color:var(--cs-muted);font-weight:600}
+.lk-dot{color:var(--cs-muted-2);letter-spacing:2px;font-size:11px;user-select:none}
+.lk-tag{display:inline-block;padding:2px 7px;border-radius:20px;font-size:10px;font-weight:700;
+  letter-spacing:.04em;background:var(--cs-amber-dim);color:var(--cs-amber);margin-left:6px}
+.open-tag{display:inline-block;padding:2px 7px;border-radius:20px;font-size:10px;font-weight:700;
+  background:var(--cs-green-dim);color:var(--cs-green)}
+.watch-tag{color:var(--cs-amber);font-size:12px}
+
+/* the sealed drawer */
+.lock-hero{display:flex;gap:14px;align-items:flex-start;padding:18px;border-radius:12px;
+  background:var(--cs-card-2);border:1px solid var(--cs-border);margin-bottom:22px}
+.lock-ic{flex:0 0 40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;
+  background:var(--cs-amber-dim);color:var(--cs-amber)}
+.lock-hero h3{font-size:15px;margin:0 0 5px;color:var(--cs-ink)}
+.lock-hero p{font-size:12.5px;line-height:1.6;color:var(--cs-muted);margin:0}
+
+/* allowance meters */
+.tok-strip{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:12px 16px;margin-bottom:14px;
+  border-radius:10px;background:var(--cs-blue-dim);border:1px solid var(--cs-border-blue)}
+.tok-strip.out{background:var(--cs-amber-dim);border-color:rgba(199,122,0,.32)}
+.tok-strip .ts-l b{font-size:16px;font-weight:800;color:var(--cs-ink);display:block;line-height:1.2}
+.tok-strip .ts-l span{font-size:11px;color:var(--cs-muted)}
+.tok-strip .ts-r{font-size:11.5px;color:var(--cs-muted);flex:1 1 240px;text-align:right}
+.tok-meter{display:inline-block;vertical-align:middle;width:78px;height:6px;border-radius:4px;
+  background:rgba(14,26,36,.10);overflow:hidden}
+.tok-meter.wide{width:150px;height:7px}
+.tok-fill{height:100%;background:var(--cs-blue);border-radius:4px}
+.tok-fill.out{background:var(--cs-amber)}
+.tok-n{font-size:11px;color:var(--cs-muted);margin-left:7px;font-variant-numeric:tabular-nums}
+.tok-ov{width:74px;padding:5px 7px;font-size:12px;border:1px solid var(--cs-border);border-radius:7px;
+  background:var(--cs-card);color:var(--cs-ink);font-family:var(--mono);text-align:center}
+.tok-bar{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;
+  padding:14px 16px;border-radius:10px;background:var(--cs-blue-dim);border:1px solid var(--cs-border-blue)}
+.tok-bar.out{background:var(--cs-amber-dim);border-color:rgba(199,122,0,.32)}
+.tok-bar b{font-size:17px;font-weight:800;color:var(--cs-ink);display:block;line-height:1.2}
+.tok-bar span{font-size:11px;color:var(--cs-muted)}
+.cat-chip{display:inline-block;padding:2px 7px;border-radius:20px;font-size:10.5px;font-weight:600;
+  margin:0 4px 3px 0;white-space:nowrap}
+.org-sheet td{vertical-align:middle}
+
+/* the NDA panel */
+.nda-scroll{max-height:320px;overflow-y:auto;padding:16px 18px;border:1px solid var(--cs-border);
+  border-radius:10px;background:var(--cs-card-2);font-size:12.5px;line-height:1.65;color:var(--cs-ink);
+  scroll-behavior:smooth}
+.nda-scroll h5{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--cs-muted-2);margin:16px 0 6px}
+.nda-scroll h5:first-child{margin-top:0}
+.nda-scroll p{margin:0 0 9px;color:var(--cs-muted)}
+.nda-scroll b{color:var(--cs-ink)}
+.nda-accept{margin-top:14px;padding:14px 16px;border-radius:10px;border:1px dashed var(--cs-border);
+  opacity:.55;transition:opacity .18s ease,border-color .18s ease}
+.nda-accept.live{opacity:1;border-style:solid;border-color:var(--cs-border-blue);background:var(--cs-blue-dim)}
+.nda-cb{display:flex;gap:10px;align-items:flex-start;margin-bottom:11px;font-size:12.5px;
+  line-height:1.55;color:var(--cs-muted);cursor:pointer}
+.nda-cb input{margin-top:2px;width:15px;height:15px;flex:0 0 15px;accent-color:var(--cs-blue)}
+.nda-cb b{color:var(--cs-ink)}
+
+/* the buy box */
+.bb-head{display:flex;align-items:center;gap:16px;padding:14px 16px;border-radius:10px;
+  border:1px solid var(--cs-border);background:var(--cs-card-2);margin-bottom:14px}
+.bb-head.good{background:var(--cs-green-dim);border-color:rgba(18,128,92,.28)}
+.bb-head.fair{background:var(--cs-amber-dim);border-color:rgba(199,122,0,.28)}
+.bb-head.poor{background:var(--cs-red-dim);border-color:rgba(180,50,42,.26)}
+.bb-score{flex:0 0 auto;text-align:center;padding-right:16px;border-right:1px solid var(--cs-border)}
+.bb-score b{display:block;font-size:26px;font-weight:800;line-height:1;color:var(--cs-ink);
+  font-variant-numeric:tabular-nums}
+.bb-score span{font-size:10.5px;color:var(--cs-muted-2)}
+.bb-verdict strong{display:block;font-size:13.5px;color:var(--cs-ink);margin-bottom:3px}
+.bb-verdict span{font-size:11.5px;color:var(--cs-muted)}
+.bb-list{display:grid;gap:2px}
+.bb-row{display:flex;gap:10px;align-items:flex-start;padding:8px 10px;border-radius:8px}
+.bb-row:hover{background:var(--cs-card-2)}
+.bb-row b{display:block;font-size:12.5px;font-weight:650;color:var(--cs-ink);margin-bottom:1px}
+.bb-row span{font-size:11.5px;color:var(--cs-muted);line-height:1.5}
+.bb-row.un b{color:var(--cs-muted)}
+.bb-i{flex:0 0 18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-size:10px;font-weight:800;margin-top:1px}
+.bb-i.ok{background:var(--cs-green-dim);color:var(--cs-green)}
+.bb-i.no{background:var(--cs-red-dim);color:var(--cs-red)}
+.bb-i.un{background:rgba(14,26,36,.06);color:var(--cs-muted-2)}
+.bb-w{font-size:9.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--cs-muted-2)}
+.bb-live{display:flex;align-items:center;gap:16px;padding:12px 16px;border-radius:10px;margin:2px 0 12px;
+  border:1px solid var(--cs-border);background:var(--cs-card-2)}
+.bb-live.good{background:var(--cs-green-dim);border-color:rgba(18,128,92,.28)}
+.bb-live.fair{background:var(--cs-amber-dim);border-color:rgba(199,122,0,.28)}
+.bb-live.poor{background:var(--cs-red-dim);border-color:rgba(180,50,42,.26)}
+.bb-live-l{flex:0 0 auto;padding-right:15px;border-right:1px solid var(--cs-border);text-align:center}
+.bb-live-l b{display:block;font-size:19px;font-weight:800;line-height:1.1;color:var(--cs-ink);
+  font-variant-numeric:tabular-nums}
+.bb-live-l span{font-size:10px;color:var(--cs-muted-2)}
+.bb-live-r span{font-size:11.5px;color:var(--cs-muted)}
+.bbq-row{display:flex;gap:4px;margin-bottom:5px}
+.bbq{width:16px;height:6px;border-radius:3px;background:rgba(14,26,36,.10);cursor:help}
+.bbq.ok{background:var(--cs-green)}
+.bbq.no{background:var(--cs-red)}
+.bbq.un{background:rgba(14,26,36,.13)}
+
+@media (max-width:760px){
+  .tok-strip .ts-r{text-align:left}
+  .bb-head{flex-direction:column;align-items:flex-start;gap:10px}
+  .bb-score{border-right:none;padding-right:0;text-align:left;display:flex;align-items:baseline;gap:8px}
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
    STORAGE SIZER  —  stacked above the deal dialog (z-index 90 > modal's 70)
    so the half-filled Submit-a-deal form stays mounted underneath and the
    sponsor never loses what they typed.
@@ -1130,6 +1238,125 @@ const EV_PROGRAMS= ['Not determined','None — no program award','NEVI corridor 
                     'Utility make-ready program','Utility make-ready + rebate','LCFS / clean fuel credits',
                     'Multiple programs stacked'];
 
+/* ── Site qualification ─────────────────────────────────────────────────────
+   The blocks below are the buy box the acquisition teams actually screen on,
+   written as fields rather than prose so a deal can be filtered on them. They
+   are appended to the powered-land and data-centre forms, because those are
+   the two products a site is offered as. Nothing here is scored as a pass or a
+   fail on its own — a blank means "not yet known", which is a different answer
+   from "no", and the scorecard keeps the two apart. */
+const ENTITLE_STATUS = ['Not determined','Entitled and permitted','Entitled, not permitted',
+                        'Unentitled — clear path','Unentitled — path unclear','Entitlement denied previously'];
+const INTENDED_USE   = ['Not determined','Data center','Warehouse / industrial','Either — site suits both',
+                        'Mixed-use industrial park'];
+const AHJ_POSTURE    = ['Not determined','Actively recruiting','Supportive','Neutral','Cautious','Opposed'];
+const OPPOSITION     = ['Not determined','None known','Isolated objections','Organized opposition','Active litigation'];
+const MORATORIUM     = ['Not determined','None','Proposed','In effect','Recently lifted'];
+const CORRIDORS      = ['Not determined','I-4','I-75','I-95','I-85','I-10','I-20','I-35','I-45','I-91','I-40','I-65',
+                        'Other interstate','Not on a target corridor'];
+const POWER_TIMING   = ['Not determined','Energized today','Under 12 months','12–24 months','24–36 months',
+                        'Over 36 months','Not studied'];
+const FIBER_STATUS   = ['Not determined','On site','Confirmed within 1 mile','Confirmed within 5 miles',
+                        'Provider identified, distance unconfirmed','None identified'];
+
+/* Acreage and the building program. A warehouse buyer screens on square feet
+   and a data-centre buyer screens on megawatts, but both start from the same
+   question — how much usable dirt is there, and what fits on it. */
+const SITE_BASICS = [
+  {g:'Land', k:'grossAcres',     l:'Gross acres',              t:'number', step:'1', ph:'1046', req:true},
+  {g:'Land', k:'netAcres',       l:'Net usable acres',         t:'number', step:'1', ph:'833',
+   hint:'After wetlands, floodplain, easements and setbacks. The number a site plan can actually use.'},
+  {g:'Land', k:'expansionAcres', l:'Adjacent expansion acres', t:'number', step:'1', ph:'2215',
+   hint:'Contiguous land under option or available, not yet controlled.'},
+  {g:'Land', k:'jurisdiction',   l:'Jurisdiction / ETJ',       t:'text',   ph:'Ellis County — Red Oak ETJ'}
+];
+
+const BUILDING_PROGRAM = [
+  {g:'Building program', k:'intendedUse',  l:'Intended use',                t:'select', o:INTENDED_USE},
+  {g:'Building program', k:'maxBuildingSf',l:'Largest single building (SF)',t:'number', step:'1000', ph:'400000',
+   hint:'The buy box starts at 200,000 SF. State what one building can be, not the campus total.'},
+  {g:'Building program', k:'totalSf',      l:'Total program at full build (SF)', t:'number', step:'1000', ph:'1200000',
+   hint:'Across all phases. A million square feet is the figure most acquisition teams are working toward.'},
+  {g:'Building program', k:'phaseCount',   l:'Number of phases',            t:'number', step:'1', ph:'3'},
+  {g:'Building program', k:'clearHeight',  l:'Clear height achievable (ft)',t:'number', step:'1', ph:'40',
+   hint:'Warehouse only. Leave blank on a data-centre site.'},
+  {g:'Building program', k:'padReady',     l:'Pad ready',                   t:'select', o:YESNO},
+  {g:'Building program', k:'topography',   l:'Topography / fill required',  t:'text',   ph:'Flat, under 2% grade — no import fill expected'}
+];
+
+const ENTITLEMENT = [
+  {g:'Entitlement & zoning', k:'entitleStatus', l:'Entitlement status',      t:'select', o:ENTITLE_STATUS, req:true},
+  {g:'Entitlement & zoning', k:'byRight',       l:'By-right for intended use', t:'select', o:YESNO, req:true,
+   hint:'The first question a data-centre buyer asks. If it is not by-right, describe the path below rather than leaving it blank.'},
+  {g:'Entitlement & zoning', k:'zoningCode',    l:'Current zoning designation', t:'text', ph:'Unzoned county / M-2 heavy industrial'},
+  {g:'Entitlement & zoning', k:'entitleMonths', l:'Months to full entitlement', t:'number', step:'1', ph:'9',
+   hint:'From a signed contract to a permit in hand, on the AHJ\u2019s own stated timeline — not the optimistic one.'},
+  {g:'Entitlement & zoning', k:'annexation',    l:'Annexation required',     t:'select', o:YESNO},
+  {g:'Entitlement & zoning', k:'annexNote',     l:'Annexation detail',       t:'text',   ph:'City of Red Oak — roughly 90 days, base PD already adopted'},
+  {g:'Entitlement & zoning', k:'pdPrecedent',   l:'Adopted PD or overlay precedent', t:'select', o:YESNO,
+   hint:'A planned development other data centres have already been approved under is worth months of schedule.'},
+  {g:'Entitlement & zoning', k:'moratorium',    l:'Moratorium or restrictive ordinance', t:'select', o:MORATORIUM},
+  {g:'Entitlement & zoning', k:'airPermit',     l:'Air permitting posture',  t:'text',   ph:'Attainment zone; no Title V expected'}
+];
+
+const AHJ_POLITICS = [
+  {g:'AHJ & political', k:'ahjName',      l:'Authority having jurisdiction', t:'text', ph:'City of Red Oak / Ellis County', req:true},
+  {g:'AHJ & political', k:'ahjPosture',   l:'AHJ posture toward this use',   t:'select', o:AHJ_POSTURE, req:true,
+   hint:'Say what the record shows, not what you hope. A neutral AHJ with a clean precedent screens better than a supportive one with none.'},
+  {g:'AHJ & political', k:'ahjPrecedent', l:'Comparable projects approved',  t:'text',
+   ph:'Google, Compass, Diode, Databank annexed and approved 2024\u201326'},
+  {g:'AHJ & political', k:'ahjContact',   l:'Officials available to speak',  t:'select', o:YESNO,
+   hint:'Whether the seller can put a buyer on a call with planning staff before a contract. This moves deals.'},
+  {g:'AHJ & political', k:'permitWeeks',  l:'Typical permit cycle (weeks)',  t:'number', step:'1', ph:'12'},
+  {g:'AHJ & political', k:'opposition',   l:'Organized opposition',          t:'select', o:OPPOSITION},
+  {g:'AHJ & political', k:'electionRisk', l:'Council or commission turnover', t:'text',
+   ph:'Two seats up Nov 2026; current majority approved the last three DC cases'},
+  {g:'AHJ & political', k:'taxAbatement', l:'Abatement / incentive status',  t:'text',
+   ph:'County 10-yr abatement under discussion; state DC sales-tax exemption applies'},
+  {g:'AHJ & political', k:'taxingJur',    l:'Taxing jurisdictions',          t:'text', ph:'Ellis County, Red Oak ISD, City of Red Oak'},
+  {g:'AHJ & political', k:'communityNote',l:'Community and political context', t:'text',
+   hint:'One or two lines a capital partner would not find in a title report \u2014 who is for it, who is against it, and why.',
+   ph:'County judge has publicly backed compute investment; school district supports abatement'}
+];
+
+const CORRIDOR_LOGISTICS = [
+  {g:'Corridor & logistics', k:'corridor',    l:'Target corridor',            t:'select', o:CORRIDORS},
+  {g:'Corridor & logistics', k:'interstate',  l:'Nearest interstate',         t:'text',   ph:'I-45'},
+  {g:'Corridor & logistics', k:'interstateMi',l:'Distance to interstate (mi)',t:'number', step:'0.1', ph:'2.0', req:true,
+   hint:'The buy box is three miles. Measure to the interchange, not to the right of way.'},
+  {g:'Corridor & logistics', k:'portName',    l:'Nearest port or intermodal', t:'text',   ph:'Port of Savannah / BNSF Alliance'},
+  {g:'Corridor & logistics', k:'portMi',      l:'Distance to port / intermodal (mi)', t:'number', step:'1', ph:'34'},
+  {g:'Corridor & logistics', k:'airportMi',   l:'Distance to commercial airport (mi)', t:'number', step:'1', ph:'28'},
+  {g:'Corridor & logistics', k:'metroMi',     l:'Distance to metro core (mi)', t:'number', step:'1', ph:'22'},
+  {g:'Corridor & logistics', k:'latencyMs',   l:'Latency to primary market (ms)', t:'number', step:'0.1', ph:'6',
+   hint:'Data centre only. Name the market in the notes if it is not the obvious one.'}
+];
+
+/* A data centre form has no interconnection block of its own — the powered-land
+   form carries one, but a compute deal filed against a shell needs the same
+   three answers: how many megawatts, when, and over what fiber. */
+const DC_SITE_POWER = [
+  {g:'Power to site', k:'utilityName',   l:'Serving utility',              t:'text',   ph:'Oncor / Entergy Texas'},
+  {g:'Power to site', k:'iso',           l:'ISO / RTO',                    t:'select', o:ISO_RTOS},
+  {g:'Power to site', k:'availableMw',   l:'Power available to site (MW)', t:'number', step:'1', ph:'150', req:true,
+   hint:'The buy box floor is 50 MW. Enter what a utility or a study will stand behind, not the campus ambition.'},
+  {g:'Power to site', k:'powerTiming',   l:'Time to power',                t:'select', o:POWER_TIMING, req:true},
+  {g:'Power to site', k:'powerEvidence', l:'Basis for the power figure',   t:'text',
+   ph:'Capacity study J4104_POI, 705.9 MW headroom, ERIS withdrawal summer peak'},
+  {g:'Power to site', k:'substationMi',  l:'Distance to substation (mi)',  t:'number', step:'0.1', ph:'0.5'},
+  {g:'Power to site', k:'poiKv',         l:'Service voltage (kV)',         t:'number', step:'1', ph:'345'},
+  {g:'Power to site', k:'onsiteGenMw',   l:'On-site generation permitted (MW)', t:'number', step:'1', ph:'300'},
+  {g:'Power to site', k:'gasOnSite',     l:'Interstate gas on or adjacent', t:'select', o:YESNO,
+   hint:'A pipeline under the site is what turns a five-year grid wait into an eighteen-month microgrid.'},
+  {g:'Power to site', k:'gasDetail',     l:'Gas detail',                   t:'text',   ph:'Three Enbridge interstate lines crossing site; Algonquin compressor adjacent'},
+  {g:'Power to site', k:'fiberStatus',   l:'Fiber',                        t:'select', o:FIBER_STATUS, req:true},
+  {g:'Power to site', k:'fiberCarriers', l:'Carriers confirmed',           t:'text',   ph:'Lumen, Zayo, Frontier, Windstream \u2014 10+ within 10 mi'},
+  {g:'Power to site', k:'waterUtility',  l:'Water provider / CCN',         t:'text',   ph:'Rockett Water CCN, 12in main at NWQ',
+   hint:'The supply to the site. Cooling water — closed loop or otherwise — is answered under compute and tenancy above.'},
+  {g:'Power to site', k:'waterGpm',      l:'Available flow (GPM)',         t:'number', step:'10', ph:'2000'},
+  {g:'Power to site', k:'sewer',         l:'Sewer / effluent',             t:'text',   ph:'Municipal, or on-site septic'}
+];
+
 const ASSET_FIELDS = {
   /* ── Powered land ────────────────────────────────────────────────────────
      Modelled on what actually appears in a site binder: acreage, a studied
@@ -1227,6 +1454,176 @@ const ASSET_FIELDS = {
   ]
 };
 const assetFields = tech => ASSET_FIELDS[tech] || null;
+
+/* Powered land already carries acreage, interconnection, gas, fiber and water.
+   A data-centre deal filed against a site does not, so it gets the site blocks
+   too. Both then get the qualification blocks, which is what makes a deal
+   screenable against a buy box rather than only readable. */
+const QUALIFY_BLOCKS = [].concat(BUILDING_PROGRAM, ENTITLEMENT, AHJ_POLITICS, CORRIDOR_LOGISTICS);
+ASSET_FIELDS.land = ASSET_FIELDS.land.concat(QUALIFY_BLOCKS);
+ASSET_FIELDS.datacenter = ASSET_FIELDS.datacenter
+  .map(f => f.g ? f : Object.assign({g:'Compute & tenancy'}, f))
+  .concat(SITE_BASICS, DC_SITE_POWER, QUALIFY_BLOCKS);
+
+/* ── The buy box ────────────────────────────────────────────────────────────
+   Twelve tests, drawn from what acquisition teams actually qualify on. Each
+   returns pass, fail, or unknown, and unknown is never counted as either — a
+   site with eight passes and four blanks is a site with four questions
+   outstanding, not a site that scored 8/12. Reporting it that way is the whole
+   point: it tells the originator exactly which four calls to make. */
+const TARGET_STATES = ['FL','GA','SC','NC','CT','VA','MD','NY','NJ','PA','TN','AL','TX'];
+const PRIORITY_CORRIDORS = ['I-4','I-75','I-95'];
+
+function buyBox(d) {
+  if (!d || ['land','datacenter'].indexOf(d.tech) === -1) return null;
+  const a = d.assetSpec || {};
+  const n = k => { const v = Number(a[k]); return isFinite(v) && v > 0 ? v : null; };
+  const t = k => { const v = a[k]; return v == null || v === '' ? null : String(v); };
+  const isDC = d.tech === 'datacenter';
+  const checks = [];
+  /* state: true = meets it, false = does not, null = not yet stated */
+  const add = (key, label, state, detail, weight) =>
+    checks.push({key, label, state, detail, weight: weight || 1});
+
+  /* 1. Geography */
+  add('state', 'Target state',
+      TARGET_STATES.indexOf(d.state) > -1 ? true : false,
+      TARGET_STATES.indexOf(d.state) > -1
+        ? STATE_NAME[d.state] + ' is on the target list.'
+        : STATE_NAME[d.state] + ' sits outside the stated footprint. Not fatal, but it needs a reason.');
+
+  /* 2. Corridor */
+  const corr = t('corridor');
+  add('corridor', 'Priority corridor',
+      corr == null ? null : PRIORITY_CORRIDORS.indexOf(corr) > -1 ? true : false,
+      corr == null ? 'No corridor stated.'
+        : PRIORITY_CORRIDORS.indexOf(corr) > -1 ? corr + ' \u2014 a priority corridor.'
+        : corr + '. Outside I-4, I-75 and I-95, so the location has to carry itself.');
+
+  /* 3. Interstate access */
+  const im = n('interstateMi');
+  add('interstate', 'Within 3 miles of an interstate',
+      im == null ? null : im <= 3,
+      im == null ? 'Distance to the interstate not stated.'
+        : num(im, 1) + ' mi to ' + (t('interstate') || 'the nearest interstate') + '.');
+
+  /* 4. Acreage */
+  const acres = n('netAcres') || n('grossAcres');
+  add('acres', 'Site large enough',
+      acres == null ? null : acres >= 15,
+      acres == null ? 'Acreage not stated.'
+        : num(acres, 0) + ' usable acres' + (acres >= 200 ? ' \u2014 campus scale.' : acres >= 15 ? '.' : ' \u2014 below the 15-acre floor.'));
+
+  /* 5. Building program */
+  const bsf = n('maxBuildingSf'), tsf = n('totalSf');
+  add('program', 'Building program clears 200,000 SF',
+      bsf == null && tsf == null ? null : (bsf || 0) >= 200000 || (tsf || 0) >= 200000,
+      bsf == null && tsf == null ? 'No building program stated.'
+        : (bsf ? num(bsf, 0) + ' SF single building' : 'single building not stated')
+          + (tsf ? ' \u00b7 ' + num(tsf, 0) + ' SF at full build' : ''));
+
+  /* 6. Zoning */
+  const br = t('byRight'), ent = t('entitleStatus');
+  const zoneOk = br === 'Yes' || /^Entitled/.test(ent || '');
+  const zoneBad = br === 'No' && /path unclear|denied/.test(ent || '');
+  add('zoning', isDC ? 'By-right zoning' : 'By-right or a clear entitlement path',
+      br == null && ent == null ? null : zoneOk ? true : zoneBad ? false : (/clear path/.test(ent || '') && !isDC),
+      br == null && ent == null ? 'Zoning position not stated.'
+        : [ent, br ? 'by-right: ' + br : null].filter(Boolean).join(' \u00b7 '),
+      2);
+
+  /* 7. Power */
+  const mw = n('availableMw') || n('headroomMw') || (isDC ? null : (d.mw > 0 ? d.mw : null));
+  add('power', isDC ? 'At least 50 MW available' : 'Deliverable power established',
+      mw == null ? null : (isDC ? mw >= 50 : mw > 0),
+      mw == null ? 'No power figure stated.'
+        : num(mw, 1) + ' MW' + (t('powerEvidence') ? ' \u2014 ' + t('powerEvidence') : ''),
+      2);
+
+  /* 8. Time to power */
+  const pt = t('powerTiming') || (t('energizeBy') ? 'stated' : null);
+  add('timing', 'Time to power stated',
+      pt == null ? null : !/Over 36|Not studied/.test(pt),
+      pt == null ? 'No delivery date. This is the question that kills the most compute deals.'
+        : (pt === 'stated' ? t('energizeBy') : pt));
+
+  /* 9. Fiber */
+  const fb = t('fiberStatus'), fd = n('fiberDistance');
+  add('fiber', 'Fiber access',
+      fb == null && fd == null ? null
+        : fb ? !/None identified|distance unconfirmed/.test(fb) : fd <= 5,
+      fb || (fd != null ? num(fd, 2) + ' mi to fiber' : 'Fiber not addressed.'),
+      isDC ? 2 : 1);
+
+  /* 10. Water and sewer */
+  const water = t('waterUtility') || t('waterSource') || n('waterGpm'), sewer = t('sewer');
+  add('utilities', 'Water and sewer identified',
+      water == null && sewer == null ? null : !!(water && sewer),
+      [water ? 'water: ' + (t('waterUtility') || t('waterSource') || num(n('waterGpm'), 0) + ' GPM') : null,
+       sewer ? 'sewer: ' + sewer : null].filter(Boolean).join(' \u00b7 ') || 'Neither stated.');
+
+  /* 11. AHJ */
+  const post = t('ahjPosture'), opp = t('opposition'), mor = t('moratorium');
+  const ahjBad = post === 'Opposed' || opp === 'Active litigation' || mor === 'In effect';
+  add('ahj', 'AHJ and political environment',
+      post == null && opp == null ? null : ahjBad ? false : (post === 'Actively recruiting' || post === 'Supportive' || post === 'Neutral'),
+      [t('ahjName'), post, opp && opp !== 'None known' ? opp : null, mor && mor !== 'None' ? 'moratorium ' + mor.toLowerCase() : null]
+        .filter(Boolean).join(' \u00b7 ') || 'AHJ posture not stated.',
+      2);
+
+  /* 12. Site control */
+  const sc = d.siteControl || '';
+  add('control', 'Site control',
+      /^(None|—|$)/.test(sc) ? false : /Owner aware/.test(sc) ? false : true,
+      sc && sc !== '\u2014' ? sc : 'No site control stated.');
+
+  const met  = checks.filter(c => c.state === true);
+  const miss = checks.filter(c => c.state === false);
+  const open = checks.filter(c => c.state == null);
+  const wMet  = sum(met.map(c => c.weight));
+  const wKnown = sum(met.concat(miss).map(c => c.weight));
+  const wTotal = sum(checks.map(c => c.weight));
+  const pctOfKnown = wKnown ? wMet / wKnown : 0;
+  /* Confidence is the share of the buy box that has been answered at all. A
+     high score on a third of the questions is not a qualified site. */
+  const confidence = wTotal ? wKnown / wTotal : 0;
+  const band = miss.some(c => c.weight > 1) ? 'poor'
+             : confidence < .5 ? 'unknown'
+             : pctOfKnown >= .85 ? 'good'
+             : pctOfKnown >= .6  ? 'fair' : 'poor';
+  return {checks, met: met.length, missed: miss.length, open: open.length,
+          total: checks.length, pct: pctOfKnown, confidence, band,
+          verdict: band === 'good'  ? 'Fits the buy box'
+                 : band === 'fair'  ? 'Fits with exceptions'
+                 : band === 'unknown' ? 'Too little stated to qualify'
+                 : 'Outside the buy box'};
+}
+
+const BUYBOX_BADGE = {good:'p-won', fair:'p-diligence', unknown:'p-withdrawn', poor:'p-declined'};
+
+/* The scorecard as a block, used in the drawer and in the submit form. */
+function buyBoxPanel(d, compact) {
+  const b = buyBox(d); if (!b) return '';
+  const ic = c => c.state === true ? '<span class="bb-i ok">\u2713</span>'
+                : c.state === false ? '<span class="bb-i no">\u2715</span>'
+                : '<span class="bb-i un">?</span>';
+  return `<div class="sec bb">
+    <h4>Buy-box fit</h4>
+    <div class="bb-head ${b.band}">
+      <div class="bb-score"><b>${b.met}</b><span>of ${b.total} met</span></div>
+      <div class="bb-verdict">
+        <strong>${b.verdict}</strong>
+        <span>${b.missed ? b.missed + ' outside the box' : 'nothing outside the box'} \u00b7 ${b.open} still unanswered \u00b7 ${pct(b.confidence * 100, 0)} of the box addressed</span>
+      </div>
+    </div>
+    ${compact ? '' : `<div class="bb-list">${b.checks.map(c => `
+      <div class="bb-row ${c.state === true ? 'ok' : c.state === false ? 'no' : 'un'}">
+        ${ic(c)}<div><b>${esc(c.label)}${c.weight > 1 ? ' <span class="bb-w">weighted</span>' : ''}</b><span>${esc(c.detail)}</span></div>
+      </div>`).join('')}</div>
+    ${b.open ? `<p class="note" style="margin-top:12px">A blank is read as <b>not yet known</b>, never as a no. Answering the ${plural(b.open, 'open question')} above is usually worth more to this deal than anything else on the file.</p>` : ''}`}
+  </div>`;
+}
+
 
 /* ═══════════════════════════════════════════════════════════════════════════
    3. DEALS
@@ -2186,9 +2583,35 @@ const COLS = [
 const STATUS_PILL = {active:['p-active','In market'], won:['p-won','Funded'], declined:['p-declined','Declined'], withdrawn:['p-withdrawn','Withdrawn']};
 const STAGE_PILL = {'Submitted':'p-active','Screening':'p-screening','Diligence':'p-diligence','Term sheet':'p-term','Closed':'p-won'};
 
+/* A locked row still has to be worth reading. State, technology, a size band
+   and a stage are enough to decide whether to spend an unlock; the name, the
+   city, the sponsor and every figure that could identify the site are not
+   rendered at all rather than blurred, because a blur is still a disclosure. */
+function lockedCell(d, c) {
+  const b = buyBox(d);
+  switch (c.key) {
+    case 'name': return `<div><span class="lk-name"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>Sealed deal</span>${
+      b ? ` <span class="pill ${BUYBOX_BADGE[b.band]}" title="${esc(b.verdict)} — ${b.met} of ${b.total} buy-box tests met">${b.met}/${b.total} fit</span>` : ''
+      }<span>${esc(d.ref)} · ${esc(STATE_NAME[d.state] || d.state)}</span></div>`;
+    case 'state':      return d.state;
+    case 'techName':   return `<span class="tag" style="color:${d.techColor};background:${d.techColor}18">${esc(d.techName)}</span>`;
+    case 'mw':         return `<span class="lk-band">${sizeBand(d)}</span>`;
+    case 'ask':        return `<span class="lk-band">${askBand(d)}</span>`;
+    case 'stage':      return `<span class="pill ${STAGE_PILL[d.stage]}">${d.stage}</span>`;
+    case 'status':   { const [cls, lab] = STATUS_PILL[d.status]; return `<span class="pill ${cls}">${lab}</span>`; }
+    case 'submitted':  return dt(d.submitted);
+    default:           return '<span class="lk-dot" title="Unlock this deal to see">•••</span>';
+  }
+}
+
 function cellHTML(d, c) {
-  if (c.key === 'name') return `<div>${esc(d.name)}${d.sample ? ' <span class="sample-tag">Sample</span>' : ''}${
-    isDraft(d) ? ' <span class="draft-tag">Draft</span>' : isPublished(d) ? '' : ' <span class="hidden-tag">Not on marketplace</span>'}<span>${esc(d.ref)} · ${esc(d.city)}, ${d.state}</span></div>`;
+  if (isLocked(d)) return lockedCell(d, c);
+  if (c.key === 'name') { const bb = buyBox(d); return `<div>${esc(d.name)}${d.sample ? ' <span class="sample-tag">Sample</span>' : ''}${
+    isDraft(d) ? ' <span class="draft-tag">Draft</span>' : isPublished(d) ? '' : ' <span class="hidden-tag">Not on marketplace</span>'}${
+    isUnlocked(d) ? ' <span class="open-tag">Unlocked</span>' : ''}${
+    WATCH.has(d.id) ? ' <span class="watch-tag">★</span>' : ''}${
+    bb ? ` <span class="pill ${BUYBOX_BADGE[bb.band]}" title="${esc(bb.verdict)} — ${bb.met} of ${bb.total} buy-box tests met, ${bb.open} unanswered">${bb.met}/${bb.total} fit</span>` : ''
+    }<span>${esc(d.ref)} · ${esc(d.city)}, ${d.state}</span></div>`; }
   if (c.key === 'submittedBy') return `${esc(d.submittedBy)}${isOrgMate(d) && S.role !== 'partner' ? ' <span class="mate-tag">colleague</span>' : ''}`;
   if (c.key === 'status') { const [cls, lab] = STATUS_PILL[d.status]; return `<span class="pill ${cls}">${lab}</span>`; }
   if (c.key === 'stage') return `<span class="pill ${STAGE_PILL[d.stage]}">${d.stage}</span>`;
@@ -2298,12 +2721,55 @@ function partnerMarketplace() {
     ${kpi('Bills on file', withBills.length, '', `${equitable.length} clear the 12% savings bar`, equitable.length ? 'up' : '')}
     ${kpi('Avg sponsor IRR', pct(st.avgIrr, 1), '', `DSCR ${num(avg(list.map(d => d.dscr)), 2)} avg`, '')}
   </div>
+  ${tokenStrip()}
   ${filterBar(true)}
   ${filterChips()}
   <div class="card" style="padding:0;overflow:hidden;border:none;background:none">
     ${dealTable(list, {group: S.group})}
   </div>
-  <p class="note" style="margin-top:12px">Showing ${list.length} of ${scopeDeals().length} deals. Click any row to open the deal, read its documents, and pull the extracted utility data.</p>`;
+  <p class="note" style="margin-top:12px">Showing ${list.length} of ${scopeDeals().length} deals${
+    needsToken({}) ? `, ${list.filter(d => !isLocked(d)).length} of them unlocked` : ''}. Click any row to open it.</p>`;
+}
+
+/* The allowance, stated plainly and always in view. A partner who does not
+   know what an unlock costs them will not spend one. */
+function tokenStrip() {
+  if (!needsToken({})) return '';
+  const ts = tokenState();
+  const pctUsed = ts.unlimited ? 0 : (ts.limit ? Math.min(100, ts.used / ts.limit * 100) : 100);
+  return `<div class="tok-strip ${!ts.unlimited && ts.left === 0 ? 'out' : ''}">
+    <div class="ts-l">
+      <b>${tokensLeftLabel(ts)}</b>
+      <span>deal unlocks left · ${periodLabel(ts.period)}</span>
+    </div>
+    ${ts.unlimited ? '<span class="pill p-won">Enterprise · unlimited</span>'
+      : `<div class="tok-meter wide"><div class="tok-fill ${ts.left === 0 ? 'out' : ''}" style="width:${pctUsed.toFixed(0)}%"></div></div>
+         <span class="pill ${ts.left === 0 ? 'p-declined' : 'p-active'}">${esc(ts.tierLabel)}</span>`}
+    <span class="ts-r">${ts.left === 0 && !ts.unlimited
+      ? 'Your allowance resets on the 1st. A ClearSky administrator can raise your tier before then.'
+      : 'One unlock opens a full deal file to everyone at ' + esc(SESSION.org) + ', permanently.'}</span>
+  </div>`;
+}
+
+function partnerWatchlist() {
+  const mine = allDeals().filter(d => WATCH.has(d.id));
+  if (!mine.length) return `<div class="empty">
+    <div class="e-ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.7 5.5 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.8 1-6.1-4.4-4.3 6.1-.9z"/></svg></div>
+    <h3>Nothing on your watchlist yet</h3>
+    <p>Unlock a deal and add it here to keep it to hand. The watchlist follows you, not your browser — it is on your account.</p>
+    <button class="btn btn-primary" data-act="tab" data-val="market">Browse the marketplace</button>
+  </div>`;
+  const st = stats(mine);
+  return `
+  <div class="kpi-strip">
+    ${kpi('On watch', mine.length, '', `${mine.filter(d => !isLocked(d)).length} unlocked`, '')}
+    ${kpi('Capital sought', usdC(sum(mine.filter(d => !isLocked(d)).map(d => d.ask))), '', 'across unlocked deals', '')}
+    ${kpi('Capacity', capacity(sum(mine.map(d => unsized(d) ? 0 : d.mw))), '', `${plural(new Set(mine.map(d => d.state)).size, 'state')}`, '')}
+    ${kpi('Median check', usdC(st.medAsk), '', `avg ${usdC(st.avgAsk)}`, '')}
+  </div>
+  ${tokenStrip()}
+  ${dealTable(mine, {group:'none'})}
+  <p class="note" style="margin-top:12px">Open any deal and use <b>Remove from watchlist</b> to take it off.</p>`;
 }
 
 function partnerCoverage() {
@@ -2723,7 +3189,9 @@ function openDeal(id) {
   const d = allDeals().find(x => x.id === id);
   if (!d) return;
   S.drawerDeal = d; S.drawerTab = 'overview';
-  watchOffers(d);
+  /* A sealed deal subscribes to nothing. The offer thread is part of what an
+     unlock buys, and asking for it would only earn a permission error. */
+  if (!isLocked(d)) watchOffers(d); else { stopOffers(); OFFERS = []; offersErr = null; }
   renderDrawer();
   $('#drawerBack').classList.add('show');
   $('#drawer').classList.add('show');
@@ -2984,6 +3452,7 @@ function assetSection(d) {
 }
 
 function drawerBody(d) {
+  if (isLocked(d)) return lockedPanel(d);
   if (S.drawerTab === 'overview') {
     const [cls, lab] = STATUS_PILL[d.status];
     return `
@@ -3007,6 +3476,7 @@ function drawerBody(d) {
     ${d.status === 'declined' ? `<div class="verdict poor" style="margin-bottom:20px">
       <div class="vd-top"><span class="vd-badge">Declined</span><h5>${esc(d.declineReason)}</h5></div>
       <p>Returned after ${d.cycleDays} days in ${d.stage.toLowerCase()}. Resubmission is allowed once the underlying issue is documented.</p></div>` : ''}
+    ${buyBoxPanel(d)}
     <div class="sec">
       <h4>Where this stands</h4>
       <div class="readiness">
@@ -3242,23 +3712,33 @@ function drawerBody(d) {
 
 function renderDrawer() {
   const d = S.drawerDeal; if (!d) return;
-  $('#drTitle').textContent = d.name;
-  $('#drSub').innerHTML = `${esc(d.ref)} · ${esc(d.city)}, ${d.state} · ${usd(d.ask)} · ${num(d.mw)} MW`
-    + (d.sample ? ' <span class="sample-tag">Sample record</span>' : '');
+  const lock = isLocked(d);
+  $('#drTitle').textContent = lock ? 'Sealed deal' : d.name;
+  $('#drSub').innerHTML = lock
+    ? `${esc(d.ref)} · ${esc(STATE_NAME[d.state] || d.state)} · ${esc(d.techName)} · ${sizeBand(d)} <span class="lk-tag">Locked</span>`
+    : `${esc(d.ref)} · ${esc(d.city)}, ${d.state} · ${usd(d.ask)} · ${num(d.mw)} MW`
+      + (d.sample ? ' <span class="sample-tag">Sample record</span>' : '');
   const nOffers = OFFERS.filter(o => o.status !== 'withdrawn').length;
-  $('#drTabs').innerHTML = DR_TABS.map(([k, l]) =>
+  $('#drTabs').innerHTML = lock ? '' : DR_TABS.map(([k, l]) =>
     `<button class="dr-tab ${S.drawerTab === k ? 'on' : ''}" data-act="drtab" data-val="${k}">${l}${
       k === 'bill' && d.bill ? ' •' : ''}${
       k === 'offers' && nOffers ? ` <span class="cnt">${nOffers}</span>` : ''}</button>`).join('');
   $('#drBody').innerHTML = drawerBody(d);
   $('#drBody').scrollTop = 0;
   const actions = [];
+  if (lock) {
+    const ts = tokenState();
+    if (ts.unlimited || ts.left > 0) actions.push(`<button class="btn btn-primary btn-sm" data-act="ask-unlock" data-val="${esc(d.id)}">Unlock this deal</button>`);
+    actions.push(`<button class="btn btn-ghost btn-sm" data-act="watch" data-val="${esc(d.id)}">${WATCH.has(d.id) ? 'Remove from watchlist' : 'Watch without unlocking'}</button>`);
+    $('#drFoot').innerHTML = actions.join('');
+    return;
+  }
   if (canOffer(d) && !myOffer()) actions.push(`<button class="btn btn-primary btn-sm" data-act="offer" data-val="${esc(d.id)}">Make an offer</button>`);
   else if (myOffer()) actions.push(`<button class="btn btn-ghost btn-sm" data-act="drtab" data-val="offers">View your offer</button>`);
   if (canEdit(d))   actions.push(`<button class="btn btn-ghost btn-sm" data-act="edit-deal" data-val="${d.id}">Edit</button>`);
   actions.push(`<button class="btn btn-ghost btn-sm" data-act="export-onedeal">Export this deal</button>`);
   if (S.role !== 'partner' && isOwnerOf(d)) actions.push(`<button class="btn btn-ghost btn-sm" data-act="upload-bill">${d.bill ? 'Replace utility bills' : 'Upload utility bills'}</button>`);
-  if (S.role === 'partner' && !isPlatformAdmin()) actions.push(`<button class="btn btn-ghost btn-sm" data-act="watch">Add to watchlist</button>`);
+  if (S.role === 'partner' && !isPlatformAdmin()) actions.push(`<button class="btn btn-ghost btn-sm" data-act="watch" data-val="${esc(d.id)}">${WATCH.has(d.id) ? 'Remove from watchlist' : 'Add to watchlist'}</button>`);
   if (canDelete(d)) actions.push(`<button class="btn btn-ghost btn-sm btn-danger-ghost" style="margin-left:auto" data-act="ask-delete" data-val="${d.id}">${isOwnerOf(d) ? 'Withdraw' : 'Delete'}</button>`);
   $('#drFoot').innerHTML = actions.join('');
 }
@@ -3700,7 +4180,32 @@ function renderAssetDerived() {
     cf: (TECH_BY_ID[techEl.value] || {}).cf
   };
   const m = assetMetrics(probe);
-  if (!m) { box.innerHTML = ''; return; }
+
+  /* Buy-box fit, recomputed on every keystroke. It needs the fields that live
+     outside the asset block too, so they are read off the form rather than
+     defaulted — a scorecard that ignored the state or the site control would
+     tell the sponsor the wrong thing. */
+  let fit = '';
+  if (['land', 'datacenter'].indexOf(techEl.value) > -1) {
+    const stEl = $('#nfState'), scEl = $('#nfSite');
+    const b = buyBox(Object.assign({}, probe, {
+      state: stEl ? stEl.value : '',
+      siteControl: scEl ? scEl.value : '',
+      sizePending: !(probe.mw > 0)
+    }));
+    if (b) {
+      const bar = c => `<span class="bbq ${c.state === true ? 'ok' : c.state === false ? 'no' : 'un'}" title="${esc(c.label)}: ${esc(c.detail)}"></span>`;
+      fit = `<div class="bb-live ${b.band}">
+        <div class="bb-live-l"><b>${b.met}/${b.total}</b><span>buy-box tests met</span></div>
+        <div class="bb-live-r">
+          <div class="bbq-row">${b.checks.map(bar).join('')}</div>
+          <span>${esc(b.verdict)}${b.open ? ' · ' + plural(b.open, 'question') + ' still unanswered' : ' · fully answered'}</span>
+        </div>
+      </div>`;
+    }
+  }
+
+  if (!m) { box.innerHTML = fit; return; }
 
   const cell = (k, v) => v == null ? '' :
     `<div><div style="font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--cs-muted-2)">${k}</div>
@@ -3723,8 +4228,8 @@ function renderAssetDerived() {
           + cell('Annual dispensed', m.annualKwh ? num(m.annualKwh / 1000, 0) + ' MWh' : null)
           + cell('Capital at risk', m.netAsk != null ? usdC(m.netAsk) : null);
   }
-  if (!cells.replace(/\s/g, '')) { box.innerHTML = ''; return; }
-  box.innerHTML = `<div style="margin:2px 0 4px;background:var(--cs-card-2);border:1px solid var(--cs-border);border-radius:10px;padding:14px 16px">
+  if (!cells.replace(/\s/g, '')) { box.innerHTML = fit; return; }
+  box.innerHTML = fit + `<div style="margin:2px 0 4px;background:var(--cs-card-2);border:1px solid var(--cs-border);border-radius:10px;padding:14px 16px">
     <div style="display:flex;align-items:center;gap:9px;margin-bottom:11px">
       <span class="demo-badge">Derived</span>
       <span style="font-size:12px;color:var(--cs-muted)">What a capital partner computes from the fields above</span></div>
@@ -5050,15 +5555,566 @@ function applySizing() {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
+   12c. ENTITLEMENTS — TIERS, UNLOCK TOKENS, NDA AND WATCHLIST
+
+   Sponsors file as much as they like; it costs them nothing and the platform
+   wants the flow. What is metered is the other side of the table — a capital
+   partner spends one unlock a month against a monthly allowance to open a
+   deal, and signs a mutual NDA and a non-circumvent before the file opens.
+
+   Two documents carry it:
+     fin_orgs/{orgKey}                 tier, monthly allowance, period, used
+     fin_orgs/{orgKey}/unlocks/{dealId} who opened it, when, what they accepted
+
+   The unlock document is keyed by deal id, so opening the same deal twice is
+   free and the count cannot drift. The counter and the unlock record are
+   written in one transaction, so a partner cannot be charged for a deal that
+   did not open, or open one that was not charged.
+   ═══════════════════════════════════════════════════════════════════════════ */
+const TIERS = {
+  tier1:      {label:'Tier 1',     unlocks:5,        blurb:'5 deal unlocks a month'},
+  tier2:      {label:'Tier 2',     unlocks:10,       blurb:'10 deal unlocks a month'},
+  tier3:      {label:'Tier 3',     unlocks:20,       blurb:'20 deal unlocks a month'},
+  enterprise: {label:'Enterprise', unlocks:Infinity, blurb:'Unlimited unlocks'}
+};
+const TIER_ORDER = ['tier1','tier2','tier3','enterprise'];
+const DEFAULT_TIER = 'tier1';
+const NDA_VERSION = 'NDA-2026.1';
+const NC_VERSION  = 'NC-2026.1';
+
+/* Allowances reset on a calendar month, keyed by the string rather than by a
+   scheduled job — the first unlock of a new month rolls the counter itself. */
+function periodKey(dt) {
+  const d = dt || new Date();
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+}
+const periodLabel = p => {
+  const [y, m] = String(p || periodKey()).split('-').map(Number);
+  return new Date(y, (m || 1) - 1, 1).toLocaleDateString('en-US', {month:'long', year:'numeric'});
+};
+
+let ORG = null;              // my organisation's entitlement document
+let ORGS = [];               // administrators: every organisation
+let orgsErr = null;
+let UNLOCKS = {};            // dealId -> unlock record, for my organisation
+let WATCH = new Set();       // deal ids on my watchlist
+let entUnsubs = [];
+
+function stopEntitlements() {
+  entUnsubs.forEach(u => { try { u(); } catch (e) {} });
+  entUnsubs = [];
+}
+
+function watchEntitlements() {
+  stopEntitlements();
+  ORG = null; UNLOCKS = {};
+  if (!FB.ready || !FB.auth.currentUser || !SESSION) return;
+  const key = myOrgKey(); if (!key) return;
+  const orgRef = FB.db.collection('fin_orgs').doc(key);
+
+  entUnsubs.push(orgRef.onSnapshot(
+    snap => { ORG = snap.exists ? Object.assign({orgKey:key}, snap.data()) : null; if (SESSION) render(); },
+    err => console.warn('[OMEGA] org entitlement watch failed:', err.code || err.message)));
+
+  entUnsubs.push(orgRef.collection('unlocks').onSnapshot(
+    snap => {
+      UNLOCKS = {};
+      snap.docs.forEach(doc => { UNLOCKS[doc.id] = Object.assign({dealId:doc.id}, doc.data()); });
+      if (SESSION) { render(); if (S.drawerDeal) renderDrawer(); }
+    },
+    err => console.warn('[OMEGA] unlock watch failed:', err.code || err.message)));
+
+  /* the watchlist lives on the person, not the organisation */
+  entUnsubs.push(FB.db.collection('fin_profiles').doc(FB.auth.currentUser.uid).onSnapshot(
+    snap => {
+      const w = snap.exists ? snap.data().watchlist : null;
+      WATCH = new Set(Array.isArray(w) ? w : []);
+      if (SESSION) { render(); if (S.drawerDeal) renderDrawer(); }
+    },
+    err => console.warn('[OMEGA] watchlist watch failed:', err.code || err.message)));
+}
+
+/* What this organisation is allowed, and what it has spent this month. */
+function tokenState() {
+  const tier = (ORG && TIERS[ORG.tier]) ? ORG.tier : DEFAULT_TIER;
+  const ov = ORG ? ORG.unlocksOverride : null;
+  const limit = (ov === 0 || (ov != null && ov !== '' && isFinite(Number(ov)))) ? Number(ov) : TIERS[tier].unlocks;
+  const p = periodKey();
+  const used = (ORG && ORG.period === p) ? Number(ORG.used || 0) : 0;
+  const unlimited = !isFinite(limit);
+  return {tier, tierLabel: TIERS[tier].label, limit, used, unlimited,
+          left: unlimited ? Infinity : Math.max(0, limit - used),
+          period: p, provisioned: !!ORG};
+}
+const tokensLeftLabel = ts => ts.unlimited ? 'Unlimited' : ts.left + ' of ' + ts.limit;
+
+/* Sponsors and administrators are never metered — a sponsor is reading their
+   own file, and an administrator has to be able to see everything to run the
+   platform. Sample records are never metered either; nothing is at stake. */
+function needsToken(d) {
+  return !!SESSION && SESSION.role === 'partner' && !isPlatformAdmin() && !!d && !d.sample;
+}
+const isUnlocked = d => !!d && !!UNLOCKS[d.id];
+const isLocked   = d => needsToken(d) && !isUnlocked(d);
+
+/* Size band rather than a figure. A locked card should tell a partner whether
+   the deal is worth an unlock without giving away the deal. */
+function sizeBand(d) {
+  if (unsized(d)) return 'Not sized';
+  const mw = d.mw;
+  if (mw < 1)   return Math.round(mw * 1000) + ' kW';
+  if (mw < 5)   return 'Under 5 MW';
+  if (mw < 20)  return '5\u201320 MW';
+  if (mw < 50)  return '20\u201350 MW';
+  if (mw < 100) return '50\u2013100 MW';
+  if (mw < 300) return '100\u2013300 MW';
+  return '300+ MW';
+}
+function askBand(d) {
+  const v = d.ask;
+  if (!(v > 0)) return '\u2014';
+  if (v < 5e6)  return 'Under $5M';
+  if (v < 25e6) return '$5\u201325M';
+  if (v < 1e8)  return '$25\u2013100M';
+  if (v < 5e8)  return '$100\u2013500M';
+  return '$500M+';
+}
+
+/* ── The unlock ──────────────────────────────────────────────────────────── */
+async function unlockDeal(dealId) {
+  const d = allDeals().find(x => x.id === dealId);
+  if (!d) return;
+  if (!FB.ready || !FB.auth.currentUser) { toast('Sign in to unlock deals.', true); return; }
+  const btn = $('[data-act="nda-unlock"]');
+  if (btn) { btn.disabled = true; btn.textContent = 'Unlocking\u2026'; }
+
+  const key = myOrgKey(), p = periodKey(), u = FB.auth.currentUser;
+  const orgRef = FB.db.collection('fin_orgs').doc(key);
+  const unlockRef = orgRef.collection('unlocks').doc(d.id);
+
+  try {
+    await FB.db.runTransaction(async tx => {
+      const orgSnap = await tx.get(orgRef);
+      const already = await tx.get(unlockRef);
+      if (already.exists) return;                         // never charge twice
+      const o = orgSnap.exists ? orgSnap.data() : {};
+      const tier = TIERS[o.tier] ? o.tier : DEFAULT_TIER;
+      const ov = o.unlocksOverride;
+      const limit = (ov === 0 || (ov != null && ov !== '' && isFinite(Number(ov))))
+        ? Number(ov) : TIERS[tier].unlocks;
+      const used = o.period === p ? Number(o.used || 0) : 0;
+      if (isFinite(limit) && used >= limit) throw new Error('QUOTA');
+      tx.set(orgRef, {orgKey:key, name: SESSION.org, tier, period:p, used: used + 1,
+                      lastUnlockAt: Date.now()}, {merge:true});
+      tx.set(unlockRef, {
+        dealId: d.id, dealRef: d.ref, dealName: d.name, dealState: d.state, dealTech: d.tech,
+        dealMw: d.mw, dealAsk: d.ask, sponsorOrg: d.developer || null, sponsorOrgKey: d.orgKey || null,
+        orgKey: key, org: SESSION.org, uid: u.uid, name: SESSION.name, email: SESSION.email || u.email || null,
+        period: p, at: Date.now(),
+        ndaVersion: NDA_VERSION, ncVersion: NC_VERSION,
+        acceptedName: (($('#ndaSign') || {}).value || SESSION.name || '').trim()
+      });
+    });
+  } catch (err) {
+    if (btn) { btn.disabled = false; btn.textContent = 'Accept and unlock'; }
+    if (String(err.message) === 'QUOTA') {
+      const ts = tokenState();
+      return modalErr('Your organisation has used all ' + ts.limit + ' unlocks for ' + periodLabel(ts.period)
+        + '. The allowance resets on the 1st, or an administrator can raise your tier.');
+    }
+    console.error('[OMEGA] unlock failed:', err);
+    return modalErr(err.code === 'permission-denied'
+      ? 'The database refused the unlock. An administrator may need to deploy the fin_orgs rules.'
+      : explain(err)[0]);
+  }
+
+  closeModal();
+  toast('Unlocked. ' + d.name + ' is open to your organisation.');
+  /* the snapshot listener repaints, but open the file immediately */
+  UNLOCKS[d.id] = {dealId:d.id, at: Date.now(), name: SESSION.name};
+  render();
+  openDeal(d.id);
+}
+
+/* ── NDA and non-circumvent ──────────────────────────────────────────────────
+   Scroll-gated on purpose. The checkboxes stay disabled until the panel has
+   been read to the end, because a consent nobody could have read is not much
+   of a consent and would not survive being tested. */
+function ndaText(d) {
+  return `
+  <h5>1. Parties and purpose</h5>
+  <p>This agreement is between <b>${esc(SESSION.org)}</b> ("Receiving Party") and ClearSky Energy Solutions LLC together with the sponsor of the opportunity identified as <b>${esc(d.ref)}</b> ("Disclosing Parties"). Its purpose is to let the Receiving Party evaluate that opportunity for a possible financing, acquisition or participation.</p>
+
+  <h5>2. Confidential information</h5>
+  <p>Confidential information means everything the Receiving Party is given access to through this platform in connection with ${esc(d.ref)}, whether marked confidential or not. It includes the site and its location, the identity of the landowner, sponsor, developer and any counterparty, utility and interconnection studies, capacity and headroom figures, tenant and offtake terms, pricing, cost bases, pro formas, permitting and entitlement status, and any document, link or extract reached from the deal file.</p>
+  <p>It does not include information the Receiving Party can show was already lawfully in its possession without a duty of confidence, is or becomes public through no act of the Receiving Party, or is independently developed without reference to what was disclosed here.</p>
+
+  <h5>3. Use and care</h5>
+  <p>The Receiving Party will use the confidential information only to evaluate this opportunity, will not disclose it to anyone outside its own organisation except to employees, officers, advisers and financing sources who need it for that evaluation and who are bound by obligations no less protective than these, and will protect it with at least the care it uses for its own confidential information.</p>
+  <p>The Receiving Party will not copy, republish, index, scrape, or feed the confidential information into any system that retains or trains on it, and will not use it to compete for the same site.</p>
+
+  <h5>4. Non-circumvent</h5>
+  <p>For <b>twenty-four (24) months</b> from the date of acceptance, the Receiving Party and its affiliates will not, directly or indirectly, and whether alone or with or through any other person:</p>
+  <p>(a) contact, solicit, negotiate with or transact with the landowner, seller, sponsor, developer, broker, utility, tenant, offtaker or any other counterparty first identified to it through this deal file, in relation to this site or this opportunity, other than through the introducing party;</p>
+  <p>(b) bypass, avoid or circumvent the introducing party, or attempt to do so, so as to avoid a fee, commission or participation that would otherwise be payable;</p>
+  <p>(c) use the confidential information to acquire, option, or take an interest in the site or in any parcel contiguous to it, or to pursue a substantially similar transaction on that site, other than through the introducing party.</p>
+  <p>Nothing here prevents the Receiving Party from doing business with a party it can document it was already in a live, substantive discussion with about this same site before the unlock recorded below.</p>
+
+  <h5>5. No representation, no offer</h5>
+  <p>The information in this deal file is supplied by the sponsor. The Disclosing Parties make no representation or warranty as to its accuracy or completeness, and the Receiving Party will conduct its own diligence. Nothing here is an offer, a commitment to finance, or an agreement to transact, and neither party is obliged to proceed.</p>
+
+  <h5>6. Term, remedies and general</h5>
+  <p>The confidentiality obligations run for <b>three (3) years</b> from acceptance; the non-circumvent runs for twenty-four (24) months. The parties agree that damages alone may be inadequate for a breach and that injunctive relief may be sought without posting bond. This agreement is governed by the laws of the State of Delaware, without regard to its conflict-of-law rules. It may be accepted electronically, and the record of acceptance below has the same effect as a signature.</p>
+
+  <h5>7. Record of this acceptance</h5>
+  <p>Accepting below records your name, your email address, your organisation, this deal reference, the document versions <b>${NDA_VERSION}</b> and <b>${NC_VERSION}</b>, and the date and time, against the deal file. The sponsor and the platform administrator can both see that record.</p>
+  <p style="margin-top:14px"><b>You have reached the end. The checkboxes below are now active.</b></p>`;
+}
+
+function ndaModal(dealId) {
+  const d = allDeals().find(x => x.id === dealId); if (!d) return;
+  const ts = tokenState();
+  const out = ts.unlimited ? 'This does not draw down an allowance.'
+            : 'This uses <b>1</b> of your <b>' + ts.left + '</b> remaining unlocks for ' + periodLabel(ts.period) + '.';
+
+  openModal(`
+  <div class="modal-head">
+    <div><h2>Confidentiality and non-circumvent</h2>
+      <div class="mh-sub">${esc(d.ref)} \u00b7 ${esc(STATE_NAME[d.state] || d.state)} \u00b7 ${esc(d.techName)} \u00b7 ${sizeBand(d)}</div></div>
+    <button class="dr-x" data-act="close-modal" aria-label="Close">&times;</button>
+  </div>
+  <div class="modal-body">
+    <p class="note" style="margin:0 0 12px">Read to the end of the panel below. The acceptance boxes activate once you have.</p>
+    <div class="nda-scroll" id="ndaScroll">${ndaText(d)}</div>
+    <div class="nda-accept" id="ndaAccept">
+      <label class="nda-cb"><input type="checkbox" id="ndaA" disabled>
+        <span>I have read and accept the confidentiality terms above on behalf of <b>${esc(SESSION.org)}</b>, and I am authorised to bind it.</span></label>
+      <label class="nda-cb"><input type="checkbox" id="ndaB" disabled>
+        <span>I accept the 24-month non-circumvent, and I will not approach the landowner, sponsor or any counterparty on this site except through the introducing party.</span></label>
+      <div class="field" style="margin-top:12px">
+        <label for="ndaSign">Type your full name to sign</label>
+        <input id="ndaSign" type="text" placeholder="${esc(SESSION.name || '')}" disabled autocomplete="off">
+      </div>
+    </div>
+    <div class="auth-err" id="modalErr" style="margin-top:14px"></div>
+    <p class="note" style="margin-top:14px">${out} Once unlocked, this deal stays open to everyone at ${esc(SESSION.org)} \u2014 nobody at your firm pays for it twice.</p>
+  </div>
+  <div class="modal-foot">
+    <button class="btn btn-ghost" data-act="close-modal">Cancel</button>
+    <button class="btn btn-primary" id="ndaGo" data-act="nda-unlock" data-val="${esc(d.id)}" disabled>Accept and unlock</button>
+  </div>`);
+
+  const box = $('#ndaScroll'), a = $('#ndaA'), b = $('#ndaB'), sign = $('#ndaSign'), go = $('#ndaGo');
+  let read = false;
+  const sync = () => {
+    go.disabled = !(read && a.checked && b.checked && sign.value.trim().length > 1);
+  };
+  const onScroll = () => {
+    if (read) return;
+    if (box.scrollTop + box.clientHeight >= box.scrollHeight - 24) {
+      read = true;
+      a.disabled = b.disabled = sign.disabled = false;
+      $('#ndaAccept').classList.add('live');
+      sync();
+    }
+  };
+  box.addEventListener('scroll', onScroll);
+  [a, b].forEach(el => el.addEventListener('change', sync));
+  sign.addEventListener('input', sync);
+  /* a short document on a tall screen may already be fully visible */
+  setTimeout(onScroll, 60);
+}
+
+/* ── Watchlist ───────────────────────────────────────────────────────────── */
+async function toggleWatch(dealId) {
+  const id = dealId || (S.drawerDeal && S.drawerDeal.id); if (!id) return;
+  const on = WATCH.has(id);
+  if (on) WATCH.delete(id); else WATCH.add(id);
+  if (S.drawerDeal) renderDrawer();
+  render();
+  if (!FB.ready || !FB.auth.currentUser) return;
+  try {
+    await FB.db.collection('fin_profiles').doc(FB.auth.currentUser.uid)
+      .update({watchlist: Array.from(WATCH)});
+    toast(on ? 'Removed from your watchlist.' : 'Added to your watchlist.');
+  } catch (err) {
+    console.error('[OMEGA] watchlist save failed:', err);
+    if (on) WATCH.add(id); else WATCH.delete(id);
+    render();
+    toast(explain(err)[0], true);
+  }
+}
+
+/* ── The locked card a partner sees before spending an unlock ─────────────── */
+function lockedPanel(d) {
+  const ts = tokenState();
+  const b = buyBox(d);
+  const none = !ts.unlimited && ts.left <= 0;
+  return `
+  <div class="lock-hero">
+    <div class="lock-ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></div>
+    <div>
+      <h3>This deal is sealed</h3>
+      <p>You can see enough to decide whether it is worth opening. The name, the location, the sponsor, the capital ask, the documents and the utility data stay closed until you unlock it.</p>
+    </div>
+  </div>
+  <div class="sec">
+    <h4>What we can tell you</h4>
+    <div class="readiness">
+      <div class="r"><div class="k">State</div><div class="v">${esc(STATE_NAME[d.state] || d.state)}</div></div>
+      <div class="r"><div class="k">Technology</div><div class="v">${esc(d.techName)}</div></div>
+      <div class="r"><div class="k">Size</div><div class="v">${sizeBand(d)}</div></div>
+      <div class="r"><div class="k">Capital ask</div><div class="v">${askBand(d)}</div></div>
+      <div class="r"><div class="k">Stage</div><div class="v">${esc(d.stage)}</div></div>
+      <div class="r"><div class="k">Filed</div><div class="v">${dt(d.submitted)}</div></div>
+      ${d.assetSpec && d.assetSpec.corridor ? `<div class="r"><div class="k">Corridor</div><div class="v">${esc(d.assetSpec.corridor)}</div></div>` : ''}
+      ${d.assetSpec && d.assetSpec.powerTiming ? `<div class="r"><div class="k">Time to power</div><div class="v">${esc(d.assetSpec.powerTiming)}</div></div>` : ''}
+      ${d.bill ? '<div class="r done"><div class="k">Utility bills</div><div class="v">12 months on file</div></div>' : ''}
+      ${(d.links || []).length ? `<div class="r done"><div class="k">Documents</div><div class="v">${plural(d.links.length, 'file')} attached</div></div>` : ''}
+    </div>
+  </div>
+  ${b ? `<div class="sec bb">
+    <h4>Buy-box fit</h4>
+    <div class="bb-head ${b.band}">
+      <div class="bb-score"><b>${b.met}</b><span>of ${b.total} met</span></div>
+      <div class="bb-verdict"><strong>${b.verdict}</strong>
+        <span>${b.missed ? b.missed + ' outside the box' : 'nothing outside the box'} \u00b7 ${b.open} unanswered</span></div>
+    </div>
+    <p class="note" style="margin-top:10px">The scorecard is open before you unlock, deliberately \u2014 it is the one thing that tells you whether an unlock is worth spending. The detail behind each line opens with the deal.</p>
+  </div>` : ''}
+  <div class="sec">
+    <h4>Unlocking this deal</h4>
+    <p class="note" style="margin-bottom:14px">One unlock opens the full file to everyone at ${esc(SESSION.org)} \u2014 documents, utility data, sponsor contact and the offer thread. You will be asked to accept a mutual NDA and a non-circumvent first.</p>
+    <div class="tok-bar ${none ? 'out' : ''}">
+      <div><b>${tokensLeftLabel(ts)}</b><span>unlocks left \u00b7 ${periodLabel(ts.period)} \u00b7 ${esc(ts.tierLabel)}</span></div>
+      ${none
+        ? '<span class="pill p-declined">Allowance used</span>'
+        : `<button class="btn btn-primary btn-sm" data-act="ask-unlock" data-val="${esc(d.id)}">Unlock this deal</button>`}
+    </div>
+    ${none ? `<p class="note" style="margin-top:12px">Your allowance resets on the 1st of next month. If you need more before then, ask a ClearSky administrator to move ${esc(SESSION.org)} to a higher tier.</p>` : ''}
+  </div>`;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   12d. ORGANISATIONS — administrator view: tiers, allowances, KPIs
+   ═══════════════════════════════════════════════════════════════════════════ */
+async function loadOrgs() {
+  if (!FB.ready || !isPlatformAdmin()) return;
+  try {
+    const snap = await FB.db.collection('fin_orgs').get();
+    ORGS = snap.docs.map(d => Object.assign({orgKey:d.id}, d.data()));
+    orgsErr = null;
+  } catch (e) {
+    console.error('[OMEGA] fin_orgs list failed:', e);
+    orgsErr = explain(e)[0];
+    ORGS = [];
+  }
+  render();
+}
+
+async function setOrgTier(orgKey, tier) {
+  if (!TIERS[tier]) return;
+  try {
+    await FB.db.collection('fin_orgs').doc(orgKey).set(
+      {orgKey, tier, unlocksOverride: null, period: periodKey()}, {merge:true});
+    const o = ORGS.find(x => x.orgKey === orgKey);
+    if (o) { o.tier = tier; o.unlocksOverride = null; } else ORGS.push({orgKey, tier, period:periodKey(), used:0});
+    render();
+    toast(orgKey + ' moved to ' + TIERS[tier].label + ' \u2014 ' + TIERS[tier].blurb.toLowerCase() + '.');
+  } catch (err) {
+    console.error('[OMEGA] tier change failed:', err);
+    toast(explain(err)[0], true);
+  }
+}
+
+async function setOrgOverride(orgKey, raw) {
+  const v = String(raw).trim();
+  const n = v === '' ? null : Number(v);
+  if (n != null && (!isFinite(n) || n < 0)) return toast('Enter a whole number of unlocks, or leave it blank to use the tier.', true);
+  try {
+    await FB.db.collection('fin_orgs').doc(orgKey).set({orgKey, unlocksOverride: n}, {merge:true});
+    const o = ORGS.find(x => x.orgKey === orgKey); if (o) o.unlocksOverride = n;
+    render();
+    toast(n == null ? 'Back to the tier allowance.' : 'Allowance set to ' + n + ' a month for ' + orgKey + '.');
+  } catch (err) { toast(explain(err)[0], true); }
+}
+
+async function resetOrgPeriod(orgKey) {
+  try {
+    await FB.db.collection('fin_orgs').doc(orgKey).set({orgKey, period: periodKey(), used: 0}, {merge:true});
+    const o = ORGS.find(x => x.orgKey === orgKey); if (o) { o.period = periodKey(); o.used = 0; }
+    render();
+    toast('Allowance reset for ' + orgKey + '.');
+  } catch (err) { toast(explain(err)[0], true); }
+}
+
+/* What each organisation has actually brought to the platform. Sponsors are
+   measured on deal flow; capital partners on what they open and close. */
+function orgKpis() {
+  const byKey = {};
+  const touch = k => (byKey[k] = byKey[k] || {orgKey:k, name:k, people:0, roles:{}, deals:[], partner:false, sponsor:false});
+
+  PEOPLE.forEach(p => {
+    const k = p.orgKey || orgKeyOf(p.org); if (!k) return;
+    const o = touch(k);
+    o.name = p.org || o.name;
+    o.people++;
+    o.roles[p.role || 'developer'] = (o.roles[p.role || 'developer'] || 0) + 1;
+    if (p.role === 'partner') o.partner = true;
+    if (p.role === 'developer' || p.role === 'originator') o.sponsor = true;
+  });
+
+  allDeals().forEach(d => {
+    const k = d.orgKey; if (!k) return;
+    const o = touch(k);
+    o.deals.push(d);
+  });
+
+  ORGS.forEach(e => { const o = touch(e.orgKey); o.ent = e; o.name = e.name || o.name; });
+
+  return Object.values(byKey).map(o => {
+    const d = o.deals;
+    const closed = d.filter(x => x.status === 'won');
+    const active = d.filter(x => x.status === 'active');
+    const sized  = d.filter(x => !unsized(x));
+    const withAsk = d.filter(x => x.ask > 0);
+    const byTech = {};
+    d.forEach(x => {
+      const b = byTech[x.tech] = byTech[x.tech] || {tech:x.tech, name:x.techName, color:x.techColor, n:0, mw:0, ask:0, sized:0, asked:0, won:0};
+      b.n++;
+      if (!unsized(x)) { b.mw += x.mw; b.sized++; }
+      if (x.ask > 0)   { b.ask += x.ask; b.asked++; }
+      if (x.status === 'won') b.won++;
+    });
+    const ent = o.ent || null;
+    const tier = ent && TIERS[ent.tier] ? ent.tier : DEFAULT_TIER;
+    const ov = ent ? ent.unlocksOverride : null;
+    const limit = (ov === 0 || (ov != null && ov !== '' && isFinite(Number(ov)))) ? Number(ov) : TIERS[tier].unlocks;
+    const used = ent && ent.period === periodKey() ? Number(ent.used || 0) : 0;
+    return Object.assign(o, {
+      n: d.length, closed: closed.length, active: active.length,
+      closeRate: d.length ? closed.length / d.length : 0,
+      mw: sum(sized.map(x => x.mw)),
+      avgMw: sized.length ? sum(sized.map(x => x.mw)) / sized.length : null,
+      ask: sum(withAsk.map(x => x.ask)),
+      avgAsk: withAsk.length ? sum(withAsk.map(x => x.ask)) / withAsk.length : null,
+      byTech: Object.values(byTech).sort((a, b) => b.n - a.n),
+      tier, limit, used, ent,
+      left: isFinite(limit) ? Math.max(0, limit - used) : Infinity
+    });
+  }).sort((a, b) => b.n - a.n || b.used - a.used || String(a.name).localeCompare(String(b.name)));
+}
+
+/* MW is the wrong unit under a megawatt. A 400 kW charging hub reported as
+   0.4 MW reads as a rounding error rather than as a project. */
+const capacity = mw => mw == null ? '\u2014'
+  : mw < 1 ? num(mw * 1000, 0) + ' kW' : num(mw, mw < 10 ? 1 : 0) + ' MW';
+
+function orgsView() {
+  if (orgsErr) return `<div class="empty"><h3>Organisations could not be loaded</h3><p>${esc(orgsErr)}</p></div>`;
+  if (!PEOPLE.length) return `<div class="empty"><p>Loading organisations\u2026</p></div>`;
+  const rows = orgKpis();
+  const partners = rows.filter(r => r.partner);
+  const totalUnlocks = sum(rows.map(r => r.used));
+
+  return `
+  <div class="kpi-strip">
+    ${kpi('Organizations', rows.length, '', `${plural(partners.length, 'capital partner')} \u00b7 ${rows.filter(r => r.sponsor).length} sponsors`, '')}
+    ${kpi('Deals on platform', sum(rows.map(r => r.n)), '', `${sum(rows.map(r => r.closed))} closed`, '')}
+    ${kpi('Unlocks this month', totalUnlocks, '', periodLabel(periodKey()), '')}
+    ${kpi('Capacity filed', capacity(sum(rows.map(r => r.mw))), '', `${usdC(sum(rows.map(r => r.ask)))} sought`, '')}
+  </div>
+  <p class="note" style="margin-bottom:14px">Tier sets how many deals an organisation can unlock each month \u2014 <b>Tier 1</b> 5, <b>Tier 2</b> 10, <b>Tier 3</b> 20, <b>Enterprise</b> unlimited. Set a number in the override box to grant something other than the tier. Filing deals is never metered, for anyone.</p>
+  <div class="sheet-wrap"><table class="sheet org-sheet">
+    <thead><tr>
+      <th>Organization</th><th>Tier</th><th style="width:96px">Override</th><th>Unlocks used</th>
+      <th class="num">Deals</th><th class="num">Closed</th><th class="num">Close rate</th>
+      <th class="num">Avg size</th><th class="num">Avg check</th><th>By category</th><th style="text-align:right">Reset</th>
+    </tr></thead>
+    <tbody>${rows.map(r => {
+      const pctUsed = isFinite(r.limit) && r.limit > 0 ? Math.min(100, r.used / r.limit * 100) : (r.used ? 100 : 0);
+      const bar = r.tier === 'enterprise'
+        ? `<span class="pill p-won">Unlimited</span> <span class="tok-n">${r.used} used</span>`
+        : `<div class="tok-meter"><div class="tok-fill ${r.left === 0 ? 'out' : ''}" style="width:${pctUsed.toFixed(0)}%"></div></div>
+           <span class="tok-n">${r.used} / ${isFinite(r.limit) ? r.limit : '\u221e'}</span>`;
+      return `<tr style="cursor:default">
+        <td class="c-name"><div>${esc(r.name)}<span>${esc(r.orgKey)} \u00b7 ${plural(r.people, 'person')}${r.partner ? ' \u00b7 capital' : ''}${r.sponsor ? ' \u00b7 sponsor' : ''}</span></div></td>
+        <td><select class="fb-sel" style="padding:5px 8px;font-size:12px" data-act="set-tier" data-val="${esc(r.orgKey)}">
+          ${TIER_ORDER.map(t => `<option value="${t}"${r.tier === t ? ' selected' : ''}>${TIERS[t].label}</option>`).join('')}
+        </select></td>
+        <td><input class="tok-ov" data-act="set-override" data-val="${esc(r.orgKey)}" type="number" min="0" step="1"
+             placeholder="${isFinite(TIERS[r.tier].unlocks) ? TIERS[r.tier].unlocks : '\u221e'}"
+             value="${r.ent && r.ent.unlocksOverride != null ? esc(String(r.ent.unlocksOverride)) : ''}"></td>
+        <td>${bar}</td>
+        <td class="num">${r.n || '\u2014'}</td>
+        <td class="num">${r.closed || '\u2014'}</td>
+        <td class="num">${r.n ? pct(r.closeRate * 100, 0) : '\u2014'}</td>
+        <td class="num">${capacity(r.avgMw)}</td>
+        <td class="num">${r.avgAsk ? usdC(r.avgAsk) : '\u2014'}</td>
+        <td>${r.byTech.length ? r.byTech.slice(0, 4).map(b =>
+          `<span class="cat-chip" style="color:${b.color};background:${b.color}18" title="${esc(b.name)}: ${b.n} filed, ${b.won} closed, avg ${capacity(b.sized ? b.mw / b.sized : null)}, avg ${b.asked ? usdC(b.ask / b.asked) : 'n/a'}">${esc(b.name.split(' / ')[0])} <b>${b.n}</b> \u00b7 ${capacity(b.sized ? b.mw / b.sized : null)}</span>`).join('')
+          : '<span class="note">\u2014</span>'}</td>
+        <td style="text-align:right"><button class="btn btn-ghost btn-xs" data-act="reset-tokens" data-val="${esc(r.orgKey)}">Reset</button></td>
+      </tr>`;
+    }).join('')}</tbody>
+  </table></div>
+  <div style="display:flex;gap:9px;flex-wrap:wrap;margin-top:14px">
+    <button class="btn btn-ghost btn-sm" data-act="export-orgs">Export organization KPIs</button>
+    <button class="btn btn-ghost btn-sm" data-act="export-unlocks">Export unlock log</button>
+  </div>
+  <p class="note" style="margin-top:12px">Average size is measured across deals that have a nameplate; deals filed without one are left out rather than counted as zero. Hover a category chip for its own averages.</p>`;
+}
+
+function exportOrgs() {
+  const rows = [['Organization','Org key','People','Tier','Monthly allowance','Unlocks used','Period',
+                 'Deals filed','Closed','Close rate %','Total capacity (MW)','Avg size (MW)','Avg size (kW)',
+                 'Capital sought (USD)','Avg check (USD)','Categories']];
+  orgKpis().forEach(r => rows.push([r.name, r.orgKey, r.people, TIERS[r.tier].label,
+    isFinite(r.limit) ? r.limit : 'unlimited', r.used, periodKey(),
+    r.n, r.closed, (r.closeRate * 100).toFixed(1), r.mw.toFixed(2),
+    r.avgMw != null ? r.avgMw.toFixed(3) : '', r.avgMw != null ? Math.round(r.avgMw * 1000) : '',
+    Math.round(r.ask), r.avgAsk != null ? Math.round(r.avgAsk) : '',
+    r.byTech.map(b => b.name + ': ' + b.n + ' filed, ' + b.won + ' closed, avg '
+      + (b.sized ? (b.mw / b.sized).toFixed(2) + ' MW' : 'n/a') + ', avg '
+      + (b.asked ? '$' + Math.round(b.ask / b.asked) : 'n/a')).join(' | ')]));
+  downloadCSV(`omega-organizations-${stamp()}.csv`, rows);
+}
+
+async function exportUnlocks() {
+  if (!FB.ready) return toast('Not connected.', true);
+  const rows = [['Organization','Org key','Person','Email','Deal ID','Deal','State','Technology',
+                 'MW','Capital ask (USD)','Sponsor','Unlocked at','Period','NDA version','Non-circumvent version','Signed as']];
+  try {
+    const orgs = await FB.db.collection('fin_orgs').get();
+    for (const o of orgs.docs) {
+      const subs = await o.ref.collection('unlocks').get();
+      subs.docs.forEach(u => {
+        const x = u.data();
+        rows.push([x.org || o.id, o.id, x.name || '', x.email || '', x.dealRef || u.id, x.dealName || '',
+          x.dealState || '', (TECH_BY_ID[x.dealTech] || {}).name || x.dealTech || '',
+          x.dealMw || '', x.dealAsk || '', x.sponsorOrg || '',
+          x.at ? new Date(x.at).toISOString() : '', x.period || '',
+          x.ndaVersion || '', x.ncVersion || '', x.acceptedName || '']);
+      });
+    }
+  } catch (e) {
+    console.error('[OMEGA] unlock export failed:', e);
+    return toast(explain(e)[0], true);
+  }
+  if (rows.length === 1) return toast('No unlocks recorded yet.', true);
+  downloadCSV(`omega-unlock-log-${stamp()}.csv`, rows);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
    13. RENDER
    ═══════════════════════════════════════════════════════════════════════════ */
 const TABS_BASE = {
   dev: [['overview','Overview'],['timelines','Timelines'],['deals','My deals']],
-  partner: [['market','Marketplace'],['coverage','Coverage'],['reports','Reports']]
+  partner: [['market','Marketplace'],['watchlist','Watchlist'],['coverage','Coverage'],['reports','Reports']]
 };
 const TABS = new Proxy({}, {get: (_, k) => {
   const base = (TABS_BASE[k] || TABS_BASE.dev).slice();
-  if (SESSION && SESSION.role === 'admin') base.push(['people', 'People']);
+  if (SESSION && SESSION.role === 'admin') base.push(['orgs', 'Organizations'], ['people', 'People']);
   return base;
 }});
 
@@ -5115,6 +6171,12 @@ function render() {
   }).join('');
 
   const view = $('#view');
+  if (S.tab === 'orgs') {
+    view.innerHTML = orgsView();
+    if (!PEOPLE.length && !peopleErr) loadPeople();
+    if (!ORGS.length && !orgsErr) loadOrgs();
+    return;
+  }
   if (S.tab === 'people') {
     view.innerHTML = peopleView();
     if (!PEOPLE.length && !peopleErr) loadPeople();
@@ -5141,6 +6203,7 @@ function render() {
                      + `<p class="note" style="margin-top:12px">${filtered().length} of ${myBook().length} deals shown.</p>`;
   } else {
     view.innerHTML = S.tab === 'market' ? partnerMarketplace()
+                   : S.tab === 'watchlist' ? partnerWatchlist()
                    : S.tab === 'coverage' ? partnerCoverage()
                    : partnerReports();
   }
@@ -5254,7 +6317,12 @@ document.addEventListener('click', e => {
     case 'accept-offer': { const [dl, pu] = val.split('|'); setOfferStatus(dl, pu, 'accepted'); break; }
     case 'decline-offer':{ const [dl, pu] = val.split('|'); setOfferStatus(dl, pu, 'declined'); break; }
     case 'sign':         { const [dl, side] = val.split('|'); signOff(dl, side); break; }
-    case 'watch':      toast('Added to your watchlist. You\'ll get a note when the stage changes.'); break;
+    case 'watch':        toggleWatch(val); break;
+    case 'ask-unlock':   ndaModal(val); break;
+    case 'nda-unlock':   unlockDeal(val); break;
+    case 'reset-tokens': resetOrgPeriod(val); break;
+    case 'export-orgs':    exportOrgs(); break;
+    case 'export-unlocks': exportUnlocks(); break;
     case 'upload-bill':closeDeal(); submitModal(); break;
   }
 });
@@ -5266,6 +6334,10 @@ document.addEventListener('change', e => {
   if (e.target.id === 'nfTech') { syncTech(null); return; }
   const rl = e.target.closest('[data-act="set-role"]');
   if (rl) { setPersonRole(rl.dataset.val, rl.value); return; }
+  const tr = e.target.closest('[data-act="set-tier"]');
+  if (tr) { setOrgTier(tr.dataset.val, tr.value); return; }
+  const ov = e.target.closest('[data-act="set-override"]');
+  if (ov) { setOrgOverride(ov.dataset.val, ov.value); return; }
   const el = e.target.closest('[data-act="sel"]');
   if (!el) return;
   const key = el.dataset.val;
@@ -5531,6 +6603,7 @@ let seenIds = null;           // null until the first snapshot lands
    refresh. Single-field filters only, so no composite index is required. */
 function watchDeals() {
   stopWatching();
+  watchEntitlements();
   seenIds = null;
   if (!FB.ready || !FB.auth.currentUser) return;
 
