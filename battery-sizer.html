@@ -287,8 +287,16 @@ body.nohelp .hb{display:none}
         <button class="btn btn-out btn-sm" style="flex:1" onclick="loadSample()">Load sample</button>
       </div>
       <div id="pasteBox" style="display:none;margin-top:10px">
-        <textarea id="pasteTa" rows="5" placeholder="Paste CSV rows here, then tap Parse"></textarea>
-        <button class="btn btn-pri btn-sm" style="margin-top:7px;width:100%" onclick="parsePaste()">Parse pasted data</button>
+        <textarea id="pasteTa" rows="8" spellcheck="false" style="font-family:var(--mono);font-size:11.5px"
+          placeholder="Paste straight from Excel, Google Sheets or a CSV.&#10;&#10;Timestamp&#9;kW&#10;2025-01-01 00:00&#9;412.5&#10;2025-01-01 01:00&#9;408.1&#10;&#10;Tabs, commas and semicolons all work. A bare column of numbers works too."></textarea>
+        <div id="pasteMsg"></div>
+        <div style="display:flex;gap:8px;margin-top:7px">
+          <button class="btn btn-pri btn-sm" style="flex:1" onclick="parsePaste()">Parse pasted data</button>
+          <button class="btn btn-out btn-sm" onclick="clearPaste()">Clear</button>
+        </div>
+        <div class="hint">Parses on paste automatically. Values may carry units or currency
+          (<span style="font-family:var(--mono)">412.5 kW</span>, <span style="font-family:var(--mono)">1,234</span>)
+          and account lines above the table are skipped.</div>
       </div>
 
       <div id="mapBox" style="display:none;margin-top:14px;border-top:1px solid var(--border2);padding-top:12px">
@@ -338,6 +346,9 @@ body.nohelp .hb{display:none}
             <option>1</option><option>2</option><option>3</option><option>4</option>
             <option>5</option><option>6</option><option>7</option><option>8</option>
             <option>9</option><option>10</option><option>11</option><option selected>12</option>
+            <option>13</option><option>14</option><option>15</option><option>16</option>
+            <option>17</option><option>18</option><option>19</option><option>20</option>
+            <option>21</option><option>22</option><option>23</option><option>24</option>
           </select>
         </div>
         <div>
@@ -353,15 +364,20 @@ body.nohelp .hb{display:none}
           <tbody id="billBody"></tbody>
         </table>
       </div>
-      <div class="hint">Peak&nbsp;kW is the billed demand on the invoice. Enter the demand rate that actually applies to it &mdash; add facilities + distribution + transmission $/kW together if they are separate line items.</div>
+      <div class="hint" id="billHint">Peak&nbsp;kW is the billed demand on the invoice. Enter the demand rate that actually applies to it &mdash; add facilities + distribution + transmission $/kW together if they are separate line items, and gross it up for sales tax if the utility charges it.</div>
       <div style="margin-top:10px"><button class="btn btn-out btn-sm" style="width:100%" onclick="fillSampleBills()">Fill with sample bills</button></div>
 
       <div style="border-top:1px solid var(--border2);margin-top:12px;padding-top:12px">
-        <div class="row">
-          <div><label class="fl" data-help="baseFrac">Base load % of peak</label><input type="number" id="baseFrac" value="35" min="5" max="90" step="1"></div>
-          <div><label class="fl" data-help="evtMo">Peak events / month</label><input type="number" id="evtMo" value="22" min="1" max="31" step="1"></div>
+        <div class="row3">
+          <div><label class="fl">On-peak hrs/day</label><input type="number" id="pkHrs" value="8" min="1" max="24" step="1"></div>
+          <div><label class="fl">Base load % of peak</label><input type="number" id="baseFrac" value="60" min="5" max="95" step="1"></div>
+          <div><label class="fl">Peak-day uplift %</label><input type="number" id="dayUp" value="15" min="0" max="60" step="5"></div>
         </div>
-        <div class="hint">Bills give totals, not shape. These two numbers define the assumed load duration curve. Lower base load = spikier site = more shaveable. Verify against interval data before quoting.</div>
+        <input type="hidden" id="evtMo" value="22">
+        <div class="hint">Bills give totals, not shape. The curve is now built inside the <b>on-peak window on the worst day</b> &mdash;
+          the only hours that can set the determinant, and the day the battery actually has to survive. Base load is read off the
+          on-peak kWh where the tariff is known; raise it for a flat site, lower it for a spiky one. This is the single biggest
+          assumption in the model and the reason interval data is worth asking for.</div>
       </div>
     </div>
   </div>
@@ -370,10 +386,28 @@ body.nohelp .hb{display:none}
   <div class="card">
     <div class="card-h" data-help="sRate"><span class="n">2</span> Rate</div>
     <div class="card-b">
+      <div class="f"><label class="fl" data-help="rateStruct">Demand is billed as</label>
+        <select id="rateStruct" onchange="rateStructUI()">
+          <option value="kw" selected>$ per kW of peak demand</option>
+          <option value="sub">Subscribed kW blocks (PG&amp;E BEV, SDG&amp;E EV-HP)</option>
+        </select>
+      </div>
       <div class="row" id="rateRow">
         <div><label class="fl" data-help="dRate">Demand charge $/kW-mo</label><input type="number" id="dRate" value="18.50" step="0.25"></div>
         <div><label class="fl" data-help="eRate">Energy $/kWh</label><input type="number" id="eRate" value="0.075" step="0.005"></div>
       </div>
+      <div id="subRow" style="display:none">
+        <div class="row3">
+          <div><label class="fl">Block size kW</label><input type="number" id="subBlock" value="50" min="1" step="5"></div>
+          <div><label class="fl">$ per block/mo</label><input type="number" id="subPrice" value="95.56" step="0.01"></div>
+          <div><label class="fl">Floor kW</label><input type="number" id="subMin" value="100" min="0" step="10"></div>
+        </div>
+        <div class="hint" data-help="subHint">A subscription is a step function, not a slope. Shaving 40 kW off a 503 kW peak saves
+          nothing unless it crosses a block boundary, and nothing at all below the floor. Enter the block price from the current
+          tariff sheet &mdash; these escalate, and a stale number is the whole error.</div>
+      </div>
+      <label class="chk" style="margin:0 0 8px"><input type="checkbox" id="curRate" checked>
+        <span>Price every month at the newest rate on the packet</span></label>
       <div class="row">
         <div><label class="fl" data-help="ratchet">Demand ratchet %</label><input type="number" id="ratchet" value="0" min="0" max="100" step="5"></div>
         <div><label class="fl" data-help="headroom">Sizing headroom %</label><input type="number" id="headroom" value="10" min="0" max="50" step="5"></div>
@@ -403,16 +437,61 @@ body.nohelp .hb{display:none}
         <div><label class="fl" data-help="cKwh">Cost $/kWh installed</label><input type="number" id="cKwh" value="450" step="10"></div>
         <div><label class="fl" data-help="cKw">Cost $/kW installed</label><input type="number" id="cKw" value="0" step="10"></div>
       </div>
+      <div class="row">
+        <div><label class="fl" data-help="incent">Cash incentive $</label><input type="number" id="incent" value="0" step="1000"></div>
+        <div><label class="fl" data-help="incHair">Incentive haircut %</label><input type="number" id="incHair" value="0" min="0" max="100" step="10"></div>
+      </div>
       <div class="row3">
         <div><label class="fl" data-help="itc">ITC %</label><input type="number" id="itc" value="30" min="0" max="70" step="5"></div>
         <div><label class="fl" data-help="om">O&amp;M $/kW-yr</label><input type="number" id="om" value="10" min="0" step="1"></div>
         <div><label class="fl" data-help="term">Term yrs</label><input type="number" id="term" value="10" min="1" max="25" step="1"></div>
       </div>
       <div class="row">
+        <div><label class="fl" data-help="escal">Utility escalation %/yr</label><input type="number" id="escal" value="3.0" min="-5" max="15" step="0.5"></div>
         <div><label class="fl" data-help="disc">Discount %</label><input type="number" id="disc" value="8" min="0" max="25" step="0.5"></div>
+      </div>
+      <div class="row">
         <div><label class="fl" data-help="obj">Objective</label>
           <select id="obj"><option value="npv">Max NPV</option><option value="pay">Fastest payback</option><option value="sav">Max savings</option></select>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. PROPOSAL AUDIT -->
+  <div class="card">
+    <div class="card-h" data-help="sAudit"><span class="n">4</span> Audit someone else&rsquo;s model</div>
+    <div class="card-b">
+      <div class="hint" style="padding-top:0">Paste the headline numbers off a vendor proposal. Every claim gets checked against
+        what the hardware can physically do and against the same energy budget &mdash; a battery cannot spend the same kWh twice.</div>
+      <div class="row">
+        <div><label class="fl">Claimed battery kW</label><input type="number" id="aKw" value="" placeholder="503"></div>
+        <div><label class="fl">Claimed battery kWh</label><input type="number" id="aKwh" value="" placeholder="1004"></div>
+      </div>
+      <div class="row">
+        <div><label class="fl">Claimed demand savings $/yr</label><input type="number" id="aDem" value="" placeholder="120720"></div>
+        <div><label class="fl">Claimed arbitrage $/yr</label><input type="number" id="aArb" value="" placeholder="89864"></div>
+      </div>
+      <div class="row3">
+        <div><label class="fl">On-peak $/kWh</label><input type="number" id="aOn" value="0.52" step="0.01"></div>
+        <div><label class="fl">Off-peak $/kWh</label><input type="number" id="aOff" value="0.12" step="0.01"></div>
+        <div><label class="fl">Cycles/day</label><input type="number" id="aCyc" value="1" min="0.25" max="3" step="0.25"></div>
+      </div>
+      <div class="hint" style="padding:8px 0 4px"><b>Subscription check:</b> if the site sits on a PG&amp;E BEV or SDG&amp;E EV-HP
+        rate, switch step 2 to subscribed blocks before auditing. A 503 kW shave off a 600 kW peak is 10 blocks of 50 kW
+        &mdash; real money, but roughly a tenth of what the same shave is worth on a $20/kW demand charge.</div>
+      <div class="row3">
+        <div><label class="fl">Gross CAPEX $</label><input type="number" id="aCap" value="" placeholder="435000"></div>
+        <div><label class="fl">Incentive $</label><input type="number" id="aInc" value="" placeholder="300000"></div>
+        <div><label class="fl">Their discount %</label><input type="number" id="aDisc" value="0" step="0.5"></div>
+      </div>
+      <div class="row">
+        <div><label class="fl">Site peak kW</label><input type="number" id="aPeak" value="" placeholder="600"></div>
+        <div><label class="fl">Daily site kWh</label><input type="number" id="aDay" value="" placeholder="1536"></div>
+      </div>
+      <div style="display:flex;gap:6px;margin-top:8px">
+        <button class="btn btn-out btn-sm" style="flex:1" onclick="auditExample()">Load the EVSE example</button>
+        <button class="btn btn-pri btn-sm" style="flex:1" onclick="auditRun()">Audit it</button>
       </div>
     </div>
   </div>
@@ -497,9 +576,20 @@ var HELP = {
 'bRate':['Demand charge for that month',
  'Dollars per kW for this specific bill. If the invoice breaks demand into separate facilities, distribution, and transmission lines, <b>add them together</b>.<p>It is per-month because summer and winter rates usually differ, and the summer rate is where the savings are.</p>'],
 'baseFrac':['Base load as a share of peak',
- 'How much load the site never drops below \u2014 overnight, weekends, idle. Expressed as a percentage of the peak.<p>This drives the answer more than almost anything else here. A plant that never falls below 60% of peak is flat and expensive to shave. A school or office at 20% is spiky and cheap to shave.</p><p>35% is a fair starting guess. Before you quote anything, get one month of interval data and check it.</p>'],
+ 'The load the site never drops below <b>inside the on-peak window</b>, as a percentage of the on-peak maximum.<p>This drives the answer more than anything else on the page. A plant that never falls below 60% of peak is flat: the excess above a shave target lasts hours, so the battery needs kWh. A site at 20% is spiky: the excess is minutes, and kW is nearly free.</p><p>When a time-of-day tariff is read off the bill the on-peak kWh give you the average in that window, which brackets this number but does not pin it. Interval data pins it. Until then, run the sizing at your assumption and at the flat-top downside in the underwriting panel, and quote the gap honestly.</p>'],
 'evtMo':['Peak events per month',
- 'Roughly how many separate times per month the site runs up near its peak. 22 means every weekday.<p>Fewer events means each one carries more energy, so the battery needs more kWh for the same kW of shaving.</p>'],
+ 'No longer used. The curve is built for the worst day inside the on-peak window, because the battery has to hold the target on every one of those days \u2014 the month\u0027s peak can land on any of them.'],
+
+'rateStruct':['How demand is billed',
+ 'Two structures, two completely different batteries.<p><b>$ per kW</b> is a slope: every kW you shave is worth the same, so savings scale smoothly with power.</p><p><b>Subscribed blocks</b> is a staircase. PG&#39;s BEV rates and SDG&E&#39;s EV-HP replaced the demand charge with a reserved block of capacity - 50 kW blocks on BEV2, 25 kW on EV-HP. Shaving 40 kW off a 503 kW peak saves nothing at all unless it crosses a boundary, and the subscription never falls below the floor. Batteries still pay on these rates, but they pay in steps, and a model built on a slope will overstate the saving badly.</p>'],
+'incent':['Cash incentive',
+ 'A rebate or grant applied against CAPEX - SGIP in California, and its equivalents elsewhere.<p>Enter the gross award here and use the haircut beside it to say how much of it an underwriter should count.</p>'],
+'incHair':['Incentive haircut',
+ 'The share of the incentive to discount for the underwriting case.<p>A reservation that has not been awarded, or an award that cannot be assigned to the financing party, is not equity yet. At 100% the model shows what the project looks like if the incentive never arrives - which is the case a credit committee will ask for.</p>'],
+'escal':['Utility escalation',
+ 'Annual increase in the demand and energy rates the savings are measured against.<p>Savings escalate with the tariff while the payment usually does not, so this is what makes later years carry the deal. It cuts the other way too: escalating a number that was wrong in year one only compounds the error.</p><p>3% is a common default. On this Eversource meter the all-in demand rate moved 11% in a single year.</p>'],
+'sAudit':['Step 4: audit a proposal',
+ 'For checking someone else&#39;s numbers - a vendor, a competitor, or your own model from six months ago.<p>It tests each claimed savings line against a physical ceiling, then tests both lines against the one energy budget they share. It needs no bills and no interval data, because the checks are arithmetic on the claims themselves.</p>'],
 
 /* --- step 2: rate --- */
 'sRate':['Step 2: the tariff',
@@ -566,6 +656,8 @@ var HELP = {
  'This is the honest answer to "what would this month have needed." It uses only the month you entered.<p>What it does <b>not</b> tell you is what to install. If this was not the site\u0027s worst month, the annual peak is higher and a system sized here will be short on power exactly when it matters most.</p>'],
 'rLadder':['Shave depth ladder',
  'Each row asks: what if you cut this percentage off that month\u0027s peak?<p><b>Duration</b> is the giveaway. Rows needing more than about 8 hours are marked \u2014 that means the load is flat, not peaky, and no amount of battery will make demand charges pencil.</p><p>The "if every month" column assumes an identical peak all twelve months. No site behaves that way. Treat it as a ceiling, never a forecast.</p>'],
+'rNoGood':['Nothing pencils here',
+ 'Every size and duration the tool tried costs more than it saves over the analysis term, so the system shown above is the least-bad of a bad set rather than something to quote.<p>Two things move it: a <b>higher demand charge</b>, which is set by the tariff and not negotiable, or a <b>lower installed cost</b>. The figures given are what each would have to reach on its own.</p><p><b>Check the duration first.</b> A 6-hour battery buys three times the kWh of a 2-hour one for the same kW of shaving. On a flat, high-load-factor site that difference alone decides whether the project works.</p>'],
 'rShort':['Not enough months yet',
  'Annual figures are scaled up from the months you provided.<p>Demand charges are driven by the single worst interval in each period, so if the months you have exclude the seasonal peak, both the savings and the required power rating are understated.</p>']
 };
@@ -756,37 +848,161 @@ function setMode(m){
 /* ============================================================
    CSV PARSING
    ============================================================ */
-function parseCSV(txt){
-  txt = txt.replace(/^\uFEFF/,'').replace(/\r\n/g,'\n').replace(/\r/g,'\n');
-  var lines = txt.split('\n'), out = [], i, j;
-  /* sniff delimiter on the first non-empty line */
-  var probe='', k;
-  for(k=0;k<lines.length;k++){ if(lines[k].replace(/\s/g,'')!==''){ probe=lines[k]; break; } }
-  var delim = ',';
-  var counts = {',':0,'\t':0,';':0,'|':0};
-  for(i=0;i<probe.length;i++){ if(counts[probe.charAt(i)]!==undefined) counts[probe.charAt(i)]++; }
-  var bestC = -1;
-  for(var d in counts){ if(counts[d]>bestC){ bestC=counts[d]; delim=d; } }
+var LAST_PARSE = { delim:'', rows:0, cols:0, skipped:0 };
 
-  for(i=0;i<lines.length;i++){
-    var ln = lines[i];
-    if(ln.replace(/\s/g,'')==='') continue;
-    var cells=[], cur='', q=false;
-    for(j=0;j<ln.length;j++){
-      var c = ln.charAt(j);
-      if(q){
-        if(c==='"'){ if(ln.charAt(j+1)==='"'){ cur+='"'; j++; } else q=false; }
-        else cur+=c;
-      } else {
-        if(c==='"') q=true;
-        else if(c===delim){ cells.push(cur); cur=''; }
-        else cur+=c;
-      }
+/* Split one line, honouring quotes. delim may be a single character or a
+   regular expression (used for whitespace-separated pastes). */
+function splitLine(ln, delim){
+  var cells=[], cur='', q=false, j, c;
+  if(delim instanceof RegExp){
+    if(ln.indexOf('"') < 0) return ln.replace(/^\s+|\s+$/g,'').split(delim);
+    /* quoted + whitespace is rare; fall back to a simple split of the parts */
+    return ln.replace(/^\s+|\s+$/g,'').replace(/"/g,'').split(delim);
+  }
+  for(j=0;j<ln.length;j++){
+    c = ln.charAt(j);
+    if(q){
+      if(c==='"'){ if(ln.charAt(j+1)==='"'){ cur+='"'; j++; } else q=false; }
+      else cur+=c;
+    } else {
+      if(c==='"') q=true;
+      else if(c===delim){ cells.push(cur); cur=''; }
+      else cur+=c;
     }
-    cells.push(cur);
-    for(j=0;j<cells.length;j++) cells[j] = cells[j].replace(/^\s+|\s+$/g,'');
+  }
+  cells.push(cur);
+  for(j=0;j<cells.length;j++) cells[j] = cells[j].replace(/^\s+|\s+$/g,'').replace(/^"|"$/g,'');
+  return cells;
+}
+
+/* Pick the delimiter by how CONSISTENT it makes the row width across the whole
+   paste, not by counting characters in the first line. A single line cannot
+   tell "1,234" apart from two columns; twenty lines can. */
+/* parseFloat("00:00,1,580.0") returns 0, so it cannot be used to ask whether a
+   CELL is a number - it happily reads a prefix. The whole token has to match. */
+function isFullNumber(v){
+  if(v === null || v === undefined) return false;
+  var t = String(v).replace(/\u00a0/g,' ').replace(/^\s+|\s+$/g,'');
+  if(t === '') return false;
+  t = t.replace(/\s*(kwh|kw|kva|kvar|mw|mwh|w)\s*$/i,'').replace(/[$\u20ac\u00a3]/g,'').replace(/\s/g,'');
+  if(/^\(.*\)$/.test(t)) t = t.slice(1,-1);
+  return /^-?\d{1,3}(\.\d{3})+,\d+$/.test(t)      /* 1.234,56 European */
+      || /^-?\d+,\d{1,2}$/.test(t)                  /* 1234,5   European */
+      || /^-?\d{1,3}(,\d{3})+(\.\d+)?$/.test(t)     /* 1,234.5  thousands */
+      || /^-?\d*\.?\d+(e[-+]?\d+)?$/i.test(t);
+}
+
+/* An unquoted "1,234" splits into "1" and "234" on a comma. Rejecting the
+   comma outright is wrong - the delimiter IS a comma, the number just needs
+   putting back together. */
+function mergeThousands(cells){
+  var out = [], i;
+  for(i=0;i<cells.length;i++){
+    var prev = out.length ? out[out.length-1] : null;
+    if(prev !== null && /^-?\d{1,3}(,\d{3})*$/.test(prev) && /^\d{3}(\.\d+)?$/.test(cells[i])){
+      out[out.length-1] = prev + ',' + cells[i];
+    } else out.push(cells[i]);
+  }
+  return out;
+}
+function thousandsFrac(split){
+  var hit = 0, i, j;
+  for(i=0;i<split.length;i++){
+    for(j=1;j<split[i].length;j++){
+      if(/^-?\d+$/.test(split[i][j-1]) && /^\d{3}(\.\d+)?$/.test(split[i][j])){ hit++; break; }
+    }
+  }
+  return split.length ? hit/split.length : 0;
+}
+
+function sniffDelim(lines){
+  var cands = [
+    { d:'\t',              name:'tab',       bonus:14 },
+    { d:',',               name:'comma',     bonus:10 },
+    { d:';',               name:'semicolon', bonus:8 },
+    { d:'|',               name:'pipe',      bonus:8 },
+    { d:/\s*[\t ]{2,}\s*/, name:'spaces',    bonus:2 },
+    { d:/[ ]+/,            name:'space',     bonus:0 }
+  ];
+  var probe = lines.slice(0, 40), i, j, c;
+  var best = null;
+
+  /* Does a cell look like real data? The delimiter that leaves the most cells
+     parseable as a number or a date is almost always the right one. This is
+     what separates "01.01.2025 00:00;1.580,0" split on ; (two clean cells)
+     from the same line split on , (one broken cell and a stray "0"). */
+  function clean(v){
+    if(v === '' || v === null || v === undefined) return false;
+    if(isFullNumber(v)) return true;
+    return !!parseTS(v);
+  }
+
+  for(c=0;c<cands.length;c++){
+    var widths = {}, n = 0, split = [], k;
+    for(i=0;i<probe.length;i++) split.push(splitLine(probe[i], cands[c].d));
+    /* repair thousands before measuring, so the comma is judged on what it
+       would actually produce rather than on the damage before repair */
+    var merged = (cands[c].name === 'comma') && thousandsFrac(split) > 0.6;
+    if(merged) for(k=0;k<split.length;k++) split[k] = mergeThousands(split[k]);
+    for(i=0;i<split.length;i++){
+      widths[split[i].length] = (widths[split[i].length]||0) + 1; n++;
+    }
+    var modeW = 1, modeN = 0, w2;
+    for(w2 in widths) if(widths[w2] > modeN){ modeN = widths[w2]; modeW = parseInt(w2,10); }
+    if(modeW < 2) continue;                       /* did not split anything */
+
+    var consistency = modeN / n;
+    var good = 0, tot = 0;
+    for(i = (split.length > 1 ? 1 : 0); i<split.length; i++){     /* skip the header row */
+      for(j=0;j<split[i].length;j++){ tot++; if(clean(split[i][j])) good++; }
+    }
+    var quality = tot ? good/tot : 0;
+
+    var score = consistency*60 + quality*60 + cands[c].bonus + Math.min(modeW,6);
+    if(!best || score > best.score)
+      best = { d:cands[c].d, name:cands[c].name, score:score, cols:modeW, merge:merged };
+  }
+  /* nothing split: a single column of numbers, which is perfectly valid */
+  if(!best) best = { d:'\n', name:'single column', score:0, cols:1 };
+  return best;
+}
+
+/* Utility exports often carry account details, blank lines and notes above the
+   real table. Start where the rows first settle into a consistent width. */
+function findTableStart(rows, cols){
+  if(cols < 2) return 0;
+  var i, runStart = 0, runLen = 0, bestStart = 0, bestLen = 0;
+  for(i=0;i<rows.length;i++){
+    if(rows[i].length === cols){
+      if(runLen === 0) runStart = i;
+      runLen++;
+      if(runLen > bestLen){ bestLen = runLen; bestStart = runStart; }
+    } else runLen = 0;
+  }
+  return bestLen >= 3 ? bestStart : 0;
+}
+
+function parseCSV(txt){
+  txt = String(txt).replace(/^\uFEFF/,'').replace(/\r\n/g,'\n').replace(/\r/g,'\n')
+                   .replace(/\u00a0/g,' ');      /* non-breaking spaces from web copy */
+  var raw = txt.split('\n'), lines = [], i;
+  for(i=0;i<raw.length;i++) if(raw[i].replace(/\s/g,'') !== '') lines.push(raw[i]);
+  if(!lines.length){ LAST_PARSE = {delim:'',rows:0,cols:0,skipped:0}; return []; }
+
+  var sn = sniffDelim(lines);
+  var out = [];
+  for(i=0;i<lines.length;i++){
+    var cells = (sn.cols === 1 && sn.name === 'single column')
+      ? [lines[i].replace(/^\s+|\s+$/g,'')]
+      : splitLine(lines[i], sn.d);
+    if(sn.merge) cells = mergeThousands(cells);
     out.push(cells);
   }
+
+  var start = findTableStart(out, sn.cols);
+  if(start > 0) out = out.slice(start);
+
+  LAST_PARSE = { delim: sn.name, rows: out.length, cols: sn.cols, skipped: start };
   return out;
 }
 
@@ -795,8 +1011,34 @@ function looksNumeric(s){
   return /^-?[\d,]*\.?\d+(e[-+]?\d+)?$/i.test(String(s).replace(/[$\s]/g,''));
 }
 function toNum(s){
-  var v = parseFloat(String(s).replace(/[$,\s]/g,''));
-  return isFinite(v)?v:NaN;
+  if(s === null || s === undefined) return NaN;
+  var t = String(s).replace(/\u00a0/g,' ').replace(/^\s+|\s+$/g,'');
+  if(t === '') return NaN;
+  /* drop a trailing unit that came along for the ride: "412.5 kW", "1,234 kWh" */
+  t = t.replace(/\s*(kwh|kw|kva|kvar|mw|mwh|w)\s*$/i,'');
+  t = t.replace(/[$\u20ac\u00a3]/g,'').replace(/\s/g,'');
+  /* parentheses are accounting negatives */
+  var neg = /^\(.*\)$/.test(t);
+  if(neg) t = t.slice(1,-1);
+  /* European: 1.234,56  ->  1234.56   (comma last and exactly 2 trailing) */
+  if(/^\-?\d{1,3}(\.\d{3})+,\d+$/.test(t)) t = t.replace(/\./g,'').replace(',','.');
+  else if(/^\-?\d+,\d{1,2}$/.test(t)) t = t.replace(',','.');
+  else t = t.replace(/,/g,'');
+  var v = parseFloat(t);
+  if(!isFinite(v)) return NaN;
+  return neg ? -v : v;
+}
+
+/* Excel stores a date as days since 1899-12-30. Pasting a formatted column
+   usually gives text, but pasting the underlying values gives numbers like
+   45658.25, which would otherwise be read as demand. */
+function excelSerial(v){
+  if(!(v > 20000 && v < 80000)) return null;      /* 1954 .. 2119 */
+  var ms = Math.round((v - 25569) * 86400000);
+  var u = new Date(ms);
+  if(isNaN(u.getTime())) return null;
+  return new Date(u.getUTCFullYear(), u.getUTCMonth(), u.getUTCDate(),
+                  u.getUTCHours(), u.getUTCMinutes(), u.getUTCSeconds());
 }
 
 /* Robust-enough timestamp parse for utility exports. */
@@ -827,7 +1069,11 @@ function parseTS(s){
    ============================================================ */
 function handleText(txt){
   var rows = parseCSV(txt);
-  if(rows.length < 2){ alert('Could not read any rows out of that file.'); return; }
+  if(rows.length < 2){
+    pasteMsg('Only ' + rows.length + ' row' + (rows.length===1?'':'s') + ' could be read. '
+      + 'Paste the rows themselves \u2014 a timestamp column and a demand column \u2014 not a screenshot or a summary.', 'bad');
+    return;
+  }
 
   /* header row = first row that is not fully numeric */
   var hdr = rows[0], hasHdr = false, i;
@@ -842,6 +1088,19 @@ function handleText(txt){
 
   buildColSelects();
   reIngest();
+
+  var lp = LAST_PARSE;
+  var msg = 'Read ' + fmt(lp.rows) + ' rows \u00d7 ' + lp.cols + ' column' + (lp.cols===1?'':'s')
+          + ' (' + lp.delim + '-separated).';
+  if(lp.skipped) msg += ' Skipped ' + lp.skipped + ' header/preamble line' + (lp.skipped===1?'':'s') + ' above the table.';
+  msg += ' Check the column mapping below.';
+  pasteMsg(msg, SERIES ? 'ok' : 'bad');
+}
+
+function pasteMsg(m, kind){
+  var el = $('pasteMsg');
+  if(!el) return;
+  el.innerHTML = m ? '<div class="note' + (kind ? ' ' + kind : '') + '">' + m + '</div>' : '';
 }
 
 function buildColSelects(){
@@ -883,7 +1142,11 @@ function reIngest(){
     var v = toNum(r[vi]);
     if(!isFinite(v)) continue;
     var t = null;
-    if(ti>=0){ t = parseTS(r[ti]); if(!t) continue; }
+    if(ti>=0){
+      t = parseTS(r[ti]);
+      if(!t && looksNumeric(r[ti])) t = excelSerial(toNum(r[ti]));
+      if(!t) continue;
+    }
     ts.push(t); kw.push(v);
   }
   if(kw.length < 24){ $('dataSum').innerHTML = '<div class="note bad">Only '+kw.length+' usable rows. Check the column mapping.</div>'; SERIES=null; return; }
@@ -1024,9 +1287,26 @@ function togglePaste(){
 }
 function parsePaste(){
   var t = $('pasteTa').value;
-  if(!t || t.replace(/\s/g,'')===''){ alert('Nothing pasted yet.'); return; }
+  if(!t || t.replace(/\s/g,'')===''){ pasteMsg('Nothing pasted yet.', 'bad'); return; }
   handleText(t);
 }
+function clearPaste(){
+  $('pasteTa').value = '';
+  pasteMsg('');
+}
+
+/* Parse as soon as something lands in the box. Waiting for a button press is
+   an extra step that only ever produces "why is nothing happening". */
+(function(){
+  var ta = $('pasteTa');
+  if(!ta) return;
+  ta.addEventListener('paste', function(){
+    setTimeout(function(){
+      var v = ta.value;
+      if(v && v.replace(/\s/g,'') !== '') handleText(v);
+    }, 0);
+  });
+})();
 
 /* ---------- synthetic sample 8760 ---------- */
 function loadSample(){
@@ -1215,6 +1495,7 @@ function aiRows(resp){
     var rate = parseFloat(p.rate), days = parseFloat(p.days);
     if(!isFinite(kwh) && !isFinite(kw)) continue;
     out.push({
+      meter: p.meter || null,
       label: p.label || null,
       kwh: isFinite(kwh) && kwh > 0 ? kwh : null,
       kw:  isFinite(kw)  && kw  > 0 ? kw  : null,
@@ -1234,6 +1515,10 @@ function aiRows(resp){
    more than 2% on a figure, the person is told which row to check. */
 function aiMerge(aiList, reList){
   var byLabel = {}, i, r;
+  /* The pattern reader normally loses to the AI because it reads layout
+     worse. It does not lose when it has parsed a tariff it knows line by
+     line: the AI returns one $/kW, and this meter has four. */
+  for(i=0;i<reList.length;i++) if(reList[i].tariff) return { rows: reList, conflicts: [] };
   for(i=0;i<reList.length;i++){ if(reList[i].label) byLabel[reList[i].label] = reList[i]; }
   var conflicts = [];
   for(i=0;i<aiList.length;i++){
@@ -1393,6 +1678,10 @@ function pdfPeriod(text){
       return { mi:mi, yr:+m[3], days:(dd>15 && dd<45)?dd:null };
     }
   }
+  /* A dotted European date block used to live here and referenced a variable
+     that does not exist in this scope, so every bill whose period did not
+     match one of the two patterns above threw instead of falling through. */
+
   /* last resort: a lone "Jul 2025" or "07/2025" */
   m = text.match(/\b([A-Za-z]{3,9})\.?\s+(20\d\d)\b/);
   if(m && pdfMonIdx(m[1]) >= 0) return { mi:pdfMonIdx(m[1]), yr:+m[2], days:null };
@@ -1490,8 +1779,208 @@ function pdfHistory(lines){
   return rows.length >= 3 ? rows : null;
 }
 
+/* ============================================================
+   EVERSOURCE CT - RATE 27 / RATE 116 STATEMENT READER
+   ------------------------------------------------------------
+   A time-of-day demand bill is not "kWh + peak kW + one $/kW".
+   On this tariff:
+     - the billing determinant is the MAX ON-PEAK demand, which is
+       often LOWER than the max off-peak demand printed beside it;
+     - four separate line items are charged per kW (transmission
+       demand, local delivery improvements, local delivery demand,
+       CTA demand) and only their sum is what a shaved kW is worth;
+     - 6.35% CT sales tax rides on every dollar removed;
+     - on-peak and off-peak kWh carry different delivery rates, and
+       that spread flips sign when the rates change;
+     - when a rate change splits the period the bill pro-rates each
+       half with a trailing factor that has to be summed, not averaged.
+   Generic pattern matching found none of that, so it fell back to a
+   default $/kW and pointed the sizing at the wrong peak.
+   ============================================================ */
+var ES_TAX = 0.0635;
+
+function esNum(s){ var v = parseFloat(String(s).replace(/[$,\s]/g,'')); return isFinite(v) ? v : NaN; }
+function esRe(label, tail){
+  return new RegExp(label.replace(/[.*+?^${}()|[\]\\]/g,'\\$&') + tail, 'i');
+}
+
+/* "<label> 124.70KW X $4.33000 [X 0.64520]" -> { rate, kw }
+   The trailing factor is the pro-ration when a rate change splits the
+   billing period; the halves add up to one month of charge. */
+function esKwLine(lines, label){
+  var re = esRe(label, '\\s+([\\d,]+(?:\\.\\d+)?)\\s*KW\\s*X\\s*\\$\\s*(-?[\\d.]+)(?:\\s*X\\s*([\\d.]+))?');
+  var tot = 0, kw = null, hit = 0, i, m;
+  for(i=0;i<lines.length;i++){
+    m = lines[i].match(re);
+    if(!m) continue;
+    kw = esNum(m[1]);
+    tot += parseFloat(m[2]) * (m[3] ? parseFloat(m[3]) : 1);
+    hit++;
+  }
+  return hit ? { rate:tot, kw:kw } : null;
+}
+
+/* "<label> 15360.00kWh X $0.03333" -> kWh-weighted $/kWh and total kWh */
+function esKwhLine(lines, label){
+  var re = esRe(label, '\\s+([\\d,]+(?:\\.\\d+)?)\\s*kWh\\s*X\\s*\\$\\s*(-?[\\d.]+)');
+  var num = 0, den = 0, i, m;
+  for(i=0;i<lines.length;i++){
+    m = lines[i].match(re);
+    if(!m) continue;
+    var q = esNum(m[1]);
+    if(!isFinite(q)) continue;
+    num += q * parseFloat(m[2]);
+    den += q;
+  }
+  return den ? { rate:num/den, kwh:den } : null;
+}
+
+/* Weekdays in the period. On-peak demand can only be set in the on-peak
+   window, so the number of weekdays - not the number of days - is what a
+   battery has to cover. */
+function esWeekdays(from, to){
+  function d(s){
+    var p = s.split('/');
+    return new Date(2000 + (+p[2]), (+p[0]) - 1, +p[1]);
+  }
+  var a = d(from), b = d(to), n = 0;
+  if(!(a < b)) return null;
+  var g = new Date(a.getTime());
+  while(g < b){
+    var w = g.getDay();
+    if(w > 0 && w < 6) n++;
+    g = new Date(g.getTime() + 86400000);
+  }
+  return n;
+}
+
+/* One merged PDF holds many statements, and packets routinely repeat a
+   month. Splitting on the statement date and keeping the first copy stops
+   a duplicated bill from doubling that month's kWh and demand rate. */
+function esSplit(lines){
+  var out = [], cur = null, i, m;
+  for(i=0;i<lines.length;i++){
+    m = lines[i].match(/Statement Date:\s*(\d{2})\/(\d{2})\/(\d{2})/);
+    if(m){
+      var dt = m[1] + '/' + m[2] + '/' + m[3];
+      if(!cur || cur.date !== dt){ cur = { date:dt, lines:[] }; out.push(cur); }
+    }
+    if(cur) cur.lines.push(lines[i]);
+  }
+  var seen = {}, keep = [], dups = 0;
+  for(i=0;i<out.length;i++){
+    if(seen[out[i].date]){ dups++; continue; }
+    seen[out[i].date] = 1;
+    keep.push(out[i]);
+  }
+  /* A packet that repeats a bill back to back does not change statement date
+     between the two copies, so the split above cannot see the seam and the
+     charge lines get counted twice - doubling that month's kWh and its $/kW.
+     Identical lines inside one statement are always repeats: a real bill
+     never charges the same quantity at the same rate on two lines. */
+  var q, ls, uniq, mark, dropped;
+  for(i=0;i<keep.length;i++){
+    ls = keep[i].lines; uniq = []; mark = {}; dropped = 0;
+    for(q=0;q<ls.length;q++){
+      if(mark[ls[q]]){ dropped++; continue; }
+      mark[ls[q]] = 1;
+      uniq.push(ls[q]);
+    }
+    keep[i].lines = uniq;
+    if(dropped > ls.length*0.4) dups++;
+  }
+  ES_DUPS = dups;
+  return keep;
+}
+var ES_DUPS = 0;
+
+function esStatement(g, fname){
+  var L = g.lines, j = L.join('\n'), m;
+  var mo = parseInt(g.date.substr(0,2),10) - 1;
+  var yr = 2000 + parseInt(g.date.substr(6,2),10);
+
+  var tx  = esKwLine(L, 'Transmission Demand Chrg');
+  var ldd = esKwLine(L, 'Local Delivery Demand Chrg');
+  if(!tx || !ldd) return null;                    /* no demand meter on this statement */
+  var ldi = esKwLine(L, 'Local Delivery Improvements');
+  var cta = esKwLine(L, 'CTA Demand Chrg');
+  var demRate = tx.rate + ldd.rate + (ldi ? ldi.rate : 0) + (cta ? cta.rate : 0);
+
+  var days = null, from = null, to = null;
+  m = j.match(/Service from\s*(\d{2}\/\d{2}\/\d{2})\s*-\s*(\d{2}\/\d{2}\/\d{2})\s*(\d{1,2})\s*Days/i);
+  if(m){ from = m[1]; to = m[2]; days = +m[3]; }
+
+  m = j.match(/Max On-?Peak Demand:\s*([\d,.]+)/i);
+  var onKw = m ? esNum(m[1]) : null;
+  m = j.match(/Max Off-?Peak Demand:\s*([\d,.]+)/i);
+  var offKw = m ? esNum(m[1]) : null;
+  if(onKw == null) onKw = tx.kw;                  /* untimed rate: determinant is the printed kW */
+
+  var txp = esKwhLine(L, 'Transmission Peak'),          txo = esKwhLine(L, 'Transmission Off-Peak');
+  var rdp = esKwhLine(L, 'Revenue Decoupling Peak'),    rdo = esKwhLine(L, 'Revenue Decoupling Off-Peak');
+  var fmp = esKwhLine(L, 'FMCC Charge Peak'),           fmo = esKwhLine(L, 'FMCC Charge Off-Peak');
+  var onKwh  = txp ? txp.kwh : (fmp ? fmp.kwh : null);
+  var offKwh = txo ? txo.kwh : (fmo ? fmo.kwh : null);
+  var ePk  = (txp?txp.rate:0) + (rdp?rdp.rate:0) + (fmp?fmp.rate:0);
+  var eOff = (txo?txo.rate:0) + (rdo?rdo.rate:0) + (fmo?fmo.rate:0);
+
+  /* the metered account, not the two unmetered floodlights */
+  var sup = null, bestQ = 0, i, s;
+  for(i=0;i<L.length;i++){
+    s = L[i].match(/Supply(?:\s+(?:Peak|Off-Peak))?\s+([\d,]+(?:\.\d+)?)\s*kWh\s*X\s*\$\s*([\d.]+)/i);
+    if(s && esNum(s[1]) > bestQ){ bestQ = esNum(s[1]); sup = parseFloat(s[2]); }
+  }
+
+  var wd = (from && to) ? esWeekdays(from, to) : null;
+  var adj = (onKw != null && tx.kw != null) ? Math.round((onKw - tx.kw)*100)/100 : 0;
+  if(!(adj >= 0 && adj < onKw*0.5)) adj = 0;
+
+  return {
+    label: MONNAMES[mo] + ' ' + yr,
+    sortKey: yr*12 + mo,
+    meter: null,
+    kwh: onKwh,                        /* ON-PEAK kWh - the window that sets demand */
+    kw: onKw,                          /* max ON-PEAK demand - the determinant */
+    rate: Math.round(demRate*(1+ES_TAX)*10000)/10000,   /* all-in $/kW-mo incl CT sales tax */
+    days: days,
+    file: fname,
+    from: 'Eversource CT statement',
+    conf: 'high',
+    tariff: 'ES-CT-27',
+    pay: {
+      period: (from && to) ? (from + ' - ' + to) : null,
+      days: days, wd: wd,
+      onKwh: onKwh, offKwh: offKwh,
+      onKw: onKw, offKw: offKw,
+      billKw: tx.kw, adj: adj,
+      demPre: Math.round(demRate*100000)/100000,
+      dem: { tx:tx.rate, ldi:ldi?ldi.rate:0, ldd:ldd.rate, cta:cta?cta.rate:0 },
+      ePk: ePk, eOff: eOff, eDelta: ePk - eOff,
+      supply: sup, tax: ES_TAX
+    },
+    warn: (onKwh && onKw && demRate) ? null : 'incomplete statement'
+  };
+}
+
+function esParseDoc(lines, fname){
+  var j = lines.join('\n');
+  if(!/Transmission Demand Chrg/i.test(j)) return null;
+  var groups = esSplit(lines), out = [], i, r;
+  for(i=0;i<groups.length;i++){
+    r = esStatement(groups[i], fname);
+    if(r) out.push(r);
+  }
+  return out.length ? out : null;
+}
+
 /* ---- one file -> statements ------------------------------------------ */
 function pdfParseDoc(lines, fname){
+  /* An exact read of a known tariff beats pattern matching every time, and a
+     merged packet of statements has to be split before anything is read at
+     all - otherwise 19 bills collapse into one bogus month. */
+  var es = esParseDoc(lines, fname);
+  if(es) return es;
+
   var joined = lines.join('\n');
   var per = pdfPeriod(joined);
   var out = [], i;
@@ -1644,31 +2133,90 @@ function pdfHandleFiles(files){
 
 function apply(stmts, errs){
   /* newest first, dedupe on the month label */
+  /* A single file often holds one statement per METER for a site. Keying the
+     dedupe on the month alone made every meter after the first collide with
+     the first and vanish - five accounts came back as one. */
   var seen = {}, keep = [], i;
   for(i=0;i<stmts.length;i++){
     var s = stmts[i];
-    var key = s.label || ('?' + i);
+    var key = (s.meter || '') + '|' + (s.label || ('?' + i));
     if(seen[key]) continue;
     seen[key] = 1;
     keep.push(s);
   }
   keep.sort(function(a,b){
+    /* a parsed statement carries an explicit key; only fall back to parsing
+       the printed label when it does not */
+    if(a.sortKey != null && b.sortKey != null) return a.sortKey - b.sortKey;
     if(!a.label || !b.label) return 0;
     return new Date(a.label + ' 1') - new Date(b.label + ' 1');
   });
-  PDF_ROWS = keep;
-  renderPdfReport(keep, errs);
-  if(keep.length) fillFromPdf(keep);
+  PDF_METERS = pdfGroupMeters(keep);
+  if(PDF_METERS.length > 1){
+    /* default to the largest meter - it carries the biggest demand charge and
+       is where storage is worth putting */
+    var best = PDF_METERS[0], i;
+    for(i=1;i<PDF_METERS.length;i++) if(PDF_METERS[i].peak > best.peak) best = PDF_METERS[i];
+    PDF_METER = best.name;
+    PDF_ROWS = best.rows;
+  } else {
+    PDF_METER = null;
+    PDF_ROWS = keep;
+  }
+  renderPdfReport(PDF_ROWS, errs);
+  if(PDF_ROWS.length) fillFromPdf(PDF_ROWS);
 }
 
 var PDF_ROWS = [];
+var PDF_METERS = [];      /* [{name, rows}] when a file holds more than one */
+var PDF_METER = null;     /* the one currently being sized */
+
+function pdfGroupMeters(rows){
+  var map = {}, order = [], i;
+  for(i=0;i<rows.length;i++){
+    var m = rows[i].meter || '';
+    if(!map[m]){ map[m] = []; order.push(m); }
+    map[m].push(rows[i]);
+  }
+  var out = [];
+  for(i=0;i<order.length;i++){
+    var rs = map[order[i]], pk = 0, kwh = 0, j;
+    for(j=0;j<rs.length;j++){
+      if(rs[j].kw > pk) pk = rs[j].kw;
+      if(rs[j].kwh) kwh += rs[j].kwh;
+    }
+    out.push({ name: order[i] || 'Unlabelled meter', rows: rs, peak: pk, kwh: kwh });
+  }
+  return out;
+}
+
+/* A battery sits behind ONE meter and shaves ONE demand charge. Summing
+   separate accounts would invent a peak that no meter ever sees, so the
+   meters are sized one at a time. */
+function pdfPickMeter(name){
+  var i;
+  for(i=0;i<PDF_METERS.length;i++){
+    if(PDF_METERS[i].name === name){
+      PDF_METER = name;
+      PDF_ROWS = PDF_METERS[i].rows;
+      renderPdfReport(PDF_ROWS, []);
+      fillFromPdf(PDF_ROWS);
+      return;
+    }
+  }
+}
 var AI_META = null;
 var AI_CONFLICTS = [];
 
 /* Write into the same editable table used for hand entry, so what was read
    and what was typed are corrected in exactly the same place. */
 function fillFromPdf(rows){
-  var n = Math.min(12, rows.length);
+  /* Twelve was a table default, not a data limit. Capping here quietly threw
+     away the oldest months of a two-year packet - including, on this meter,
+     the highest demand in the record. */
+  var n = Math.min(24, rows.length);
+  BILL_PAY = {};
+  for(var z=0;z<rows.length;z++) if(rows[z].label && rows[z].pay) BILL_PAY[rows[z].label] = rows[z].pay;
   $('nMonths').value = String(n);
   var last = rows[rows.length-1];
   if(last && last.label){
@@ -1701,10 +2249,42 @@ function fillFromPdf(rows){
     if(cell) cell.innerHTML = esc(rr.label);
   }
 
+  /* Default the headline rate to the NEWEST statement, not the oldest. A
+     demand rate that has moved is a forward-looking input. */
   var rate = null;
-  for(i=0;i<rows.length;i++) if(rows[i].rate != null){ rate = rows[i].rate; break; }
+  for(i=rows.length-1;i>=0;i--) if(rows[i].rate != null){ rate = rows[i].rate; break; }
   if(rate != null) $('dRate').value = rate;
+  if(rows.length && rows[0].tariff) esBanner(rows);
   wireHelp();
+}
+
+/* Say plainly which tariff was recognised and what that changed, because the
+   numbers below only make sense if the reader picked the right determinant. */
+function esBanner(rows){
+  var i, lo = null, hi = null, on = 0, off = 0;
+  for(i=0;i<rows.length;i++){
+    var p = rows[i].pay; if(!p) continue;
+    if(lo === null || p.demPre < lo) lo = p.demPre;
+    if(hi === null || p.demPre > hi) hi = p.demPre;
+    if(p.onKw != null && p.offKw != null && p.offKw > p.onKw) off++; else on++;
+  }
+  if(lo === null) return;
+  var newest = rows[rows.length-1].pay;
+  var h = '<div class="note ok"><b>Eversource CT time-of-day demand tariff recognised on '
+    + rows.length + ' statement' + (rows.length>1?'s':'') + '.</b><br>'
+    + 'Billing determinant: <b>max on-peak demand</b>'
+    + (off ? ' — on ' + off + ' of these months the off-peak peak was higher and would have been the wrong number to size against.' : '.')
+    + '<br>Demand rate read line by line: '
+    + money(newest.dem.tx,2) + ' transmission + ' + money(newest.dem.ldi,2) + ' LD improvements + '
+    + money(newest.dem.ldd,2) + ' LD demand + ' + money(newest.dem.cta,2) + ' CTA = '
+    + '<b>' + money(newest.demPre,2) + '/kW-month</b>, ' + money(newest.demPre*(1+ES_TAX),2)
+    + ' with 6.35% CT sales tax.'
+    + (hi > lo ? ' Across the packet this stack ranged ' + money(lo,2) + ' to ' + money(hi,2) + ' — it is not one number.' : '')
+    + (ES_DUPS ? '<br>' + ES_DUPS + ' duplicated statement' + (ES_DUPS>1?'s were':' was') + ' dropped from the packet.' : '')
+    + '<br>On-peak kWh, off-peak kWh, the peak/off-peak delivery spread and the supply rate were read too, and drive the energy side.'
+    + '</div>';
+  var box = $('pdfReport');
+  box.innerHTML = h + box.innerHTML;
 }
 
 function renderPdfReport(rows, errs){
@@ -1735,6 +2315,18 @@ function renderPdfReport(rows, errs){
       + esc(AI_CONFLICTS.join(', ')) + '.</b> '
       + 'The AI reading was used. Check those rows against the paper before sizing \u2014 a disagreement '
       + 'usually means an unusual bill layout, and one of the two is wrong.</div>';
+  }
+  if(PDF_METERS.length > 1){
+    h += '<div class="note"><b>' + PDF_METERS.length + ' meters in this file.</b> '
+      + 'A battery sits behind one meter and shaves that meter\u0027s demand charge only, so they are sized '
+      + 'separately. Pick one \u2014 the largest is selected by default.<div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">';
+    for(i=0;i<PDF_METERS.length;i++){
+      var mt = PDF_METERS[i], on = (mt.name === PDF_METER);
+      h += '<button class="btn ' + (on ? 'btn-pri' : 'btn-out') + ' btn-sm" '
+        + 'onclick="pdfPickMeter(' + JSON.stringify(mt.name).replace(/"/g,'&quot;') + ')">'
+        + esc(mt.name) + (mt.peak ? ' \u00b7 ' + fmt(mt.peak,1) + ' kW' : '') + '</button>';
+    }
+    h += '</div></div>';
   }
   h += '<div class="scrollx"><table class="t"><thead><tr><th>Period</th><th class="num">kWh</th>'
     + '<th class="num">Peak kW</th><th class="num">$/kW</th><th>Source</th></tr></thead><tbody>';
@@ -1824,41 +2416,252 @@ function readBills(){
     var pk   = parseFloat(r.getElementsByClassName('bP')[0].value);
     var rate = parseFloat(r.getElementsByClassName('bR')[0].value);
     if(!isFinite(kwh) || !isFinite(pk) || kwh<=0 || pk<=0) continue;
+    var lab = r.getAttribute('data-lab');
+    var pay = BILL_PAY[lab] || null;
     out.push({
-      key:r.getAttribute('data-lab'), label:r.getAttribute('data-lab'),
+      key:lab, label:lab,
       mon:parseInt(r.getAttribute('data-mon'),10),
-      days:isFinite(days)?days:30, kwh:kwh, peak:pk, rate:isFinite(rate)?rate:18.5
+      days:isFinite(days)?days:30, kwh:kwh, peak:pk, rate:isFinite(rate)?rate:18.5,
+      pay:pay, adj:(pay && pay.adj) || 0
     });
   }
   return out;
 }
 
-/* Build a load duration curve from bill totals.
-   p(x) = Pmin + (Ppk-Pmin)(1-x)^k  over x in [0,1] of the billing period,
-   with k solved so the curve's mean equals the billed load factor. */
+/* Rich tariff data read off the statements, kept beside the editable table
+   and keyed by the same month label the row carries. */
+var BILL_PAY = {};
+
+/* Build a load duration curve for the WORST DAY of the month, inside the
+   window that actually sets the billing determinant.
+   The old curve spread the month's total kWh over 24 h x every day and then
+   divided by an assumed event count. On a time-of-day tariff that is the
+   wrong denominator twice over: only on-peak hours can set the demand, and
+   the battery has to hold the target on the worst day, not the average one. */
 function ldcFromBill(b, baseFrac){
-  var hours = b.days*24;
-  var lf = b.kwh/(b.peak*hours);
-  if(lf >= 0.99) lf = 0.99;
+  var tou   = !!(b.pay && b.pay.onKwh);
+  var hrs   = tou ? nv('pkHrs',8) : 24;
+  var days  = tou ? (b.pay.wd || Math.max(1, Math.round(b.days*5/7))) : b.days;
+  if(!(days > 0)) days = 1;
+  var dayKwh = (b.kwh/days) * (1 + nv('dayUp',15)/100);
+  var mean   = dayKwh/hrs;
+  var lf     = mean/b.peak;
+  if(lf > 0.98) lf = 0.98;
+  if(!(lf > 0))  lf = 0.5;
   var f = baseFrac;
-  if(f >= lf) f = lf*0.85;          /* base load cannot exceed the average */
+  if(f >= lf) f = lf*0.9;
   if(f < 0.02) f = 0.02;
   var k = (1-f)/(lf-f) - 1;
   if(!isFinite(k) || k < 0.05) k = 0.05;
   if(k > 60) k = 60;
-  return { pmin:f*b.peak, ppk:b.peak, k:k, hours:hours, lf:lf };
+  return { pmin:f*b.peak, ppk:b.peak, k:k, hours:hrs, lf:lf, days:days,
+           dayKwh:dayKwh, perDay:true, tou:tou };
 }
-/* Energy (kWh) above threshold T across the billing period. */
+
+/* kWh above a threshold on the worst day. */
 function energyAbove(c, T){
   if(T >= c.ppk) return 0;
   if(T <= c.pmin) T = c.pmin;
-  var N = 1500, sum = 0, i;
+  var N = 1200, sum = 0, i;
   for(i=0;i<N;i++){
     var x = (i+0.5)/N;
     var p = c.pmin + (c.ppk-c.pmin)*Math.pow(1-x, c.k);
     if(p > T) sum += (p-T);
   }
   return sum/N * c.hours;
+}
+
+/* The most kWh the same monthly totals could possibly demand: load pinned
+   at the peak for as many hours as the energy allows, flat elsewhere. This
+   is the shape that breaks an under-sized battery, and it is the case an
+   underwriter should be shown, because bills cannot rule it out. */
+function energyAboveWorst(c, T){
+  if(T >= c.ppk) return 0;
+  var mean = c.dayKwh/c.hours;
+  var frac = mean/c.ppk;
+  if(frac > 1) frac = 1;
+  return frac * c.hours * (c.ppk - T);
+}
+
+/* Deepest shave a given battery holds this month, under either shape. */
+function shaveMonth(c, peak, kW, Emax, worst){
+  var fn = worst ? energyAboveWorst : energyAbove;
+  var lo = Math.max(c.pmin, peak - kW), hi = peak, i;
+  if(worst) lo = peak - kW;
+  for(i=0;i<26;i++){
+    var mid = (lo+hi)/2;
+    if(fn(c, mid) <= Emax && (peak-mid) <= kW) hi = mid; else lo = mid;
+  }
+  return { target:hi, shave:peak-hi, kwhDay:fn(c, hi) };
+}
+
+function billRate(m){ return isFinite(m.useRate) ? m.useRate : m.rate; }
+
+/* What one month of demand actually costs at a given peak.
+   A per-kW charge is a slope; a subscription is a staircase. Modelling a
+   staircase as a slope is how a proposal claims savings for kW that never
+   crossed a block boundary. */
+function subMode(){ var e = $('rateStruct'); return !!(e && e.value === 'sub'); }
+function demandCost(kw, m){
+  if(subMode()){
+    var blk = nv('subBlock',50), price = nv('subPrice',95.56), floor = nv('subMin',100);
+    var need = Math.max(kw, floor);
+    var blocks = Math.ceil(need/blk);
+    return blocks*price;
+  }
+  return Math.max(0, kw - ((m && m.adj) || 0)) * billRate(m);
+}
+
+function runBills(bills){
+  var durs = durations(), i, j;
+  var baseFrac = nv('baseFrac',60)/100;
+  var rte = nv('rte',88)/100;
+  var ratchet = nv('ratchet',0);
+  var useCur = !!($('curRate') && $('curRate').checked);
+
+  /* Price forward, not backward. The all-in demand rate on this meter moved
+     three times in the packet; a trailing average under-prices every kW the
+     battery will actually remove. */
+  var curRate = bills[bills.length-1].rate;
+  for(i=0;i<bills.length;i++){
+    bills[i].rateAsBilled = bills[i].rate;
+    bills[i].useRate = useCur ? curRate : bills[i].rate;
+    if(!isFinite(bills[i].adj)) bills[i].adj = (bills[i].pay && bills[i].pay.adj) || 0;
+  }
+
+  var maxPeak = 0;
+  for(i=0;i<bills.length;i++) if(bills[i].peak>maxPeak) maxPeak = bills[i].peak;
+
+  var curves = [];
+  for(i=0;i<bills.length;i++) curves.push(ldcFromBill(bills[i], baseFrac));
+
+  var basePeaks = [];
+  for(i=0;i<bills.length;i++) basePeaks.push(bills[i].peak);
+  var baseBilled = applyRatchet(basePeaks, ratchet);
+  var baseCost = 0;
+  for(i=0;i<bills.length;i++) baseCost += demandCost(baseBilled[i], bills[i]);
+
+  var cands = [], STEPS = 44;
+  for(i=1;i<=STEPS;i++) cands.push(maxPeak*(0.015 + (0.70-0.015)*(i-1)/(STEPS-1)));
+
+  var sweep = [], di, ci;
+  for(di=0;di<durs.length;di++){
+    for(ci=0;ci<cands.length;ci++){
+      var kW = cands[ci], dur = durs[di], Emax = kW*dur;
+      var peaks = [], p90peaks = [], disTot = 0, maxDay = 0, arb = 0, loss = 0;
+      for(j=0;j<bills.length;j++){
+        var c = curves[j], m = bills[j];
+        var r  = shaveMonth(c, m.peak, kW, Emax, false);
+        var rw = shaveMonth(c, m.peak, kW, Emax, true);
+        peaks.push(r.target);
+        p90peaks.push(rw.target);
+        var monKwh = r.kwhDay * c.days;
+        disTot += monKwh;
+        if(r.kwhDay > maxDay) maxDay = r.kwhDay;
+        var pay = m.pay;
+        if(pay && pay.eDelta != null && isFinite(pay.eDelta)){
+          arb  += monKwh * pay.eDelta * (1+ES_TAX);
+          loss += monKwh * (1/rte-1) * ((pay.supply||0) + (pay.eOff||0)) * (1+ES_TAX);
+        } else {
+          loss += monKwh * (1/rte-1) * nv('eRate',0.075);
+        }
+      }
+      var billed = applyRatchet(peaks, ratchet);
+      var billed90 = applyRatchet(p90peaks, ratchet);
+      var cost = 0, cost90 = 0;
+      for(j=0;j<bills.length;j++){
+        cost   += demandCost(billed[j],   bills[j]);
+        cost90 += demandCost(billed90[j], bills[j]);
+      }
+      var scale = 12/bills.length;
+      var e = econ(kW, Emax, (baseCost-cost)*scale, (loss-arb)*scale);
+      e.dur = dur; e.peaks = peaks; e.billed = billed; e.billed90 = billed90;
+      e.periodSav = baseCost-cost;
+      e.p90Ann = (baseCost-cost90)*scale;
+      e.maxEvt = maxDay;                       /* worst-day kWh, P50 shape */
+      e.disAnn = disTot*scale;
+      e.arbAnn = arb*scale; e.lossAnn = loss*scale;
+      sweep.push(e);
+    }
+  }
+  var best = pickBest(sweep);
+  RESULT = {
+    mode:'bill', sweep:sweep, best:best, baseBilled:baseBilled, baseCost:baseCost,
+    maxPeak:maxPeak, months:bills, curves:curves, dRate:curRate, nMon:bills.length,
+    curRate:curRate, useCur:useCur
+  };
+  render();
+}
+
+/* ============================================================
+   UNDERWRITING
+   What a funder asks that a savings number alone does not answer:
+   how far the savings can fall before the payment is not covered,
+   and which of these inputs is an assumption rather than a reading.
+   ============================================================ */
+function underwriting(R, b, REC){
+  if(R.mode !== 'bill') return '';
+  var i, h = '';
+  var term = Math.round(nv('term',10)), disc = nv('disc',8)/100;
+  var pay = REC.net > 0 && disc > 0
+        ? REC.net * disc/(1-Math.pow(1+disc,-term))
+        : REC.net/term;
+  var head = nv('headroom',10)/100;
+  var p90 = b.p90Ann*(1) - b.lossCost - REC.om;          /* worst credible shape */
+  var yr1 = REC.yr1;
+  var dscr = pay > 0 ? yr1/pay : 0;
+  var dscr90 = pay > 0 ? p90/pay : 0;
+  var perKw = REC.kW > 0 ? yr1/REC.kW : 0;
+
+  h += '<div style="height:16px"></div>';
+  h += '<div class="card-h" style="border-top:1px solid var(--border2);margin:0 -14px;padding-left:14px">Underwriting</div>';
+  h += '<div class="kpis" style="border:1px solid var(--border);border-radius:4px;overflow:hidden;margin-top:12px">'
+    +  kpi('Yr-1 net savings', money(yr1), '', money(perKw,0)+'/kW-yr', true)
+    +  kpi('Level payment', money(pay), '/yr', term+' yr at '+fmt(disc*100,1)+'%')
+    +  kpi('Coverage (P50)', fmt(dscr,2)+'x', '', 'savings over payment', dscr>=1.25)
+    +  kpi('Coverage (downside)', fmt(dscr90,2)+'x', '', 'flat-top load shape', false)
+    +  '</div>';
+
+  /* --- what the two shapes cost --- */
+  h += '<div class="scrollx" style="margin:12px -14px 0"><table class="t"><thead><tr>'
+    +  '<th>Case</th><th class="num">Shape</th><th class="num">Worst-day kWh</th>'
+    +  '<th class="num">Annual demand saving</th><th class="num">Coverage</th></tr></thead><tbody>';
+  h += '<tr><td class="tx">Base</td><td class="num">'+fmt(nv('baseFrac',60))+'% base load</td>'
+    +  '<td class="num">'+fmt(b.maxEvt)+'</td><td class="num">'+money(b.annSav)+'</td>'
+    +  '<td class="num">'+fmt(dscr,2)+'x</td></tr>';
+  h += '<tr><td class="tx">Downside</td><td class="num">flat-top</td>'
+    +  '<td class="num">'+fmt(b.kWh)+'+</td><td class="num">'+money(b.p90Ann)+'</td>'
+    +  '<td class="num">'+fmt(dscr90,2)+'x</td></tr>';
+  h += '</tbody></table></div>';
+
+  /* --- the assumptions that are not readings --- */
+  var flags = [], months = {}, miss = [];
+  for(i=0;i<R.months.length;i++) months[R.months[i].label] = 1;
+  var last = R.months[R.months.length-1].label.split(' ');
+  var li = 0, k;
+  for(k=0;k<12;k++) if(MONNAMES[k] === last[0]) li = k;
+  var ly = +last[1];
+  for(i=11;i>=0;i--){
+    var mi = ((li-i)%12+12)%12, yy = ly + (li-i < 0 ? -1 : 0);
+    if(!months[MONNAMES[mi]+' '+yy]) miss.push(MONNAMES[mi]+' '+yy);
+  }
+  if(miss.length) flags.push('<b>'+miss.length+' of the last 12 months are missing</b> ('+esc(miss.join(', '))
+    + '). Annual savings are scaled from the months present, so a missing winter month understates both the saving and the kW rating.');
+  flags.push('<b>No interval data.</b> Bills give totals, not shape. The two rows above are the same meter under the '
+    + 'flattest and the peakiest reading of the same numbers, and they differ by '
+    + (b.annSav>0 ? fmt((1-b.p90Ann/b.annSav)*100,0)+'%' : 'a wide margin')
+    + ' of the savings. Fifteen-minute data from Eversource closes that gap and is what turns this from an estimate into a model.');
+  if(R.useCur) flags.push('Every month is priced at the newest all-in rate on the packet, '
+    + money(R.curRate,2)+'/kW-month. That is the forward-looking number; historical bills on this meter were charged less.');
+  var tou = 0;
+  for(i=0;i<R.months.length;i++) if(R.months[i].pay) tou++;
+  if(tou) flags.push('Determinant is the <b>max on-peak</b> demand, not the higher off-peak figure printed beside it. '
+    + 'A battery that shaves the off-peak peak on this tariff saves nothing.');
+
+  h += '<div class="note" style="margin-top:12px"><b>Before this goes to a funder</b><ul style="margin:8px 0 0 18px;padding:0">';
+  for(i=0;i<flags.length;i++) h += '<li style="margin-bottom:6px">'+flags[i]+'</li>';
+  h += '</ul></div>';
+  return h;
 }
 
 /* ============================================================
@@ -1924,26 +2727,50 @@ function applyRatchet(peaks, pct){
 /* ============================================================
    ECONOMICS
    ============================================================ */
+function irr(cf){
+  /* cf[0] is negative; bisection is plenty for a 10-25 year strip */
+  var lo = -0.9, hi = 3, i, k, mid, v;
+  function npvAt(r){ var s = 0, t; for(t=0;t<cf.length;t++) s += cf[t]/Math.pow(1+r,t); return s; }
+  if(npvAt(lo) < 0 || npvAt(hi) > 0) return null;
+  for(i=0;i<200;i++){ mid = (lo+hi)/2; v = npvAt(mid); if(v > 0) lo = mid; else hi = mid; }
+  return (lo+hi)/2;
+}
+
 function econ(kW, kWhUsable, annSav, lossCost){
   var dod = nv('dod',90)/100;
   var name = kWhUsable/dod;
   var capex = name*nv('cKwh',450) + kW*nv('cKw',0);
-  var net = capex*(1 - nv('itc',30)/100);
+  var itc = nv('itc',30)/100;
+  /* A contingent incentive is not equity until it is awarded. The haircut is
+     what an underwriter applies to a reservation that has not closed. */
+  var incGross = nv('incent',0);
+  var incNet = incGross*(1 - nv('incHair',0)/100);
+  var net = capex*(1-itc) - incNet;
+  if(net < 0) net = 0;
   var om = kW*nv('om',10);
-  var yr1 = annSav - lossCost - om;
   var term = Math.round(nv('term',10));
   var disc = nv('disc',8)/100;
   var fade = nv('fade',2)/100;
-  var npv = -net, i;
+  var esc = nv('escal',3)/100;
+
+  var cf = [-net], i, npv = -net, cum = -net, payback = Infinity, yr1 = 0;
   for(i=1;i<=term;i++){
-    var cf = (annSav*Math.pow(1-fade,i-1)) - lossCost - om;
-    npv += cf/Math.pow(1+disc,i);
+    var e = Math.pow(1+esc, i-1);
+    var sav = annSav*Math.pow(1-fade, i-1)*e;
+    var c = sav - lossCost*e - om*e;
+    if(i === 1) yr1 = c;
+    cf.push(c);
+    npv += c/Math.pow(1+disc, i);
+    if(cum < 0 && cum + c >= 0) payback = i - 1 + (-cum)/c;
+    cum += c;
   }
+  var r = irr(cf);
   return {
     kW:kW, kWh:kWhUsable, nameplate:name, capex:capex, net:net, om:om,
+    incGross:incGross, incNet:incNet,
     annSav:annSav, lossCost:lossCost, yr1:yr1,
-    payback: yr1>0 ? net/yr1 : Infinity,
-    npv:npv, roi: net>0 ? (yr1/net*100) : 0
+    payback: payback, npv:npv, irr:r,
+    roi: net>0 ? (yr1/net*100) : 0
   };
 }
 
@@ -2070,71 +2897,6 @@ function finishInterval(sweep, baseBilled, baseCost, maxPeak){
   render();
 }
 
-function runBills(bills){
-  var durs = durations(), i, j;
-  var baseFrac = nv('baseFrac',35)/100;
-  var evtMo = nv('evtMo',22);
-  var rte = nv('rte',88)/100;
-  var ratchet = nv('ratchet',0);
-
-  var maxPeak = 0;
-  for(i=0;i<bills.length;i++) if(bills[i].peak>maxPeak) maxPeak = bills[i].peak;
-
-  var curves = [];
-  for(i=0;i<bills.length;i++) curves.push(ldcFromBill(bills[i], baseFrac));
-
-  var basePeaks = [];
-  for(i=0;i<bills.length;i++) basePeaks.push(bills[i].peak);
-  var baseBilled = applyRatchet(basePeaks, ratchet);
-  var baseCost = 0;
-  for(i=0;i<bills.length;i++) baseCost += baseBilled[i]*bills[i].rate;
-
-  var cands = [], STEPS = 44;
-  for(i=1;i<=STEPS;i++) cands.push(maxPeak*(0.015 + (0.70-0.015)*(i-1)/(STEPS-1)));
-
-  var sweep = [], di, ci;
-  for(di=0;di<durs.length;di++){
-    for(ci=0;ci<cands.length;ci++){
-      var kW = cands[ci], dur = durs[di], Emax = kW*dur;
-      var peaks = [], disTot = 0, maxEvt = 0;
-      for(j=0;j<bills.length;j++){
-        var c = curves[j];
-        /* deepest shave this month supports: limited by power AND by
-           per-event energy (monthly above-threshold energy / event count) */
-        var T = Math.max(c.pmin, bills[j].peak - kW);
-        var lo = T, hi = bills[j].peak, k;
-        for(k=0;k<18;k++){
-          var mid = (lo+hi)/2;
-          var eAbove = energyAbove(c, mid);
-          var perEvt = eAbove/evtMo;
-          if(perEvt <= Emax && (bills[j].peak-mid) <= kW) hi = mid; else lo = mid;
-        }
-        var achieved = hi;
-        peaks.push(achieved);
-        disTot += energyAbove(c, achieved);
-        var pe = energyAbove(c, achieved)/evtMo;
-        if(pe > maxEvt) maxEvt = pe;
-      }
-      var billed = applyRatchet(peaks, ratchet);
-      var cost = 0;
-      for(j=0;j<bills.length;j++) cost += billed[j]*bills[j].rate;
-      var sav = baseCost - cost;
-      var ann = sav*(12/bills.length);
-      var lossKwh = disTot*(1/rte-1)*(12/bills.length);
-      var e = econ(kW, Emax, ann, lossKwh*nv('eRate',0.075));
-      e.dur = dur; e.peaks = peaks; e.billed = billed;
-      e.periodSav = sav; e.maxEvt = maxEvt; e.disAnn = disTot*(12/bills.length);
-      sweep.push(e);
-    }
-  }
-  var best = pickBest(sweep);
-  RESULT = {
-    mode:'bill', sweep:sweep, best:best, baseBilled:baseBilled, baseCost:baseCost,
-    maxPeak:maxPeak, months:bills, curves:curves, dRate:nv('dRate',18.5), nMon:bills.length
-  };
-  render();
-}
-
 /* ============================================================
    RENDER
    ============================================================ */
@@ -2170,9 +2932,23 @@ function render(){
   h += '<div class="kpis" style="border:1px solid var(--border);border-radius:4px;overflow:hidden">'
     +  kpi('Annual savings', money(b.annSav), '', money(REC.yr1)+' net of O&amp;M and losses', true, 'rSav')
     +  kpi('Simple payback', isFinite(REC.payback)?fmt(REC.payback,1):'--', isFinite(REC.payback)?'yrs':'', money(REC.net)+' net cost after ITC', false, 'rPay')
-    +  kpi(nv('term',10)+'-yr NPV', money(REC.npv), '', 'at '+fmt(nv('disc',8),1)+'% discount', false, 'rNpv')
+    +  kpi(nv('term',10)+'-yr NPV', money(REC.npv), '', (REC.irr!=null?fmt(REC.irr*100,1)+'% IRR \u00b7 ':'')+'at '+fmt(nv('disc',8),1)+'% discount', false, 'rNpv')
     +  kpi('Deepest cut', fmt(maxCut), 'kW', (cutMon?cutMon+' \u00b7 ':'')+fmt(pctShave,1)+'% of site peak', false, 'rCut')
     +  '</div>';
+
+  /* ---- does this pencil at all? ---- */
+  var term = Math.round(nv('term',10));
+  var noGood = !(REC.npv > 0) || !isFinite(REC.payback) || REC.payback > term;
+  if(noGood){
+    var be = breakEven(R, b, REC);
+    h += '<div class="note bad" data-help="rNoGood"><b>No size pencils at these inputs.</b> '
+      + 'Every configuration tried returns less than it costs, so the system above is simply the '
+      + 'least-bad one — it is not a recommendation.<br><br>'
+      + 'To break even this site would need a demand charge near <b>' + money(be.rateBe,2) + '/kW-month</b> '
+      + '(you entered ' + money(nv('dRate',18.5),2) + '), or an installed cost near <b>'
+      + money(be.costBe,0) + '/kWh</b> (you entered ' + money(nv('cKwh',450),0) + ').'
+      + '<span id="durProbe"></span></div>';
+  }
 
   /* ---- single / short period callout ---- */
   if(R.nMon < 12) h += shortPeriodCallout(R, b);
@@ -2189,11 +2965,12 @@ function render(){
   for(i=0;i<R.months.length;i++){
     var m = R.months[i];
     var rate = (R.mode==='bill') ? m.rate : R.dRate;
-    var cb = R.baseBilled[i]*rate, cn = billedAfter[i]*rate, sv = cb-cn;
+    var adj = m.adj || 0;
+    var cb = demandCost(R.baseBilled[i], m), cn = demandCost(billedAfter[i], m), sv = cb-cn;
     tB+=cb; tN+=cn; tS+=sv;
     h += '<tr><td class="tx">'+m.label+'</td>'
       +  '<td class="num">'+fmt(m.peak)+'</td>'
-      +  '<td class="num">'+fmt(R.baseBilled[i])+'</td>'
+      +  '<td class="num">'+fmt(Math.max(0,R.baseBilled[i]-adj),1)+'</td>'
       +  '<td class="num">'+fmt(billedAfter[i])+'</td>'
       +  '<td class="num" style="color:var(--teal-dk);font-weight:600">'+fmt(R.baseBilled[i]-billedAfter[i])+'</td>'
       +  '<td class="num">'+money(cb)+'</td><td class="num">'+money(cn)+'</td>'
@@ -2202,6 +2979,8 @@ function render(){
   h += '<tr class="tot"><td class="tx">Total ('+R.nMon+' mo)</td><td class="num">'+fmt(R.maxPeak)+'</td><td></td><td></td><td></td>'
     +  '<td class="num">'+money(tB)+'</td><td class="num">'+money(tN)+'</td><td class="num">'+money(tS)+'</td></tr>';
   h += '</tbody></table></div>';
+
+  h += underwriting(R, b, REC);
 
   /* ---- charts ---- */
   h += '<div style="height:16px"></div>';
@@ -2260,6 +3039,25 @@ function render(){
 
   $('out').innerHTML = h;
   wireHelp($('out'));
+
+  if(noGood && $('durProbe')){
+    $('durProbe').innerHTML = '<br><br>Checking the durations you did not tick\u2026';
+    setTimeout(function(){
+      var alt = probeDurations();
+      var el = $('durProbe');
+      if(!el) return;
+      if(alt && alt.npv > 0){
+        el.innerHTML = '<br><br><b>A ' + alt.dur + '-hour system does pencil.</b> Roughly '
+          + fmt(alt.kW) + ' kW / ' + fmt(alt.kWh) + ' kWh pays back in ' + fmt(alt.payback,1)
+          + ' years at ' + money(alt.npv) + ' NPV. Tick <b>' + alt.dur + ' h</b> under '
+          + 'Durations to evaluate and run it again \u2014 a shorter battery buys the same kW of '
+          + 'shaving for less energy, which is usually what a flat load profile needs.';
+      } else if(alt){
+        el.innerHTML = '<br><br>The other durations were checked too and none of them pencil either, '
+          + 'so this is the tariff and the equipment cost talking, not the sizing.';
+      } else el.innerHTML = '';
+    }, 60);
+  }
   drawMonthly();
   drawSweep();
   if(R.mode==='interval') drawPeakDay();
@@ -2269,6 +3067,61 @@ function kpi(k,v,u,s,hl,hk){
   return '<div class="kpi'+(hl?' hl':'')+'"><div class="k"'+(hk?' data-help="'+hk+'"':'')+'>'+k+'</div><div class="v">'+v+(u?'<span class="u">'+u+'</span>':'')+'</div><div class="s">'+s+'</div></div>';
 }
 function bRow(k,v){ return '<tr><td class="tx" style="color:var(--sub)">'+k+'</td><td class="num" style="text-align:left;padding-left:20px">'+v+'</td></tr>'; }
+
+/* What would have to change for this to pencil? NPV is linear in annual
+   savings, so the break-even demand charge and installed cost fall straight
+   out rather than needing a search. */
+function breakEven(R, b, REC){
+  var term = Math.round(nv('term',10)), disc = nv('disc',8)/100, fade = nv('fade',2)/100;
+  var A = 0, B = 0, y;
+  for(y=1;y<=term;y++){
+    A += Math.pow(1-fade, y-1)/Math.pow(1+disc, y);
+    B += 1/Math.pow(1+disc, y);
+  }
+  var needSav = (REC.net + (b.lossCost + REC.om)*B) / A;
+  var mult = b.annSav > 0 ? needSav/b.annSav : Infinity;
+  /* cost side: net = nameplate * $/kWh * (1-itc) */
+  var dod = nv('dod',90)/100;
+  var nameplate = REC.kWh/dod;
+  var affordNet = b.annSav*A - (b.lossCost + REC.om)*B;
+  var costBe = nameplate > 0 ? affordNet/(nameplate*(1 - nv('itc',30)/100)) : 0;
+  return { needSav:needSav, mult:mult, rateBe: nv('dRate',18.5)*mult, costBe:costBe };
+}
+
+/* A duration the person did not tick is not a duration the tool checked. On a
+   flat site a 6-hour system buys three times the kWh for the same kW of
+   shaving, so the difference between "no good size exists" and "you did not
+   evaluate the size that works" is the whole answer. */
+function probeDurations(){
+  if(RESULT.mode !== 'interval' || !MONTHS || !MONTHS.length) return;
+  var checked = durations(), all = [1,2,4,6], missing = [], i;
+  for(i=0;i<all.length;i++) if(checked.indexOf(all[i]) < 0) missing.push(all[i]);
+  if(!missing.length) return;
+
+  var rte = nv('rte',88)/100, dRate = nv('dRate',18.5), ratchet = nv('ratchet',0);
+  var maxPeak = RESULT.maxPeak, best = null, k, d, ci;
+  var sizes = [RESULT.best.kW, maxPeak*0.05, maxPeak*0.12];
+
+  for(d=0; d<missing.length; d++){
+    for(ci=0; ci<sizes.length; ci++){
+      var kW = sizes[ci], Emax = kW*missing[d];
+      var peaks = [], dis = 0;
+      for(k=0;k<MONTHS.length;k++){
+        var r = solveMonth(MONTHS[k], kW, Emax, rte);
+        peaks.push(r.peak); dis += r.dis;
+      }
+      var billed = applyRatchet(peaks, ratchet), cost = 0;
+      for(k=0;k<MONTHS.length;k++) cost += billed[k]*dRate;
+      var ann = (RESULT.baseCost - cost)*(12/MONTHS.length);
+      var loss = dis*(1/rte-1)*(12/MONTHS.length)*nv('eRate',0.075);
+      var head = nv('headroom',10)/100;
+      var e = econ(kW*(1+head), Emax*(1+head), ann, loss);
+      e.dur = missing[d];
+      if(!best || e.npv > best.npv) best = e;
+    }
+  }
+  return best;
+}
 
 /* ---- the "one month of data" answer ---- */
 function shortPeriodCallout(R, b){
@@ -2305,7 +3158,7 @@ function shortPeriodCallout(R, b){
         ach = Math.max(r.peak, T);
       } else {
         var c = R.curves[0];
-        var perEvt = energyAbove(c, T)/nv('evtMo',22);
+        var perEvt = energyAbove(c, T);   /* already the worst DAY, not the month */
         kWh = perEvt*1.15;
         ach = Math.max(T, c.pmin);
       }
@@ -2341,6 +3194,160 @@ function energyNeeded(m, T){
   }
   if(evt>mx) mx=evt;
   return mx;
+}
+
+/* ============================================================
+   PROPOSAL AUDIT
+   ------------------------------------------------------------
+   Every check here is arithmetic against a physical ceiling. None of it
+   needs to know the vendor, the chemistry, or the site - only that a
+   battery has one energy budget and can spend it once.
+   ============================================================ */
+function auditExample(){
+  var v = { aKw:503, aKwh:1004, aDem:120720, aArb:89864, aOn:0.52, aOff:0.12,
+            aCyc:1, aCap:435000, aInc:300000, aDisc:0, aPeak:600, aDay:1536 };
+  for(var k in v) if(v.hasOwnProperty(k) && $(k)) $(k).value = v[k];
+  if($('dRate')) $('dRate').value = 20;
+  auditRun();
+}
+
+function auditRun(){
+  var kW = nv('aKw',0), kWh = nv('aKwh',0);
+  if(!(kW > 0) || !(kWh > 0)){ alert('Enter the claimed battery kW and kWh.'); return; }
+  var demClaim = nv('aDem',0), arbClaim = nv('aArb',0);
+  var on = nv('aOn',0.52), off = nv('aOff',0.12), cyc = nv('aCyc',1);
+  var cap = nv('aCap',0), inc = nv('aInc',0), theirDisc = nv('aDisc',0);
+  var peak = nv('aPeak',0), dayKwh = nv('aDay',0);
+  var rte = nv('rte',88)/100, dod = nv('dod',90)/100;
+  var dRate = nv('dRate',18.5);
+  var usable = kWh*dod;
+  var rows = [], flags = 0;
+
+  function row(name, claim, ceiling, note){
+    var bad = (claim > ceiling*1.02);
+    if(bad) flags++;
+    rows.push({ name:name, claim:claim, ceil:ceiling, bad:bad, note:note });
+  }
+
+  /* 1. demand savings ceiling: full rated power shaved in all 12 months */
+  var demCeil = subMode()
+      ? (Math.ceil(Math.max(peak,nv('subMin',100))/nv('subBlock',50))
+         - Math.ceil(Math.max(peak-kW,nv('subMin',100))/nv('subBlock',50)))*nv('subPrice',95.56)*12
+      : kW*dRate*12;
+  row('Demand savings', demClaim, demCeil,
+      subMode()
+        ? 'Blocks the shave actually crosses, twelve months. Below the floor the subscription does not fall further.'
+        : 'Rated power shaved in every one of twelve months, with no month where the peak lands outside the window and no energy limit. Nothing real reaches this.');
+
+  /* 2. arbitrage ceiling: full usable energy, every day, at the full spread */
+  var arbCeil = usable*cyc*365*(on-off)*rte;
+  row('Energy arbitrage', arbClaim, arbCeil,
+      fmt(usable) + ' kWh usable x ' + fmt(cyc,2) + ' cycle/day x 365 x ' + money(on-off,2)
+      + ' spread x ' + fmt(rte*100) + '% round trip. Assumes the spread is available every single day.');
+
+  /* 3. the budget both claims are drawing on */
+  var demHrs = 2;
+  var demNeed = kW*demHrs;                 /* kWh/day to hold a full-power shave */
+  var arbNeed = arbClaim > 0 && (on-off) > 0 ? arbClaim/365/((on-off)*rte) : 0;
+  var budget = usable*cyc;
+  var combined = demNeed + arbNeed;
+  var conflict = combined > budget*1.02;
+  if(conflict) flags++;
+
+  /* 4. can the battery even carry the site? */
+  var carry = (peak > 0 && kW >= peak*0.9 && dayKwh > 0) ? (dayKwh > usable*cyc) : false;
+
+  var h = '';
+  h += '<div class="card-b tight"><div class="spec"><div class="lbl">Proposal audit</div>'
+    +  '<div class="big">' + (flags ? flags + ' <em>claim' + (flags>1?'s':'') + ' exceed physical limits</em>'
+                                    : 'No <em>claim exceeds its ceiling</em>') + '</div>'
+    +  '<div class="sub">' + fmt(kW) + ' kW / ' + fmt(kWh) + ' kWh &middot; ' + fmt(usable) + ' kWh usable at '
+    +  fmt(dod*100) + '% DoD &middot; ' + fmt(kWh/kW,1) + ' h duration</div></div>';
+
+  h += '<div class="scrollx" style="margin:0 -14px"><table class="t"><thead><tr>'
+    +  '<th>Value stream</th><th class="num">Claimed</th><th class="num">Physical ceiling</th><th class="num">% of ceiling</th>'
+    +  '</tr></thead><tbody>';
+  var i;
+  for(i=0;i<rows.length;i++){
+    var r = rows[i];
+    var pct = r.ceil > 0 ? r.claim/r.ceil*100 : 0;
+    h += '<tr><td class="tx">' + r.name + '<div style="font-size:11px;color:var(--sub);white-space:normal;max-width:340px">'
+      +  r.note + '</div></td>'
+      +  '<td class="num">' + money(r.claim) + '</td><td class="num">' + money(r.ceil) + '</td>'
+      +  '<td class="num" style="font-weight:600;color:' + (r.bad ? 'var(--red)' : 'var(--teal-dk)') + '">'
+      +  fmt(pct) + '%' + (r.bad ? ' <span class="pill r">over</span>' : '') + '</td></tr>';
+  }
+  h += '</tbody></table></div>';
+
+  /* --- the co-optimization test --- */
+  h += '<div style="height:14px"></div>';
+  h += '<div class="card-h" style="border-top:1px solid var(--border2);margin:0 -14px;padding-left:14px">One battery, one energy budget</div>';
+  h += '<div class="scrollx" style="margin:0 -14px"><table class="t"><thead><tr>'
+    +  '<th>Daily energy</th><th class="num">kWh</th><th class="num">Share of budget</th></tr></thead><tbody>';
+  h += '<tr><td class="tx">Available (' + fmt(usable) + ' usable x ' + fmt(cyc,2) + ' cycle)</td>'
+    +  '<td class="num">' + fmt(budget) + '</td><td class="num">100%</td></tr>';
+  h += '<tr><td class="tx">Needed to hold the demand shave<div style="font-size:11px;color:var(--sub)">'
+    +  fmt(kW) + ' kW for ' + demHrs + ' h &mdash; and that is a short peak</div></td>'
+    +  '<td class="num">' + fmt(demNeed) + '</td><td class="num">' + fmt(budget?demNeed/budget*100:0) + '%</td></tr>';
+  h += '<tr><td class="tx">Needed to earn the arbitrage claim</td>'
+    +  '<td class="num">' + fmt(arbNeed) + '</td><td class="num">' + fmt(budget?arbNeed/budget*100:0) + '%</td></tr>';
+  h += '<tr class="tot"><td class="tx">Both at once</td><td class="num">' + fmt(combined) + '</td>'
+    +  '<td class="num" style="color:' + (conflict?'var(--red)':'var(--teal-dk)') + '">'
+    +  fmt(budget?combined/budget*100:0) + '%</td></tr>';
+  h += '</tbody></table></div>';
+
+  if(conflict){
+    h += '<div class="note bad"><b>The two savings lines are spending the same kWh.</b> Holding the demand shave and running '
+      +  'the arbitrage cycle both draw on ' + fmt(budget) + ' kWh a day, and together they need ' + fmt(combined) + '. '
+      +  'Discharging into the on-peak window to capture the spread leaves the battery at a lower state of charge for the peak '
+      +  'it is supposed to shave &mdash; the same hours, the same energy. Add them together and the model books '
+      +  money(demClaim+arbClaim) + '/yr for a machine that can deliver one or the other, not both. '
+      +  'This is the single most common error in storage proposals, and the first thing a technical underwriter tests.</div>';
+  }
+  if(carry){
+    h += '<div class="note bad"><b>The battery cannot carry the site.</b> It is rated to shave nearly the whole '
+      +  fmt(peak) + ' kW peak, but the site pulls ' + fmt(dayKwh) + ' kWh a day against a usable budget of '
+      +  fmt(budget) + ' kWh. Even ignoring demand entirely, the energy is not there.</div>';
+  }
+
+  /* --- finance --- */
+  var netCap = cap - inc;
+  var claimTotal = demClaim + arbClaim;
+  h += '<div style="height:14px"></div>';
+  h += '<div class="card-h" style="border-top:1px solid var(--border2);margin:0 -14px;padding-left:14px">How the finance reads</div>';
+  var fin = [];
+  if(theirDisc < 1) fin.push('<b>The discount rate is ' + fmt(theirDisc,1) + '%.</b> At zero, &ldquo;net present value&rdquo; is '
+    + 'just the undiscounted sum of ten years of cash flow with a new label on it. No capital provider underwrites at zero. '
+    + 'Rerun at their actual cost of capital and the headline falls hard.');
+  if(cap > 0 && inc/cap > 0.4) fin.push('<b>Incentives carry ' + fmt(inc/cap*100) + '% of the CAPEX</b> ('
+    + money(inc) + ' of ' + money(cap) + '). Until that is awarded and assignable, the fundable basis is '
+    + money(cap) + ', not ' + money(netCap) + '. Ask what happens to the payback if the reservation is not honoured: '
+    + (claimTotal > 0 ? 'it goes from ' + fmt(netCap/claimTotal,1) + ' to ' + fmt(cap/claimTotal,1) + ' years '
+       + 'on their own savings numbers, before any of the corrections above.' : 'it moves out by the full incentive.'));
+  fin.push('<b>No degradation is visible in the cash flow.</b> A battery cycled daily loses capacity. If year 10 saves what '
+    + 'year 1 saves, the model is missing 2-3% a year of fade and the tail of the NPV is overstated.');
+  if(demClaim > 0) fin.push('<b>Check the tariff before the savings.</b> On a subscription rate the demand line is a staircase '
+    + 'and the value collapses; on a rate with an EV demand-charge holiday it may be zero for years. The demand saving is '
+    + 'usually the largest number in a storage proposal and the least often checked against the actual rate schedule.');
+  h += '<div class="note bad" style="margin-top:12px"><ul style="margin:0 0 0 18px;padding:0">';
+  for(i=0;i<fin.length;i++) h += '<li style="margin-bottom:8px">' + fin[i] + '</li>';
+  h += '</ul></div>';
+
+  h += '<div class="hint">This audit is arithmetic on the numbers entered, not a site model. To replace a claim rather than '
+    + 'just puncture it, load the bills and size it properly in steps 1-3.</div></div>';
+
+  $('out').innerHTML = h;
+  $('results').className = 'on';
+  var pr = $('prog'); if(pr) pr.style.display = 'none';
+  wireHelp($('out'));
+  var ob = $('out');
+  if(ob && ob.scrollIntoView) ob.scrollIntoView({ behavior:'smooth', block:'start' });
+}
+
+function rateStructUI(){
+  var sub = subMode();
+  $('subRow').style.display = sub ? '' : 'none';
+  $('rateRow').style.display = sub ? 'none' : '';
 }
 
 /* ============================================================
