@@ -112,6 +112,13 @@ service cloud.firestore {
     function isFinAdmin() {
       return signedIn() && myRole() == 'admin';
     }
+    /* The financing portal's organisation key — the folded form of the
+       organisation name the person registered with. Used to scope the
+       per-firm view records below. Read with a default so a profile written
+       before orgKey existed returns '' rather than failing the whole rule. */
+    function myFinOrgKey() {
+      return myProfile().get('orgKey', '');
+    }
     /* ---------------- marketplace role helpers ---------------- */
     function mktProfile() {
       return get(/databases/$(database)/documents/mkt_profiles/$(request.auth.uid)).data;
@@ -335,6 +342,35 @@ service cloud.firestore {
         && request.resource.data.role == resource.data.role;
       allow delete: if false;
     }
+    /* ---------------- Financing portal organisations ----------------
+       fin_orgs/{orgKey} holds a capital partner's tier, unlock allowance and
+       the unlocks they have spent this period.
+
+       NOTE: the app has been reading and writing this collection for some
+       time but this file carried no rule for it, so every read failed and the
+       tier always fell back to the default. Added here so deploying this file
+       does not leave the entitlement system broken. If your live rules
+       already carry a fin_orgs block, keep whichever is more restrictive. */
+    match /fin_orgs/{orgKey} {
+      allow read:  if signedIn();
+      allow write: if isAdmin() || isFinAdmin();
+      match /unlocks/{dealId} {
+        allow read:   if signedIn();
+        allow create: if isPartner() || isAdmin() || isFinAdmin();
+        allow update: if isAdmin() || isFinAdmin();
+        allow delete: if isAdmin() || isFinAdmin();
+      }
+    }
+    /* ---------------- Financing portal settings ----------------
+       fin_settings/intake holds the intake gate and the first-look defaults
+       (which technologies queue for review, which partner gets first look,
+       and how many days they have). Readable by any signed-in user, because
+       every client needs it to decide what a newly filed deal becomes and to
+       label a held deal correctly. Writable only by the marketplace operator. */
+    match /fin_settings/{docId} {
+      allow read:  if signedIn();
+      allow write: if isAdmin() || isFinAdmin();
+    }
     /* ---------------- Financing portal projects ---------------- */
     match /fin_projects/{projectId} {
       function isOwner() {
@@ -344,39 +380,155 @@ service cloud.firestore {
         return signedIn() && resource.data.awardedTo == request.auth.uid;
       }
       function isBrowsable() {
-        // Partners browse only OPEN projects. 'closed' and 'awarded' excluded.
+        // Partners browse only OPEN projects. 'draft', 'review', 'exclusive',
+        // 'closed' and 'awarded' are all excluded.
         return resource.data.status == 'open';
+      }
+      /* The first-look partner. Membership is an array of uids written onto
+         the deal when the hold starts, so this resolves without reading a
+         profile — and so a partner's array-contains query returns only
+         documents this same test will pass. Deliberately NOT gated on status
+         here: the query cannot filter on status as well, and every document
+         carrying the uid is one this partner was given.
+         Every access below uses data.get(field, default) because deals filed
+         before this feature existed have none of these fields, and a bare
+         reference to a missing field fails the whole rule — which would have
+         locked sponsors out of editing their own older deals. */
+      function isFirstLook() {
+        return isPartner()
+               && request.auth.uid in resource.data.get('firstLookUids', []);
+      }
+      /* Is the exclusive window still running? Compared against the server's
+         clock, not the browser's, so a partner cannot buy themselves more
+         time by moving their system clock. */
+      function holdIsLive() {
+        return resource.data.get('firstLookUntil', 0) is number
+               && request.time.toMillis() < resource.data.get('firstLookUntil', 0);
       }
       // Read granted if you own it (developer or originator), or you're
       // ClearSky staff / a financing admin, or you're a partner and it's
-      // browsable (open), or you're the awarded partner.
+      // browsable (open), or you hold the first look on it, or you're the
+      // awarded partner.
       // Order matters: isOwner() and isAdmin() need no profile read, so a
       // user with no fin_profile short-circuits out before myRole() runs.
       allow read: if isOwner()
                   || isAdmin()
                   || isFinAdmin()
                   || (isPartner() && isBrowsable())
+                  || isFirstLook()
                   || (isPartner() && isAwardee());
-      // CREATE: developers AND originators may submit a deal.
+      // CREATE: developers AND originators may submit a deal. A deal may be
+      // filed as a draft, into the review queue, or straight onto the
+      // marketplace — but never pre-held for a partner, and never pre-awarded.
       allow create: if isSubmitter()
                     && request.resource.data.developerUid == request.auth.uid
-                    && request.resource.data.status == 'open'
-                    && request.resource.data.awardedTo == null;
+                    && request.resource.data.status in ['draft', 'review', 'open']
+                    && request.resource.data.awardedTo == null
+                    && request.resource.data.get('firstLookUids', []).size() == 0;
       // Owner (developer or originator) may edit their own deal
-      // (developerUid fixed). Admins get NO write access here by design.
-      // This also covers awarding and closing (status -> 'awarded' / 'closed').
+      // (developerUid fixed). This also covers awarding and closing.
+      // A sponsor may NOT put their own deal on a first-look hold — only the
+      // operator does that — so the hold fields are pinned on their writes.
       allow update: if isOwner()
-                    && request.resource.data.developerUid == resource.data.developerUid;
-      // (No partner-side project update: the project stays 'open'. Each
-      //  partner's offer carries pending/rejected/accepted. Only the owner
-      //  changes project status — via the owner update rule above.)
-      allow delete: if isOwner() && resource.data.status != 'awarded';
+                    && request.resource.data.developerUid == resource.data.developerUid
+                    && request.resource.data.get('firstLookUids', [])
+                       == resource.data.get('firstLookUids', [])
+                    && (
+                         // ordinary edit: the hold, if any, is left alone
+                         request.resource.data.get('firstLookUntil', 0)
+                           == resource.data.get('firstLookUntil', 0)
+                         // or the sponsor clears a hold whose window has run out
+                         || (resource.data.status == 'exclusive'
+                             && !holdIsLive()
+                             && request.resource.data.status == 'open')
+                       );
+      // The marketplace operator approves deals out of the review queue, puts
+      // them on a first-look hold, releases them, and sends them back.
+      // NOTE: this is a deliberate change — the financing admin used to have
+      // no write access at all. It cannot award a deal to itself: awardedTo
+      // may only be set by the owner's rule above.
+      allow update: if (isAdmin() || isFinAdmin())
+                    && request.resource.data.developerUid == resource.data.developerUid
+                    && request.resource.data.get('awardedTo', null)
+                       == resource.data.get('awardedTo', null);
+      /* The first-look partner has exactly one write on the project: passing,
+         which releases it to the marketplace. hasOnly() pins every other
+         field, so this cannot be used to touch the numbers, the owner, or the
+         award. Allowed after the window closes too — passing late is still a
+         pass, and it saves waiting for a sweep. */
+      allow update: if isFirstLook()
+                    && resource.data.status == 'exclusive'
+                    && request.resource.data.diff(resource.data).affectedKeys()
+                         .hasOnly(['status', 'firstLookUids', 'firstLookPastUids',
+                                   'firstLookDecision', 'firstLookDecidedAt',
+                                   'firstLookDecidedBy', 'firstLookUntil'])
+                    && request.resource.data.status == 'open'
+                    && request.resource.data.get('firstLookUids', []).size() == 0;
+      /* Taking the first look only stamps the decision — the hold stays on,
+         so the deal does not reach the open marketplace while terms are
+         worked out. Only allowed while the window is actually live. */
+      allow update: if isFirstLook()
+                    && resource.data.status == 'exclusive'
+                    && holdIsLive()
+                    && request.resource.data.diff(resource.data).affectedKeys()
+                         .hasOnly(['firstLookDecision', 'firstLookDecidedAt', 'firstLookDecidedBy'])
+                    && request.resource.data.firstLookDecision == 'accepted';
+      allow delete: if (isOwner() && resource.data.status != 'awarded')
+                    || isAdmin() || isFinAdmin();
+      /* ---------------- per-firm view records ----------------
+         fin_projects/{id}/fin_views/{orgKey} — one document per capital firm
+         per deal, carrying an open count and the strongest signal they have
+         given. Written by the partner who looked; read by the sponsor whose
+         deal it is, and by the operator.
+
+         The document id IS the writer's organisation key, so a firm can only
+         ever write its own record — there is no path on which one partner
+         could write, alter, or inflate another's. */
+      match /fin_views/{orgKey} {
+        function parent() {
+          return get(/databases/$(database)/documents/fin_projects/$(projectId)).data;
+        }
+        function isMyFirm() {
+          return isPartner() && myFinOrgKey() != '' && orgKey == myFinOrgKey();
+        }
+        /* A capital partner may read only their own firm's record — never a
+           rival's. Seeing who else is circling a deal is exactly what this
+           collection is for and exactly what must not leak sideways. */
+        allow read: if isAdmin()
+                    || isFinAdmin()
+                    || parent().developerUid == request.auth.uid
+                    || parent().get('orgKey', '\u0000') == myFinOrgKey()
+                    || isMyFirm();
+        /* Writable only against a deal the partner can actually see, so a
+           record cannot be manufactured for a deal in the review queue or one
+           held for somebody else. sponsorOrgKey is checked against the parent
+           rather than trusted, because the sponsor's own query filters on it. */
+        allow create, update: if isMyFirm()
+                    && request.resource.data.orgKey == orgKey
+                    && request.resource.data.sponsorOrgKey == parent().get('orgKey', '')
+                    && (
+                         parent().status == 'open'
+                         || parent().get('awardedTo', '') == request.auth.uid
+                         || request.auth.uid in parent().get('firstLookUids', [])
+                       );
+        allow delete: if isAdmin() || isFinAdmin();
+      }
       match /offers/{offerId} {
         function parent() {
           return get(/databases/$(database)/documents/fin_projects/$(projectId)).data;
         }
         function parentOwner() {
           return parent().developerUid == request.auth.uid;
+        }
+        /* A partner may only bid on a deal that is genuinely open to them:
+           on the marketplace, or held for them with the window still live.
+           Without this, a partner who kept a deal id could bid on something
+           in the review queue or on another partner's exclusive. */
+        function parentBiddable() {
+          return parent().status == 'open'
+                 || (parent().status == 'exclusive'
+                     && request.auth.uid in parent().get('firstLookUids', [])
+                     && request.time.toMillis() < parent().get('firstLookUntil', 0));
         }
         allow read: if signedIn() && (
                        parentOwner() ||
@@ -387,7 +539,8 @@ service cloud.firestore {
         allow create, update: if isPartner()
                     && offerId == request.auth.uid
                     && request.resource.data.partnerUid == request.auth.uid
-                    && parent().status != 'awarded';
+                    && parent().status != 'awarded'
+                    && parentBiddable();
         allow update: if parentOwner()
                     || (isPartner() && offerId == request.auth.uid);
         allow delete: if false;
@@ -405,20 +558,47 @@ service cloud.firestore {
         function parentBrowsable() {
           return parent().status == 'open';
         }
+        function parentHeldForMe() {
+          return parent().status == 'exclusive'
+                 && request.auth.uid in parent().get('firstLookUids', []);
+        }
         allow read: if signedIn() && (
                        parentOwner() ||
                        isAdmin() ||
                        isFinAdmin() ||
-                       (isPartner() && (parentBrowsable() || parentAwardee()))
+                       (isPartner() && (parentBrowsable() || parentHeldForMe() || parentAwardee()))
                     );
         allow create: if signedIn()
                     && request.resource.data.authorUid == request.auth.uid
                     && (
                         parentOwner() ||
-                        (isPartner() && (parentBrowsable() || parentAwardee()))
+                        (isPartner() && (parentBrowsable() || parentHeldForMe() || parentAwardee()))
                        );
         allow update, delete: if false;
       }
+    }
+    /* ---------------- view records, collection-group scope ----------------
+       A sponsor reads engagement across their whole book in one query:
+
+         collectionGroup('fin_views').where('sponsorOrgKey','==', myOrgKey())
+
+       A collection-group query is NOT authorised by the nested rule above —
+       it needs a rule matched at the group path, which is why this exists
+       separately. The subcollection is named fin_views rather than views
+       precisely because this wildcard reaches across the whole shared
+       database, and a bare "views" would match any other portal's data.
+
+       Empty org keys are excluded on both sides: a profile written before
+       orgKey existed must not match every record whose sponsorOrgKey is also
+       blank. Read-only here — every write goes through the nested rule, which
+       can check the parent deal. */
+    match /{path=**}/fin_views/{orgKey} {
+      allow read: if isAdmin()
+                  || isFinAdmin()
+                  || (myFinOrgKey() != ''
+                      && resource.data.get('sponsorOrgKey', '\u0000') == myFinOrgKey())
+                  || (isPartner() && myFinOrgKey() != '' && orgKey == myFinOrgKey());
+      allow write: if false;
     }
     /* ============================================================
        DISTRIBUTION MARKETPLACE — mkt_*

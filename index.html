@@ -447,6 +447,8 @@ code{font-family:var(--mono);font-size:11.5px;background:var(--cs-card-2);paddin
 .draft-tag{display:inline-block;font-size:9.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--cs-muted);background:rgba(14,26,36,.07);padding:2px 7px;border-radius:10px;vertical-align:middle;margin-left:6px}
 .mate-tag{display:inline-block;font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--cs-blue);background:var(--cs-blue-dim);padding:2px 6px;border-radius:9px;margin-left:5px}
 .hidden-tag{display:inline-block;font-size:9.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--cs-red);background:var(--cs-red-dim);padding:2px 7px;border-radius:10px;vertical-align:middle;margin-left:6px}
+.review-tag{display:inline-block;font-size:9.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--cs-amber);background:var(--cs-amber-dim);padding:2px 7px;border-radius:10px;vertical-align:middle;margin-left:6px}
+.first-tag{display:inline-block;font-size:9.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--cs-violet);background:var(--cs-violet-dim);padding:2px 7px;border-radius:10px;vertical-align:middle;margin-left:6px}
 .sample-tag{display:inline-block;font-size:9.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--cs-amber);background:var(--cs-amber-dim);padding:2px 7px;border-radius:10px;vertical-align:middle;margin-left:6px}
 .sample-banner{display:flex;align-items:flex-start;gap:12px;background:var(--cs-amber-dim);border:1px solid rgba(199,122,0,.3);border-radius:12px;padding:14px 16px;margin-bottom:16px;font-size:12.5px;line-height:1.55;color:var(--cs-ink)}
 .sample-banner svg{color:var(--cs-amber);flex:none;margin-top:1px}
@@ -2403,8 +2405,20 @@ function devOverview() {
 
   const samples = all.filter(d => d.sample).length;
   const hidden = all.filter(d => !isPublished(d));
+  const queued = all.filter(inReview);
+  const onFirst = all.filter(onHold);
 
   return `
+  ${queued.length ? `<div class="sample-banner" style="background:var(--cs-amber-dim);border-color:rgba(199,122,0,.3)">
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="color:var(--cs-amber)"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+    <div><b>${plural(queued.length, 'deal')} with a ClearSky administrator.</b>
+      ${queued.map(d => esc(d.name)).join(', ')} — ${queued.length === 1 ? 'it is' : 'they are'} reviewed before reaching capital partners. Nothing is needed from you.</div>
+  </div>` : ''}
+  ${onFirst.length ? `<div class="sample-banner" style="background:var(--cs-violet-dim);border-color:rgba(91,75,196,.3)">
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--cs-violet)"><path d="M12 3l2.7 5.5 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.8 1-6.1-4.4-4.3 6.1-.9z"/></svg>
+    <div><b>${plural(onFirst.length, 'deal')} on first look.</b>
+      ${onFirst.map(d => esc(d.name) + ' — ' + esc(holdOrgName(d)) + ', ' + esc(holdCountdown(d))).join('; ')}. ${onFirst.length === 1 ? 'It opens' : 'They open'} to every capital partner after that.</div>
+  </div>` : ''}
   ${hidden.length ? `<div class="sample-banner" style="background:var(--cs-red-dim);border-color:rgba(180,50,42,.3)">
     <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="color:var(--cs-red)"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
     <div><b>${plural(hidden.length, 'deal')} not reaching capital partners.</b>
@@ -2433,6 +2447,8 @@ function devOverview() {
             : stAll.avgCycle ? 'submission to funding' : 'no closes on record yet', '',
           cycleSpark.length > 2 ? sparkline(cycleSpark, 118, 34, 'var(--cs-blue)') : '')}
   </div>
+
+  ${interestPanel(filtered())}
 
   ${usMap(filtered('state'), 'Your book of business.')}
 
@@ -2597,6 +2613,22 @@ const COLS = [
   {key:'developer', lab:'Developer'},
   {key:'submitted', lab:'Submitted',   cls:'num', fmt:d => dt(d.submitted)}
 ];
+/* The interest column is the sponsor's own readership figure. It is appended
+   per render rather than living in COLS, because the same table renders for
+   capital partners, who must not see how many rivals have opened a deal. */
+const INTEREST_COL = {key:'viewFirms', lab:'Viewed by', cls:'num', fmt: d => {
+  const n = Number(d.viewFirms) || 0;
+  if (heldBackFromMarket(d)) return '<span class="sheet-dash">—</span>';
+  if (!n) return '<span class="p-unsized">Not yet</span>';
+  const v = Number(d.viewCount) || 0;
+  return `<b>${n}</b> firm${n === 1 ? '' : 's'}<span style="display:block;font-size:11px;color:var(--cs-muted-2)">${plural(v, 'open')}</span>`;
+}};
+
+function visibleCols() {
+  const sponsorSide = !!SESSION && (S.role !== 'partner' || isPlatformAdmin());
+  return sponsorSide ? COLS.concat([INTEREST_COL]) : COLS;
+}
+
 const STATUS_PILL = {active:['p-active','In market'], won:['p-won','Funded'], declined:['p-declined','Declined'], withdrawn:['p-withdrawn','Withdrawn']};
 const STAGE_PILL = {'Submitted':'p-active','Screening':'p-screening','Diligence':'p-diligence','Term sheet':'p-term','Closed':'p-won'};
 
@@ -2624,7 +2656,10 @@ function lockedCell(d, c) {
 function cellHTML(d, c) {
   if (isLocked(d)) return lockedCell(d, c);
   if (c.key === 'name') { const bb = buyBox(d); return `<div>${esc(d.name)}${d.sample ? ' <span class="sample-tag">Sample</span>' : ''}${
-    isDraft(d) ? ' <span class="draft-tag">Draft</span>' : isPublished(d) ? '' : ' <span class="hidden-tag">Not on marketplace</span>'}${
+    isDraft(d) ? ' <span class="draft-tag">Draft</span>'
+      : inReview(d) ? ' <span class="review-tag">In review</span>'
+      : onHold(d) ? ` <span class="first-tag">${holdExpired(d) ? 'Window closed' : 'First look · ' + esc(holdCountdown(d))}</span>`
+      : isPublished(d) ? '' : ' <span class="hidden-tag">Not on marketplace</span>'}${
     isUnlocked(d) ? ' <span class="open-tag">Unlocked</span>' : ''}${
     WATCH.has(d.id) ? ' <span class="watch-tag">★</span>' : ''}${
     bb ? ` <span class="pill ${BUYBOX_BADGE[bb.band]}" title="${esc(bb.verdict)} — ${bb.met} of ${bb.total} buy-box tests met, ${bb.open} unanswered">${bb.met}/${bb.total} fit</span>` : ''
@@ -2655,7 +2690,7 @@ const GROUP_LABEL = {state:'By state', originator:'By person', developer:'By org
 
 function dealTable(list, opts) {
   opts = opts || {};
-  const cols = COLS.filter(c => !(opts.hide || []).includes(c.key));
+  const cols = visibleCols().filter(c => !(opts.hide || []).includes(c.key));
   const head = `<thead><tr>${cols.map(c => `<th data-act="sort" data-val="${c.key}" class="${S.sort.key === c.key ? 'sorted' : ''}">${c.lab}${S.sort.key === c.key ? (S.sort.dir > 0 ? ' ▲' : ' ▼') : ''}</th>`).join('')}</tr></thead>`;
 
   if (!list.length) return `<div class="sheet-wrap"><table class="sheet">${head}<tbody><tr><td class="sheet-empty" colspan="${cols.length}">Nothing matches these filters. Try clearing the state or technology filter.</td></tr></tbody></table></div>`;
@@ -2968,7 +3003,13 @@ function watchOffers(deal) {
 const myOffer = () => FB.ready && FB.auth.currentUser
   ? OFFERS.find(o => o.uid === FB.auth.currentUser.uid) : null;
 const acceptedOffer = () => OFFERS.find(o => o.status === 'accepted');
-const canOffer = d => S.role === 'partner' && !isPlatformAdmin() && d && d.docId && d.status !== 'won';
+/* A deal in the review queue is not on the market at all, and a held deal
+   belongs to one partner until the window closes. Mirrors the rules, so the
+   UI only offers what the database will actually accept. */
+const canOffer = d => S.role === 'partner' && !isPlatformAdmin() && d && d.docId
+                   && d.status !== 'won'
+                   && !inReview(d)
+                   && (!onHold(d) || (iHoldFirstLook(d) && !holdExpired(d)));
 
 const OFFER_PILL = {
   submitted: ['p-active', 'Submitted'],
@@ -3202,6 +3243,15 @@ function offersTab(d) {
 
 const DR_TABS = [['overview','Overview'],['offers','Offers'],['energy','Energy'],['docs','Documents'],['bill','Utility bill'],['activity','Activity']];
 
+/* The interest panel is the sponsor's own readership data, and an
+   administrator's oversight of it. A capital partner must never see it —
+   which rivals are circling a deal is precisely what it contains. */
+function drawerTabs(d) {
+  const tabs = DR_TABS.slice();
+  if (isPlatformAdmin() || isOwnerOf(d) || isOrgMate(d)) tabs.splice(1, 0, ['interest', 'Interest']);
+  return tabs;
+}
+
 function openDeal(id) {
   const d = allDeals().find(x => x.id === id);
   if (!d) return;
@@ -3209,6 +3259,11 @@ function openDeal(id) {
   /* A sealed deal subscribes to nothing. The offer thread is part of what an
      unlock buys, and asking for it would only earn a permission error. */
   if (!isLocked(d)) watchOffers(d); else { stopOffers(); OFFERS = []; offersErr = null; }
+  /* Opening the file is the interest the sponsor is told about. Recorded even
+     when the deal is still locked — a partner reading the teaser and deciding
+     against spending a token is a real signal, and arguably the more useful
+     one. */
+  recordView(d);
   renderDrawer();
   $('#drawerBack').classList.add('show');
   $('#drawer').classList.add('show');
@@ -3470,6 +3525,7 @@ function assetSection(d) {
 
 function drawerBody(d) {
   if (isLocked(d)) return lockedPanel(d);
+  if (S.drawerTab === 'interest') return interestTab(d);
   if (S.drawerTab === 'overview') {
     const [cls, lab] = STATUS_PILL[d.status];
     return `
@@ -3485,7 +3541,30 @@ function drawerBody(d) {
       ${canEdit(d) ? `<button class="btn btn-primary btn-sm" style="margin-top:12px" data-act="republish" data-val="${d.id}">Publish to marketplace</button>
         <button class="btn btn-ghost btn-sm" style="margin-top:12px;margin-left:8px" data-act="edit-deal" data-val="${d.id}">Edit</button>` : ''}
     </div>` : ''}
-    ${!isDraft(d) && !isPublished(d) ? `<div class="verdict fair" style="margin-bottom:20px">
+    ${inReview(d) ? `<div class="verdict fair" style="margin-bottom:20px">
+      <div class="vd-top"><span class="vd-badge">In review</span><h5>${isPlatformAdmin() ? 'Waiting for you to put it on the portal' : 'With a ClearSky administrator'}</h5></div>
+      <p>${isPlatformAdmin()
+        ? `Filed ${esc(dt(d.submitted))} by ${esc(d.submittedBy)} at ${esc(d.developer)}. No capital partner can see it until you approve it — either straight to the marketplace, or held for ${esc(INTAKE.firstLookOrgName)} first.`
+        : `${esc(d.techName)} deals are reviewed before they reach capital partners. You'll see this move to the marketplace once it's approved; nothing is needed from you in the meantime.`}</p>
+      ${isPlatformAdmin() ? `<button class="btn btn-primary btn-sm" style="margin-top:12px" data-act="approve-deal" data-val="${esc(d.id)}">Review and publish</button>
+        <button class="btn btn-ghost btn-sm" style="margin-top:12px;margin-left:8px" data-act="return-deal" data-val="${esc(d.id)}">Send back</button>` : ''}
+    </div>` : ''}
+
+    ${onHold(d) ? `<div class="verdict ${holdExpired(d) ? 'poor' : 'good'}" style="margin-bottom:20px">
+      <div class="vd-top"><span class="vd-badge">${holdExpired(d) ? 'Window closed' : 'First look'}</span>
+        <h5>${holdExpired(d)
+          ? 'The exclusive window has run out'
+          : (iHoldFirstLook(d) ? `Yours exclusively — ${esc(holdCountdown(d))}` : `Held for ${esc(holdOrgName(d))} — ${esc(holdCountdown(d))}`)}</h5></div>
+      <p>${holdExpired(d)
+        ? `${esc(holdOrgName(d))} did not answer inside their window. The deal opens to every capital partner as soon as an administrator or the sponsor next has the portal open.`
+        : iHoldFirstLook(d)
+          ? `No other capital partner can see this deal until ${esc(dt(iso(new Date(Number(d.firstLookUntil) || Date.now()))))}. Take it and it stays off the open marketplace while you work it up; pass and it opens to everyone straight away. Do nothing and it opens anyway when the clock runs out.`
+          : `${esc(holdOrgName(d))} has an exclusive look until ${esc(dt(iso(new Date(Number(d.firstLookUntil) || Date.now()))))}. It reaches the open marketplace after that, or sooner if they pass.`}
+      ${d.firstLookDecision === 'accepted' ? '<br><br>They have taken the first look — the clock no longer matters, and the deal stays off the open marketplace until it is released or awarded.' : ''}</p>
+      ${isPlatformAdmin() ? `<button class="btn btn-ghost btn-sm" style="margin-top:12px" data-act="release-hold" data-val="${esc(d.id)}">Release to the marketplace now</button>` : ''}
+    </div>` : ''}
+
+    ${!isDraft(d) && !inReview(d) && !onHold(d) && !isPublished(d) ? `<div class="verdict fair" style="margin-bottom:20px">
       <div class="vd-top"><span class="vd-badge">Not visible</span><h5>Capital partners cannot see this deal</h5></div>
       <p>Its stored status is <code>${esc(String(d.fsStatus))}</code>. A deal only appears on the marketplace while that reads <code>open</code>.</p>
       ${canDelete(d) ? `<button class="btn btn-primary btn-sm" style="margin-top:12px" data-act="republish" data-val="${d.id}">Put it back on the marketplace</button>` : ''}
@@ -3734,11 +3813,19 @@ function renderDrawer() {
   $('#drSub').innerHTML = lock
     ? `${esc(d.ref)} · ${esc(STATE_NAME[d.state] || d.state)} · ${esc(d.techName)} · ${sizeBand(d)} <span class="lk-tag">Locked</span>`
     : `${esc(d.ref)} · ${esc(d.city)}, ${d.state} · ${usd(d.ask)} · ${num(d.mw)} MW`
-      + (d.sample ? ' <span class="sample-tag">Sample record</span>' : '');
+      + (d.sample ? ' <span class="sample-tag">Sample record</span>' : '')
+      + (inReview(d) ? ' <span class="review-tag">In review</span>' : '')
+      + (onHold(d) ? ` <span class="first-tag">${holdExpired(d) ? 'Window closed' : 'First look · ' + esc(holdCountdown(d))}</span>` : '');
   const nOffers = OFFERS.filter(o => o.status !== 'withdrawn').length;
-  $('#drTabs').innerHTML = lock ? '' : DR_TABS.map(([k, l]) =>
+  const tabs = drawerTabs(d);
+  /* A partner who had the Interest tab open on their own deal and then opened
+     somebody else's would otherwise land on a tab that no longer exists. */
+  if (!tabs.some(t => t[0] === S.drawerTab)) S.drawerTab = 'overview';
+  const vs = viewSummary(d.id);
+  $('#drTabs').innerHTML = lock ? '' : tabs.map(([k, l]) =>
     `<button class="dr-tab ${S.drawerTab === k ? 'on' : ''}" data-act="drtab" data-val="${k}">${l}${
       k === 'bill' && d.bill ? ' •' : ''}${
+      k === 'interest' && vs.firms ? ` <span class="cnt">${vs.firms}</span>` : ''}${
       k === 'offers' && nOffers ? ` <span class="cnt">${nOffers}</span>` : ''}</button>`).join('');
   $('#drBody').innerHTML = drawerBody(d);
   $('#drBody').scrollTop = 0;
@@ -3750,7 +3837,15 @@ function renderDrawer() {
     $('#drFoot').innerHTML = actions.join('');
     return;
   }
-  if (canOffer(d) && !myOffer()) actions.push(`<button class="btn btn-primary btn-sm" data-act="offer" data-val="${esc(d.id)}">Make an offer</button>`);
+  /* The first-look partner decides before anything else is offered to them:
+     take it and the clock stops, pass and it opens to the market at once. */
+  const mineToDecide = onHold(d) && iHoldFirstLook(d) && !holdExpired(d)
+                    && d.firstLookDecision !== 'accepted' && S.role === 'partner';
+  if (mineToDecide) {
+    actions.push(`<button class="btn btn-primary btn-sm" data-act="take-first" data-val="${esc(d.id)}">Take first look</button>`);
+    actions.push(`<button class="btn btn-ghost btn-sm" data-act="pass-first" data-val="${esc(d.id)}">Pass</button>`);
+  }
+  if (canOffer(d) && !myOffer()) actions.push(`<button class="btn btn-${mineToDecide ? 'ghost' : 'primary'} btn-sm" data-act="offer" data-val="${esc(d.id)}">Make an offer</button>`);
   else if (myOffer()) actions.push(`<button class="btn btn-ghost btn-sm" data-act="drtab" data-val="offers">View your offer</button>`);
   if (canEdit(d))   actions.push(`<button class="btn btn-ghost btn-sm" data-act="edit-deal" data-val="${d.id}">Edit</button>`);
   actions.push(`<button class="btn btn-ghost btn-sm" data-act="export-onedeal">Export this deal</button>`);
@@ -3766,12 +3861,33 @@ function renderDrawer() {
 const stamp = () => iso(TODAY).replace(/-/g, '');
 
 function exportDeals(list) {
-  const rows = [['Deal ID','Name','City','State','Technology','MW','MWh','Capital ask (USD)','$/W','Stage','Outcome','Decline reason','Developer','Originator','Bidders','Offers','Sponsor IRR %','DSCR','Offtake','Development stage','Sizing','Site control','Permits','Interconnection','Submitted','Decided','Days in process','Target COD','Shared links']];
-  list.forEach(d => rows.push([d.ref, d.name, d.city, d.state, d.techName, d.mw, d.mwh || '', d.ask, d.ppw.toFixed(3), d.stage,
-    STATUS_PILL[d.status][1], d.declineReason || '', d.developer, d.originator, d.bidders, d.offers, d.irr, d.dscr,
-    d.offtake, d.devStage || '', unsized(d) ? 'not sized' : 'sized',
-    d.siteControl, d.permits, d.interconnect, d.submitted, d.decided || '', d.cycleDays || d.ageDays, d.cod,
-    (d.links || []).map(l => l.label + ': ' + l.url).join(' | ')]));
+  /* Readership is the sponsor's own data and the operator's oversight of it.
+     A capital partner exporting the marketplace must not carry away a column
+     saying how many rivals opened each deal. */
+  const withInterest = !!SESSION && (S.role !== 'partner' || isPlatformAdmin());
+  const named = withInterest && namesShown();
+
+  const rows = [['Deal ID','Name','City','State','Technology','MW','MWh','Capital ask (USD)','$/W','Stage','Outcome','Decline reason','Developer','Originator','Bidders','Offers','Sponsor IRR %','DSCR','Offtake','Development stage','Sizing','Site control','Permits','Interconnection','Submitted','Decided','Days in process','Target COD','Shared links']
+    .concat(withInterest ? ['Firms that viewed','Total opens','Firms that unlocked','Firms watching','Days to first view','Last viewed'] : [])
+    .concat(named ? ['Viewing firms'] : [])];
+
+  list.forEach(d => {
+    const row = [d.ref, d.name, d.city, d.state, d.techName, d.mw, d.mwh || '', d.ask, d.ppw.toFixed(3), d.stage,
+      STATUS_PILL[d.status][1], d.declineReason || '', d.developer, d.originator, d.bidders, d.offers, d.irr, d.dscr,
+      d.offtake, d.devStage || '', unsized(d) ? 'not sized' : 'sized',
+      d.siteControl, d.permits, d.interconnect, d.submitted, d.decided || '', d.cycleDays || d.ageDays, d.cod,
+      (d.links || []).map(l => l.label + ': ' + l.url).join(' | ')];
+
+    if (withInterest) {
+      const s = viewSummary(d.id);
+      const lag = daysToFirstView(d);
+      row.push(s.firms, s.views, s.unlocked, s.watching,
+               lag == null ? '' : lag,
+               s.lastAt ? iso(new Date(s.lastAt)) : '');
+      if (named) row.push(s.rows.map(r => (r.org || r.orgKey) + ' (' + (Number(r.views) || 0) + ')').join(' | '));
+    }
+    rows.push(row);
+  });
   downloadCSV(`omega-deal-details-${stamp()}.csv`, rows);
 }
 
@@ -4444,7 +4560,9 @@ async function saveDeal(asDraft) {
     }
     btn.disabled = false; btn.textContent = label;
     closeModal();
-    toast(`${name} submitted — capital partners can see it now.`);
+    toast(intakeStatusFor(d) === FS_REVIEW
+      ? `${name} filed — it goes to a ClearSky administrator for review before capital partners see it.`
+      : `${name} submitted — capital partners can see it now.`);
     return;                       // the live listener re-renders with the saved copy
   }
 
@@ -5671,9 +5789,23 @@ const tokensLeftLabel = ts => ts.unlimited ? 'Unlimited' : ts.left + ' of ' + ts
 
 /* Sponsors and administrators are never metered — a sponsor is reading their
    own file, and an administrator has to be able to see everything to run the
-   platform. Sample records are never metered either; nothing is at stake. */
+   platform. Sample records are never metered either; nothing is at stake.
+
+   Neither is a deal being held for this partner on first look. The hold IS
+   the invitation: charging an unlock to open something you were handed
+   exclusively reads as a toll on a favour, and the failure mode is worse than
+   the principle — a partner out of tokens could not open their own exclusive,
+   the window would lapse unread, and the deal would reach the marketplace
+   having never been seen by the one firm it was reserved for. That defeats
+   the point of holding it.
+
+   The exemption is deliberately narrow: it lasts only while the deal is
+   actually held for them. Once it releases to the open marketplace — whether
+   they passed, the clock ran out, or an administrator released it — it is
+   metered like anything else unless they spent a token on it. */
 function needsToken(d) {
-  return !!SESSION && SESSION.role === 'partner' && !isPlatformAdmin() && !!d && !d.sample;
+  return !!SESSION && SESSION.role === 'partner' && !isPlatformAdmin() && !!d && !d.sample
+      && !(onHold(d) && iHoldFirstLook(d));
 }
 const isUnlocked = d => !!d && !!UNLOCKS[d.id];
 const isLocked   = d => needsToken(d) && !isUnlocked(d);
@@ -5751,6 +5883,9 @@ async function unlockDeal(dealId) {
 
   closeModal();
   toast('Unlocked. ' + d.name + ' is open to your organisation.');
+  /* Tell the sponsor's funnel that this firm went past looking and bought the
+     file. Best effort — the unlock itself is already committed. */
+  stampInterest(d, {unlockedAt: Date.now()});
   /* the snapshot listener repaints, but open the file immediately */
   UNLOCKS[d.id] = {dealId:d.id, at: Date.now(), name: SESSION.name};
   render();
@@ -5857,6 +5992,10 @@ async function toggleWatch(dealId) {
   try {
     await FB.db.collection('fin_profiles').doc(FB.auth.currentUser.uid)
       .update({watchlist: Array.from(WATCH)});
+    /* Firm-level, so it reads "somebody at this firm is watching" rather than
+       naming whose watchlist it is on. Cleared when the last one drops it. */
+    const deal = allDeals().find(x => x.id === id);
+    if (deal) stampInterest(deal, {watchedAt: on ? null : Date.now()});
     toast(on ? 'Removed from your watchlist.' : 'Added to your watchlist.');
   } catch (err) {
     console.error('[OMEGA] watchlist save failed:', err);
@@ -6144,15 +6283,948 @@ async function exportUnlocks() {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   13. RENDER
+   12e. INTAKE CONTROL — administrator approval, then a first-look hold
+   ───────────────────────────────────────────────────────────────────────────
+   A gated deal (by default a standalone BESS) does not reach the marketplace
+   the moment it is filed. It lands in an administrator's review queue. The
+   administrator either puts it straight on the marketplace, or holds it for
+   one capital partner — Amperage Capital — who gets an exclusive window to
+   take it or pass. When they pass, or the window runs out, it opens to
+   everybody.
+
+   The stored status field carries the whole state, because it is the field
+   every query and every rule already keys off:
+
+     draft      sponsor's working note, nobody else sees it
+     review     filed, waiting on an administrator          ← new
+     exclusive  approved and held for the first-look partner ← new
+     open       on the marketplace, anyone may underwrite it
+
+   The window is enforced in three places on purpose: the countdown in the UI,
+   the sweep below, and the security rules, which refuse a first-look partner's
+   write once firstLookUntil has passed. The UI can be stale and the sweep
+   needs somebody signed in; the rules cannot be bypassed.
    ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Stored statuses, named once so a typo cannot silently hide a deal. */
+const FS_DRAFT = 'draft', FS_REVIEW = 'review', FS_HOLD = 'exclusive', FS_OPEN = 'open';
+
+const INTAKE_DEFAULTS = {
+  gateEnabled:     true,
+  gateTechs:       ['bess'],          // standalone BESS, per TECHS
+  firstLookDays:   7,
+  firstLookOrgKey: 'amperage-capital',
+  firstLookOrgName:'Amperage Capital',
+  holdByDefault:   true,              // pre-select "hold" on the approve dialog
+  viewerDisclosure:'named'            // 'named' | 'counts' — see section 12f
+};
+const MAX_HOLD_DAYS = 90;
+
+let INTAKE = Object.assign({}, INTAKE_DEFAULTS);
+let intakeUnsub = null;
+let intakeErr = null;
+
+/* Out-of-range clamps to the nearest bound, which is what the min/max on the
+   input already promises — typing 999 gets you 90, not a silent drop back to
+   the default. Only a value that isn't a number at all falls back. */
+const clampDays = v => {
+  const n = Math.round(Number(v));
+  if (!isFinite(n)) return INTAKE_DEFAULTS.firstLookDays;
+  return Math.min(MAX_HOLD_DAYS, Math.max(1, n));
+};
+
+function normaliseIntake(raw) {
+  const x = Object.assign({}, INTAKE_DEFAULTS, raw || {});
+  if (!Array.isArray(x.gateTechs)) x.gateTechs = INTAKE_DEFAULTS.gateTechs.slice();
+  x.gateTechs = x.gateTechs.filter(t => !!TECH_BY_ID[t]);
+  x.firstLookDays = clampDays(x.firstLookDays);
+  x.gateEnabled = !!x.gateEnabled;
+  x.holdByDefault = !!x.holdByDefault;
+  x.firstLookOrgKey = String(x.firstLookOrgKey || '').trim();
+  x.firstLookOrgName = String(x.firstLookOrgName || '').trim() || x.firstLookOrgKey;
+  x.viewerDisclosure = x.viewerDisclosure === 'counts' ? 'counts' : 'named';
+  return x;
+}
+
+function stopIntake() { if (intakeUnsub) { try { intakeUnsub(); } catch (e) {} intakeUnsub = null; } }
+
+/* Live, so raising the window from 7 days to 10 takes effect everywhere at
+   once rather than on each person's next sign-in. */
+function watchIntake() {
+  stopIntake();
+  INTAKE = Object.assign({}, INTAKE_DEFAULTS);
+  if (!FB.ready || !FB.auth.currentUser) return;
+  intakeUnsub = FB.db.collection('fin_settings').doc('intake').onSnapshot(
+    snap => {
+      INTAKE = normaliseIntake(snap.exists ? snap.data() : null);
+      intakeErr = null;
+      if (SESSION) { render(); if (S.drawerDeal) renderDrawer(); }
+    },
+    err => {
+      /* Falling back to the defaults keeps the gate ON if the settings
+         document cannot be read. Failing open would put a deal the
+         administrator meant to screen straight onto the marketplace. */
+      console.warn('[OMEGA] intake settings watch failed:', err.code || err.message);
+      intakeErr = explain(err)[0];
+    });
+}
+
+async function saveIntake(patch) {
+  if (!isPlatformAdmin()) return;
+  const next = normaliseIntake(Object.assign({}, INTAKE, patch));
+  try {
+    await FB.db.collection('fin_settings').doc('intake').set(Object.assign({}, next, {
+      updatedAt: Date.now(),
+      updatedBy: SESSION.email || SESSION.name
+    }), {merge: true});
+    INTAKE = next;                     // the snapshot confirms; this is for feel
+    render();
+    return true;
+  } catch (err) {
+    console.error('[OMEGA] intake settings write failed:', err);
+    toast(err.code === 'permission-denied'
+      ? 'The database refused that change. Deploy the latest firestore.rules, then try again.'
+      : explain(err)[0], true);
+    return false;
+  }
+}
+
+/* ── Deal state ─────────────────────────────────────────────────────────── */
+const gatedTech   = t => !!INTAKE.gateEnabled && (INTAKE.gateTechs || []).indexOf(t) !== -1;
+const inReview    = d => !!d && d.fsStatus === FS_REVIEW;
+const onHold      = d => !!d && d.fsStatus === FS_HOLD;
+const holdMsLeft  = d => { const u = Number(d && d.firstLookUntil); return isFinite(u) ? u - Date.now() : 0; };
+const holdExpired = d => onHold(d) && holdMsLeft(d) <= 0;
+const myUid       = () => (FB.ready && FB.auth.currentUser) ? FB.auth.currentUser.uid : null;
+const iHoldFirstLook = d => !!d && Array.isArray(d.firstLookUids)
+                          && d.firstLookUids.indexOf(myUid()) !== -1;
+
+/* Deliberately off the open marketplace, as opposed to broken. Both look the
+   same in the stored data — only the status tells them apart. */
+const heldBackFromMarket = d => isDraft(d) || inReview(d) || onHold(d);
+
+function holdCountdown(d) {
+  const ms = holdMsLeft(d);
+  if (ms <= 0) return 'window closed';
+  const hrs = ms / 3600000;
+  if (hrs < 1)  return Math.max(1, Math.round(ms / 60000)) + ' min left';
+  if (hrs < 48) return Math.round(hrs) + (Math.round(hrs) === 1 ? ' hour left' : ' hours left');
+  return Math.floor(hrs / 24) + ' days left';
+}
+
+const holdOrgName = d => (d && d.firstLookOrgName) || INTAKE.firstLookOrgName || 'the first-look partner';
+
+/* Every approved, non-suspended capital partner at the first-look
+   organisation. Held on the deal as an array of uids so a partner's query and
+   the security rules can both resolve the hold without reading a profile. */
+function partnerUidsForOrg(orgKey) {
+  return PEOPLE
+    .filter(p => p.role === 'partner'
+              && (p.orgKey || orgKeyOf(p.org)) === orgKey
+              && p.approved !== false
+              && !p.suspended)
+    .map(p => p.uid);
+}
+
+/* Organisations with at least one capital partner on the books — the only
+   ones a first-look hold can be pointed at. */
+function partnerOrgs() {
+  const out = {};
+  PEOPLE.filter(p => p.role === 'partner').forEach(p => {
+    const k = p.orgKey || orgKeyOf(p.org); if (!k) return;
+    out[k] = out[k] || {orgKey: k, name: p.org || k, n: 0};
+    out[k].n++;
+  });
+  return Object.values(out).sort((a, b) => a.name.localeCompare(b.name));
+}
+
+/* ── Administrator actions ──────────────────────────────────────────────── */
+
+/* Approve out of the review queue. mode 'market' publishes; mode 'hold' opens
+   the exclusive window for the first-look partner. */
+async function approveDeal(id, mode, days) {
+  const d = allDeals().find(x => x.id === id);
+  if (!d || !d.docId || !FB.ready) return;
+  if (!isPlatformAdmin()) return toast('Only an administrator can approve a deal.', true);
+
+  const now = Date.now();
+  let patch;
+
+  if (mode === 'hold') {
+    const orgKey = INTAKE.firstLookOrgKey;
+    const uids = partnerUidsForOrg(orgKey);
+    if (!orgKey) return toast('Set a first-look partner under Controls first.', true);
+    if (!uids.length) {
+      return toast(`No approved capital partner at ${INTAKE.firstLookOrgName} yet — approve their account under People, or publish this straight to the marketplace.`, true);
+    }
+    const n = clampDays(days == null ? INTAKE.firstLookDays : days);
+    patch = {
+      status: FS_HOLD,
+      approvedAt: now, approvedBy: SESSION.email || SESSION.name,
+      firstLookOrgKey: orgKey,
+      firstLookOrgName: INTAKE.firstLookOrgName,
+      firstLookUids: uids,
+      firstLookDays: n,
+      firstLookStartedAt: now,
+      firstLookUntil: now + n * 86400000,
+      firstLookDecision: null,
+      firstLookDecidedAt: null,
+      firstLookDecidedBy: null
+    };
+  } else {
+    patch = {
+      status: FS_OPEN,
+      approvedAt: now, approvedBy: SESSION.email || SESSION.name,
+      firstLookUids: [],
+      firstLookUntil: null,
+      firstLookDecision: null
+    };
+  }
+
+  try {
+    await FB.db.collection('fin_projects').doc(d.docId).update(patch);
+    closeModal();
+    toast(mode === 'hold'
+      ? `${d.name} is held for ${INTAKE.firstLookOrgName} for ${plural(patch.firstLookDays, 'day')}.`
+      : `${d.name} is on the marketplace.`);
+  } catch (err) {
+    console.error('[OMEGA] approve failed:', err);
+    modalErr(err.code === 'permission-denied'
+      ? 'The database refused that change. Deploy the latest firestore.rules, then try again.'
+      : explain(err)[0]);
+  }
+}
+
+/* Send a filed deal back to the sponsor rather than publishing it. */
+async function returnDeal(id, note) {
+  const d = allDeals().find(x => x.id === id);
+  if (!d || !d.docId || !FB.ready) return;
+  try {
+    await FB.db.collection('fin_projects').doc(d.docId).update({
+      status: FS_DRAFT,
+      reviewNote: String(note || '').slice(0, 500),
+      reviewedAt: Date.now(),
+      reviewedBy: SESSION.email || SESSION.name
+    });
+    closeModal();
+    toast(`${d.name} sent back to ${d.submittedBy || 'the sponsor'} as a draft.`);
+  } catch (err) {
+    console.error('[OMEGA] return failed:', err);
+    modalErr(explain(err)[0]);
+  }
+}
+
+/* End a hold early, or clear one that has run out. Used by the administrator
+   button and by the sweep below. */
+async function releaseHold(id, reason) {
+  const d = allDeals().find(x => x.id === id);
+  if (!d || !d.docId || !FB.ready) return;
+  try {
+    await FB.db.collection('fin_projects').doc(d.docId).update({
+      status: FS_OPEN,
+      firstLookUids: [],
+      firstLookPastUids: Array.isArray(d.firstLookUids) ? d.firstLookUids : [],
+      firstLookDecision: reason || 'released',
+      firstLookDecidedAt: Date.now(),
+      firstLookDecidedBy: reason === 'expired' ? 'system' : (SESSION.email || SESSION.name),
+      firstLookUntil: null
+    });
+    if (reason !== 'expired') toast(`${d.name} is open to every capital partner.`);
+  } catch (err) {
+    console.error('[OMEGA] release failed:', err);
+    if (reason !== 'expired') toast(explain(err)[0], true);
+  }
+}
+
+/* ── Expiry ─────────────────────────────────────────────────────────────────
+   There is no server in this stack — no Cloud Function, no cron — so an
+   expired hold is cleared by whichever signed-in client is entitled to write
+   it: the administrator, or the sponsor who owns the deal. Both see the deal
+   in their own queries, so in practice it clears within minutes of anyone
+   opening the app. Until it does, nobody can act on it: the first-look
+   partner's buttons are gone and the rules refuse their write, so the deal is
+   frozen rather than wrongly still theirs. */
+let sweeping = false;
+function sweepFirstLook() {
+  if (sweeping || !FB.ready || !SESSION) return;
+  const due = allDeals().filter(d =>
+    d.docId && holdExpired(d) && (isPlatformAdmin() || isOwnerOf(d)));
+  if (!due.length) return;
+  sweeping = true;
+  Promise.all(due.map(d => releaseHold(d.id, 'expired')))
+    .then(() => { if (due.length) toast(`${plural(due.length, 'first-look window')} closed — now on the marketplace.`); })
+    .catch(() => {})
+    .then(() => { sweeping = false; });
+}
+/* A countdown that only moves when a snapshot happens to arrive is worse than
+   no countdown — a partner refreshing to see "3 days left" an hour after it
+   expired has been told something false. Repaint the surfaces that show it. */
+setInterval(() => {
+  if (!SESSION || document.hidden) return;
+  sweepFirstLook();
+  const showingHold = allDeals().some(onHold);
+  if (!showingHold) return;
+  if (S.tab === 'review') render();
+  if (S.drawerDeal && onHold(S.drawerDeal)) renderDrawer();
+}, 60000);
+
+/* ── First-look partner actions ─────────────────────────────────────────── */
+
+/* Taking the first look does not award anything — it stops the clock and
+   keeps the deal off the open marketplace while terms are agreed. The offer
+   itself goes through the normal offer flow. */
+async function acceptFirstLook(id) {
+  const d = allDeals().find(x => x.id === id);
+  if (!d || !d.docId || !FB.ready) return;
+  if (!iHoldFirstLook(d)) return toast('This deal is not held for your organisation.', true);
+  if (holdExpired(d)) return toast('That window has closed — the deal is going to the open marketplace.', true);
+  try {
+    await FB.db.collection('fin_projects').doc(d.docId).update({
+      firstLookDecision: 'accepted',
+      firstLookDecidedAt: Date.now(),
+      firstLookDecidedBy: SESSION.email || SESSION.name
+    });
+    toast('First look taken — the deal stays off the open marketplace while you work it.');
+    offerModal(id);
+  } catch (err) {
+    console.error('[OMEGA] first-look accept failed:', err);
+    toast(explain(err)[0], true);
+  }
+}
+
+/* Passing releases the deal immediately rather than waiting out the clock. */
+async function passFirstLook(id) {
+  const d = allDeals().find(x => x.id === id);
+  if (!d || !d.docId || !FB.ready) return;
+  if (!iHoldFirstLook(d)) return toast('This deal is not held for your organisation.', true);
+  try {
+    await FB.db.collection('fin_projects').doc(d.docId).update({
+      status: FS_OPEN,
+      firstLookUids: [],
+      firstLookPastUids: Array.isArray(d.firstLookUids) ? d.firstLookUids : [],
+      firstLookDecision: 'passed',
+      firstLookDecidedAt: Date.now(),
+      firstLookDecidedBy: SESSION.email || SESSION.name,
+      firstLookUntil: null
+    });
+    closeModal(); closeDeal();
+    toast('Passed. The deal is now open to every capital partner.');
+  } catch (err) {
+    console.error('[OMEGA] first-look pass failed:', err);
+    modalErr(explain(err)[0]);
+  }
+}
+
+function passModal(id) {
+  const d = allDeals().find(x => x.id === id); if (!d) return;
+  openModal(`
+  <div class="modal-head">
+    <div><h2>Pass on this deal?</h2>
+      <div class="mh-sub">It goes to the open marketplace straight away — you keep no claim on it.</div></div>
+    <button class="dr-x" data-act="close-modal" aria-label="Close">&times;</button>
+  </div>
+  <div class="modal-body">
+    <div class="confirm-card">
+      <strong>${esc(d.name)}</strong>
+      <span>${esc(d.ref)} · ${esc(d.city)}, ${d.state} · ${usd(d.ask)} · ${num(d.mw)} MW</span>
+    </div>
+    <p class="note" style="margin-top:14px">You have ${esc(holdCountdown(d))} on this window. Passing now releases it early; letting the clock run out releases it too. Either way you can still bid once it is open — you just won't be the only one.</p>
+    <div class="auth-err" id="modalErr" style="margin-top:14px"></div>
+  </div>
+  <div class="modal-foot">
+    <button class="btn btn-ghost" data-act="close-modal">Keep looking</button>
+    <button class="btn btn-danger" data-act="do-pass" data-val="${esc(d.id)}">Pass and release</button>
+  </div>`);
+}
+
+/* ── Review queue and approval dialog ───────────────────────────────────── */
+const reviewQueue = () => allDeals().filter(d => inReview(d) && !d.sample);
+const heldDeals   = () => allDeals().filter(d => onHold(d) && !d.sample);
+
+function approveModal(id) {
+  const d = allDeals().find(x => x.id === id); if (!d) return;
+  const uids = partnerUidsForOrg(INTAKE.firstLookOrgKey);
+  const canHold = !!INTAKE.firstLookOrgKey && uids.length > 0;
+  const hold = canHold && INTAKE.holdByDefault;
+  openModal(`
+  <div class="modal-head">
+    <div><h2>Put this deal on the portal</h2>
+      <div class="mh-sub">${esc(d.name)} · ${esc(d.techName)} · ${esc(d.city)}, ${d.state}</div></div>
+    <button class="dr-x" data-act="close-modal" aria-label="Close">&times;</button>
+  </div>
+  <div class="modal-body">
+    <div class="confirm-card">
+      <strong>${esc(d.name)}</strong>
+      <span>${esc(d.ref)} · ${unsized(d) ? 'not sized' : num(d.mw) + ' MW'} · ${usd(d.ask)} sought · filed by ${esc(d.submittedBy)} at ${esc(d.developer)}</span>
+    </div>
+
+    <div class="seg" style="margin:18px 0 6px" id="apMode">
+      <button type="button" class="${hold ? 'on' : ''}" data-act="ap-mode" data-val="hold"${canHold ? '' : ' disabled'}>Hold for ${esc(INTAKE.firstLookOrgName)}</button>
+      <button type="button" class="${hold ? '' : 'on'}" data-act="ap-mode" data-val="market">Straight to marketplace</button>
+    </div>
+
+    <div id="apHold" style="display:${hold ? 'block' : 'none'};margin-top:16px">
+      <div class="field" style="max-width:220px">
+        <label for="apDays">First-look window (days)</label>
+        <input id="apDays" type="number" min="1" max="${MAX_HOLD_DAYS}" step="1" value="${INTAKE.firstLookDays}">
+      </div>
+      <p class="note">${esc(INTAKE.firstLookOrgName)} sees it and nobody else. ${plural(uids.length, 'account')} at that organisation will get it. They can take it or pass; if they do neither, it opens to every capital partner when the clock runs out. Change the default window under <b>Controls</b>.</p>
+    </div>
+
+    <div id="apMarket" style="display:${hold ? 'none' : 'block'};margin-top:16px">
+      <p class="note">Every approved capital partner sees this deal immediately, with no exclusive period.
+      ${canHold ? '' : `<br><br><b>Note:</b> a first-look hold isn't available — ${INTAKE.firstLookOrgKey ? 'there is no approved capital partner at ' + esc(INTAKE.firstLookOrgName) + ' yet' : 'no first-look partner has been set'}. Fix that under ${INTAKE.firstLookOrgKey ? 'People' : 'Controls'}.`}</p>
+    </div>
+
+    <div class="auth-err" id="modalErr" style="margin-top:14px"></div>
+  </div>
+  <div class="modal-foot">
+    <button class="btn btn-ghost" data-act="return-deal" data-val="${esc(d.id)}">Send back to sponsor</button>
+    <button class="btn btn-primary" data-act="do-approve" data-val="${esc(d.id)}">Approve and publish</button>
+  </div>`);
+}
+
+function returnModal(id) {
+  const d = allDeals().find(x => x.id === id); if (!d) return;
+  openModal(`
+  <div class="modal-head">
+    <div><h2>Send back to the sponsor</h2>
+      <div class="mh-sub">It becomes their draft again. No capital partner sees it.</div></div>
+    <button class="dr-x" data-act="close-modal" aria-label="Close">&times;</button>
+  </div>
+  <div class="modal-body">
+    <div class="confirm-card"><strong>${esc(d.name)}</strong>
+      <span>${esc(d.ref)} · filed by ${esc(d.submittedBy)} at ${esc(d.developer)}</span></div>
+    <div class="field" style="margin-top:16px">
+      <label for="rvNote">What needs fixing? (shown to the sponsor)</label>
+      <textarea id="rvNote" placeholder="Interconnection status is blank, and the capital ask looks like it predates the sizing."></textarea>
+    </div>
+    <div class="auth-err" id="modalErr"></div>
+  </div>
+  <div class="modal-foot">
+    <button class="btn btn-ghost" data-act="close-modal">Cancel</button>
+    <button class="btn btn-primary" data-act="do-return" data-val="${esc(d.id)}">Send it back</button>
+  </div>`);
+}
+
+/* ── Review tab ─────────────────────────────────────────────────────────── */
+function reviewView() {
+  const queue = reviewQueue(), held = heldDeals();
+  const gateLabel = (INTAKE.gateTechs || []).map(t => (TECH_BY_ID[t] || {}).name || t).join(', ');
+
+  if (!peopleLoaded) loadPeople();
+
+  const queueRows = queue
+    .sort((a, b) => String(a.submitted).localeCompare(String(b.submitted)))
+    .map(d => `<tr>
+      <td class="c-name"><div>${esc(d.name)}<span>${esc(d.ref)} · ${esc(d.city)}, ${d.state}</span></div></td>
+      <td><span class="tag" style="color:${d.techColor};background:${d.techColor}18">${esc(d.techName)}</span></td>
+      <td>${esc(d.submittedBy)}<span style="display:block;font-size:11px;color:var(--cs-muted-2)">${esc(d.developer)}</span></td>
+      <td class="num">${unsized(d) ? '—' : num(d.mw)}</td>
+      <td class="num">${d.ask ? usdC(d.ask) : '—'}</td>
+      <td>${esc(dt(d.submitted))}</td>
+      <td style="white-space:nowrap">
+        <button class="btn btn-primary btn-sm" data-act="approve-deal" data-val="${esc(d.id)}">Review</button>
+        <button class="btn btn-ghost btn-sm" data-act="open" data-val="${esc(d.id)}">Open</button>
+      </td></tr>`).join('');
+
+  const heldRows = held
+    .sort((a, b) => holdMsLeft(a) - holdMsLeft(b))
+    .map(d => `<tr>
+      <td class="c-name"><div>${esc(d.name)}<span>${esc(d.ref)} · ${esc(d.city)}, ${d.state}</span></div></td>
+      <td>${esc(holdOrgName(d))}</td>
+      <td>${holdExpired(d)
+            ? '<span class="pill p-declined">Window closed</span>'
+            : `<span class="pill p-diligence">${esc(holdCountdown(d))}</span>`}</td>
+      <td>${d.firstLookDecision === 'accepted'
+            ? '<span class="pill p-won">Taken</span>'
+            : '<span class="pill p-active">No answer yet</span>'}</td>
+      <td>${esc(dt(iso(new Date(Number(d.firstLookUntil) || Date.now()))))}</td>
+      <td style="white-space:nowrap">
+        <button class="btn btn-ghost btn-sm" data-act="release-hold" data-val="${esc(d.id)}">Release now</button>
+        <button class="btn btn-ghost btn-sm" data-act="open" data-val="${esc(d.id)}">Open</button>
+      </td></tr>`).join('');
+
+  return `
+  <div class="kpi-strip">
+    ${kpi('Waiting on you', queue.length, '', queue.length ? 'oldest filed ' + esc(dt(queue[0] ? queue[0].submitted : iso(TODAY))) : 'queue is clear', queue.length ? 'up' : '')}
+    ${kpi('On first look', held.length, '', held.length ? esc(INTAKE.firstLookOrgName) : 'nothing held', '')}
+    ${kpi('Windows closed', held.filter(holdExpired).length, '', 'released on next sweep', '')}
+    ${kpi('Gate', INTAKE.gateEnabled ? 'On' : 'Off', '', INTAKE.gateEnabled ? esc(gateLabel || 'nothing selected') : 'everything publishes on filing', '')}
+  </div>
+
+  <div class="card" style="margin-bottom:18px">
+    <h3 style="font-family:'Syne',sans-serif;font-size:15px;font-weight:700;margin-bottom:4px">Waiting for approval</h3>
+    <p class="note" style="margin-bottom:14px">${INTAKE.gateEnabled
+      ? `Filed ${esc(gateLabel || 'gated')} deals stop here until you put them on the portal. Nobody on the capital side can see them yet.`
+      : 'The gate is off, so nothing new arrives here. Turn it on under Controls.'}</p>
+    ${queue.length ? `<div class="sheet-wrap"><table class="sheet"><thead><tr>
+        <th>Deal</th><th>Technology</th><th>Filed by</th><th class="num">MW</th><th class="num">Ask</th><th>Filed</th><th></th>
+      </tr></thead><tbody>${queueRows}</tbody></table></div>`
+      : `<p class="note" style="padding:10px 0">Nothing waiting. New gated deals land here the moment they're filed.</p>`}
+  </div>
+
+  <div class="card">
+    <h3 style="font-family:'Syne',sans-serif;font-size:15px;font-weight:700;margin-bottom:4px">On first look</h3>
+    <p class="note" style="margin-bottom:14px">Held for one partner only. When the window closes — or they pass — the deal opens to everyone automatically.</p>
+    ${held.length ? `<div class="sheet-wrap"><table class="sheet"><thead><tr>
+        <th>Deal</th><th>Held for</th><th>Window</th><th>Their answer</th><th>Closes</th><th></th>
+      </tr></thead><tbody>${heldRows}</tbody></table></div>`
+      : `<p class="note" style="padding:10px 0">Nothing on hold right now.</p>`}
+  </div>`;
+}
+
+/* ── Controls tab ───────────────────────────────────────────────────────── */
+function controlsView() {
+  if (!peopleLoaded) loadPeople();
+  const orgs = partnerOrgs();
+  const known = orgs.some(o => o.orgKey === INTAKE.firstLookOrgKey);
+  const uids = partnerUidsForOrg(INTAKE.firstLookOrgKey);
+
+  return `
+  <div class="card" style="margin-bottom:18px">
+    <h3 style="font-family:'Syne',sans-serif;font-size:15px;font-weight:700;margin-bottom:4px">Intake gate</h3>
+    <p class="note" style="margin-bottom:16px">Which deals stop for your approval instead of going straight to the marketplace. Everything else publishes the moment a sponsor files it, exactly as before.</p>
+
+    <div class="field" style="max-width:320px">
+      <label for="ctlGate">Hold new deals for approval</label>
+      <select id="ctlGate" data-act="ctl-gate">
+        <option value="1"${INTAKE.gateEnabled ? ' selected' : ''}>On — selected technologies queue for review</option>
+        <option value="0"${INTAKE.gateEnabled ? '' : ' selected'}>Off — everything goes straight to the marketplace</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label>Technologies that need approval</label>
+      <div style="display:flex;flex-wrap:wrap;gap:8px">
+        ${TECHS.map(t => `<button type="button" class="btn btn-sm ${(INTAKE.gateTechs || []).indexOf(t.id) !== -1 ? 'btn-primary' : 'btn-ghost'}"
+          data-act="ctl-tech" data-val="${esc(t.id)}">${esc(t.name)}</button>`).join('')}
+      </div>
+      <p class="note" style="margin-top:9px">Standalone BESS is selected by default — that is the deal flow you asked to see first.</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3 style="font-family:'Syne',sans-serif;font-size:15px;font-weight:700;margin-bottom:4px">First look</h3>
+    <p class="note" style="margin-bottom:16px">One capital partner may be given an exclusive window on an approved deal before it reaches the open marketplace. You choose per deal whether to use it.</p>
+
+    <div class="field-row">
+      <div class="field">
+        <label for="ctlOrg">First-look partner</label>
+        <select id="ctlOrg" data-act="ctl-org">
+          <option value=""${INTAKE.firstLookOrgKey ? '' : ' selected'}>— none —</option>
+          ${orgs.map(o => `<option value="${esc(o.orgKey)}"${o.orgKey === INTAKE.firstLookOrgKey ? ' selected' : ''}>${esc(o.name)} · ${plural(o.n, 'account')}</option>`).join('')}
+          ${(!known && INTAKE.firstLookOrgKey) ? `<option value="${esc(INTAKE.firstLookOrgKey)}" selected>${esc(INTAKE.firstLookOrgName)} · not registered yet</option>` : ''}
+        </select>
+      </div>
+      <div class="field">
+        <label for="ctlDays">Days to accept or reject</label>
+        <input id="ctlDays" type="number" min="1" max="${MAX_HOLD_DAYS}" step="1" value="${INTAKE.firstLookDays}" data-act="ctl-days">
+      </div>
+    </div>
+
+    <div class="field" style="max-width:320px">
+      <label for="ctlDefault">On the approve dialog, pre-select</label>
+      <select id="ctlDefault" data-act="ctl-default">
+        <option value="1"${INTAKE.holdByDefault ? ' selected' : ''}>Hold for the first-look partner</option>
+        <option value="0"${INTAKE.holdByDefault ? '' : ' selected'}>Straight to the marketplace</option>
+      </select>
+    </div>
+
+    ${INTAKE.firstLookOrgKey && !uids.length ? `<div class="verdict fair">
+      <div class="vd-top"><span class="vd-badge">Not ready</span><h5>No approved capital partner at ${esc(INTAKE.firstLookOrgName)}</h5></div>
+      <p>A hold needs at least one approved, unsuspended capital-partner account at that organisation — the hold is stored against those accounts. Until then the approve dialog will only offer the marketplace. Add or approve them under <b>People</b>.</p>
+    </div>` : ''}
+
+    <p class="note">${INTAKE.firstLookOrgKey
+      ? `Right now a held deal goes to ${plural(uids.length, 'account')} at ${esc(INTAKE.firstLookOrgName)} for ${plural(INTAKE.firstLookDays, 'day')}. Anyone approved at that organisation later has to be added to a hold already running — approve them before you hold the deal.`
+      : 'With no first-look partner set, approved deals can only go straight to the marketplace.'}</p>
+  </div>
+
+  <div class="card" style="margin-top:18px">
+    <h3 style="font-family:'Syne',sans-serif;font-size:15px;font-weight:700;margin-bottom:4px">View tracking</h3>
+    <p class="note" style="margin-bottom:16px">Sponsors are shown which capital partners have opened their deals. Engagement is always recorded by firm and never by individual — no partner's name, and no timestamp of theirs, is ever shown to a sponsor.</p>
+
+    <div class="field" style="max-width:420px">
+      <label for="ctlDisclose">What a sponsor is told</label>
+      <select id="ctlDisclose" data-act="ctl-disclose">
+        <option value="named"${namesShown() ? ' selected' : ''}>Name the firms — "Amperage Capital opened this twice"</option>
+        <option value="counts"${namesShown() ? '' : ' selected'}>Counts only — "3 capital partners have opened this"</option>
+      </select>
+    </div>
+    <p class="note">Naming firms lets a sponsor follow up with whoever is circling, which is most of the value. Counts-only keeps a partner's pipeline interest private, at the cost of the sponsor knowing who to call. This setting changes what sponsors see; it does not change what is recorded.</p>
+  </div>`;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   12f. INTEREST — who on the capital side has actually looked
+   ───────────────────────────────────────────────────────────────────────────
+   A sponsor filing a deal into a marketplace is otherwise working blind: they
+   cannot tell the difference between "nobody wants this" and "nobody has seen
+   it". This records the capital side's engagement and reports it back to them
+   as a funnel.
+
+     viewed  ──▶  unlocked  ──▶  watching  ──▶  offered
+
+   Recorded per FIRM, never per person. One document per organisation per
+   deal, at fin_projects/{dealId}/fin_views/{orgKey}:
+
+     orgKey, org            who looked
+     sponsorOrgKey          whose deal it is — lets the sponsor query across
+                            their whole book in one collection-group read
+     views, firstAt, lastAt
+     unlockedAt             they spent a token on the file
+     watchedAt              somebody there put it on their watchlist
+
+   Two deliberate limits on what a sponsor learns:
+
+   - **Firm, not person.** "Amperage Capital opened this twice" is useful deal
+     intelligence. "Ada opened it at 11pm on Sunday" is surveillance of an
+     individual, tells the sponsor nothing more, and would make partners
+     browse warily. No individual's name or timestamp is ever exposed.
+   - **Named or counted, the operator's call.** Some marketplaces name the
+     firms; some report only totals so a partner's pipeline interest stays
+     private. Set it under Controls; it defaults to naming firms, because a
+     sponsor who knows who is circling can follow up, which is the point.
+
+   The subcollection is called fin_views rather than views because the
+   collection-group rule has to match on that name across the whole shared
+   database, and a bare "views" would reach into every other portal's data.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+const VIEW_COL = 'fin_views';
+/* Re-opening the same deal all afternoon is one piece of interest, not
+   twenty. Anything inside this window is folded into the existing record. */
+const VIEW_DEBOUNCE_MS = 30 * 60 * 1000;
+
+let INTEREST = {};          // dealId -> [ view doc, … ]
+let interestUnsub = null;
+let interestErr = null;
+const viewedThisSession = new Map();   // dealId -> ms we last wrote
+
+function stopInterest() {
+  if (interestUnsub) { try { interestUnsub(); } catch (e) {} interestUnsub = null; }
+  INTEREST = {};
+}
+
+/* Sponsors watch their own book; administrators watch everything. A capital
+   partner never reads this — seeing which rivals are circling a deal is
+   exactly the information the firm-level record is meant to contain. */
+function watchInterest() {
+  stopInterest();
+  if (!FB.ready || !FB.auth.currentUser || !SESSION) return;
+  if (SESSION.role === 'partner' && !isPlatformAdmin()) return;
+
+  const group = FB.db.collectionGroup(VIEW_COL);
+  const q = isPlatformAdmin() ? group : group.where('sponsorOrgKey', '==', myOrgKey());
+
+  interestUnsub = q.onSnapshot(
+    snap => {
+      INTEREST = {};
+      snap.docs.forEach(doc => {
+        const v = Object.assign({orgKey: doc.id}, doc.data());
+        const id = doc.ref.parent.parent ? doc.ref.parent.parent.id : v.dealId;
+        if (!id) return;
+        (INTEREST[id] = INTEREST[id] || []).push(v);
+      });
+      interestErr = null;
+      decorateInterest();
+      if (SESSION) { render(); if (S.drawerDeal) renderDrawer(); }
+    },
+    err => {
+      /* Never fatal: the portal works without it, it just cannot report who
+         looked. The commonest cause is the collection-group rule or index
+         not being deployed yet, so say so rather than showing a blank panel. */
+      console.warn('[OMEGA] interest watch failed:', err.code || err.message);
+      interestErr = err.code === 'permission-denied'
+        ? 'View tracking is not switched on for this account yet — deploy the latest firestore.rules.'
+        : err.code === 'failed-precondition'
+        ? 'View tracking needs a collection-group index on fin_views. The Firebase console will offer a one-click link in your browser console.'
+        : explain(err)[0];
+      INTEREST = {};
+      if (SESSION) render();
+    });
+}
+
+/* What a deal's engagement looks like, from the records we hold. */
+function viewSummary(dealId) {
+  const rows = INTEREST[dealId] || [];
+  const views = rows.reduce((n, r) => n + (Number(r.views) || 0), 0);
+  const times = rows.map(r => Number(r.firstAt) || 0).filter(Boolean);
+  return {
+    firms:     rows.length,
+    views:     views,
+    unlocked:  rows.filter(r => r.unlockedAt).length,
+    watching:  rows.filter(r => r.watchedAt).length,
+    firstAt:   times.length ? Math.min.apply(null, times) : null,
+    lastAt:    rows.reduce((m, r) => Math.max(m, Number(r.lastAt) || 0), 0) || null,
+    rows:      rows.slice().sort((a, b) => (Number(b.lastAt) || 0) - (Number(a.lastAt) || 0))
+  };
+}
+
+/* Hang the counts on the deal objects so the table can sort on them like any
+   other column, rather than the sorter needing to know about interest. */
+function decorateInterest() {
+  allDeals().forEach(d => {
+    const s = viewSummary(d.id);
+    d.viewFirms = s.firms;
+    d.viewCount = s.views;
+    d.viewLastAt = s.lastAt;
+  });
+}
+
+/* Days between a deal reaching the marketplace and the first firm opening it.
+   Null while it has never been opened — which is itself the finding. */
+function daysToFirstView(d) {
+  const s = viewSummary(d.id);
+  if (!s.firstAt) return null;
+  const filed = new Date(d.submitted + 'T12:00:00').getTime();
+  return Math.max(0, Math.round((s.firstAt - filed) / 86400000));
+}
+
+/* ── Recording ──────────────────────────────────────────────────────────── */
+
+/* Called when a capital partner opens a deal. Never records the sponsor
+   reading their own file, an administrator doing their rounds, or a sample. */
+function recordView(d) {
+  if (!d || d.sample || !d.docId) return;
+  if (!FB.ready || !FB.auth.currentUser || !SESSION) return;
+  if (SESSION.role !== 'partner' || isPlatformAdmin()) return;
+  if (isOwnerOf(d)) return;
+
+  const key = myOrgKey();
+  if (!key) return;
+
+  const now = Date.now();
+  const last = viewedThisSession.get(d.id) || 0;
+  if (now - last < VIEW_DEBOUNCE_MS) return;
+  viewedThisSession.set(d.id, now);
+
+  const ref = FB.db.collection('fin_projects').doc(d.docId).collection(VIEW_COL).doc(key);
+  /* An atomic increment, so two people at the same firm opening the deal at
+     the same moment do not overwrite each other's count with a stale read. */
+  const inc = window.firebase.firestore.FieldValue.increment(1);
+
+  ref.get()
+    .then(snap => {
+      const patch = {
+        orgKey: key,
+        org: SESSION.org || key,
+        sponsorOrgKey: d.orgKey || '',
+        views: inc,
+        lastAt: now
+      };
+      if (!snap.exists) patch.firstAt = now;      // set once, never overwritten
+      return ref.set(patch, {merge: true});
+    })
+    .catch(err => {
+      /* A failure here must never interrupt the partner's reading. Roll the
+         debounce back so the next open tries again. */
+      viewedThisSession.delete(d.id);
+      console.warn('[OMEGA] view record failed:', err.code || err.message);
+    });
+}
+
+/* Stamp a stronger signal — an unlock, or a watchlist add — onto the same
+   firm-level record. Best effort: the underlying action has already
+   succeeded, and losing the stamp must not make it look otherwise. */
+function stampInterest(d, patch) {
+  if (!d || d.sample || !d.docId) return Promise.resolve();
+  if (!FB.ready || !FB.auth.currentUser || !SESSION) return Promise.resolve();
+  if (SESSION.role !== 'partner' || isPlatformAdmin()) return Promise.resolve();
+  const key = myOrgKey(); if (!key) return Promise.resolve();
+
+  return FB.db.collection('fin_projects').doc(d.docId).collection(VIEW_COL).doc(key)
+    .set(Object.assign({
+      orgKey: key, org: SESSION.org || key,
+      sponsorOrgKey: d.orgKey || '', lastAt: Date.now()
+    }, patch), {merge: true})
+    .catch(err => console.warn('[OMEGA] interest stamp failed:', err.code || err.message));
+}
+
+/* ── Reporting ──────────────────────────────────────────────────────────── */
+
+const namesShown = () => INTAKE.viewerDisclosure !== 'counts';
+
+/* Rolled up across a list of deals, for the sponsor's KPI strip. */
+function bookInterest(list) {
+  const firms = new Set();
+  let views = 0, unlocked = 0, watching = 0, seen = 0;
+  const lags = [];
+  list.forEach(d => {
+    const s = viewSummary(d.id);
+    if (s.firms) seen++;
+    views += s.views;
+    s.rows.forEach(r => {
+      firms.add(r.orgKey);
+      if (r.unlockedAt) unlocked++;
+      if (r.watchedAt) watching++;
+    });
+    const lag = daysToFirstView(d);
+    if (lag != null) lags.push(lag);
+  });
+  return {
+    firms: firms.size, views, unlocked, watching,
+    seen,                                   // deals opened by at least one firm
+    unseen: list.length - seen,
+    medianLag: lags.length ? median(lags) : null
+  };
+}
+
+/* The panel a sponsor sees on their own deal. */
+function interestTab(d) {
+  const s = viewSummary(d.id);
+  const lag = daysToFirstView(d);
+  const offers = OFFERS.filter(o => o.status !== 'withdrawn').length;
+
+  if (interestErr) {
+    return `<div class="sec"><h4>Who has looked</h4>
+      <div class="verdict fair"><div class="vd-top"><span class="vd-badge">Unavailable</span>
+        <h5>View tracking is not reporting</h5></div>
+      <p>${esc(interestErr)}</p></div></div>`;
+  }
+
+  if (heldBackFromMarket(d)) {
+    return `<div class="sec"><h4>Who has looked</h4>
+      <p class="note">${inReview(d)
+        ? 'No capital partner can see this deal yet — it is still with a ClearSky administrator. Tracking starts the moment it reaches the portal.'
+        : onHold(d)
+        ? `Only ${esc(holdOrgName(d))} can see this deal at the moment. Anything they do is recorded below.`
+        : 'This deal is not on the marketplace, so there is nothing to look at yet.'}</p>
+      ${s.firms ? interestRows(s) : ''}</div>`;
+  }
+
+  if (!s.firms) {
+    const days = daysBetween(d.submitted, iso(TODAY));
+    return `<div class="sec"><h4>Who has looked</h4>
+      <div class="empty" style="padding:34px 16px">
+        <h3>No capital partner has opened this yet</h3>
+        <p>${days > 14
+          ? `It has been on the marketplace ${plural(days, 'day')}. A deal that has not been opened is usually a positioning problem rather than a pricing one — check the nameplate, the capital ask and whether utility bills are attached.`
+          : `Filed ${plural(days, 'day')} ago. Most deals are first opened within a fortnight.`}</p>
+      </div></div>`;
+  }
+
+  return `<div class="sec">
+    <h4>Who has looked</h4>
+    <div class="kpi-strip" style="margin-bottom:16px">
+      ${kpi('Firms', s.firms, '', plural(s.views, 'open') + ' in total', '')}
+      ${kpi('Unlocked the file', s.unlocked, '', s.firms ? pct(s.unlocked / s.firms * 100) + ' of viewers' : '', s.unlocked ? 'up' : '')}
+      ${kpi('Watching', s.watching, '', 'kept it to hand', '')}
+      ${kpi('Offers', offers, '', s.unlocked ? pct(offers / s.unlocked * 100) + ' of unlocks' : 'none yet', offers ? 'up' : '')}
+    </div>
+    <p class="note" style="margin-bottom:14px">
+      ${lag != null ? `First opened ${lag === 0 ? 'the day it was filed' : plural(lag, 'day') + ' after filing'}.` : ''}
+      ${s.lastAt ? ` Last opened ${esc(dt(iso(new Date(s.lastAt))))}.` : ''}
+      ${namesShown() ? '' : ' Firms are not named on this portal — the totals are what is shared.'}
+    </p>
+    ${interestRows(s)}
+  </div>`;
+}
+
+function interestRows(s) {
+  if (!s.rows.length) return '';
+  if (!namesShown()) {
+    return `<p class="note">${plural(s.firms, 'capital partner')} ${s.firms === 1 ? 'has' : 'have'} opened this deal.</p>`;
+  }
+  return `<div class="sheet-wrap"><table class="sheet">
+    <thead><tr><th>Firm</th><th class="num">Opens</th><th>First</th><th>Last</th><th>Signal</th></tr></thead>
+    <tbody>${s.rows.map(r => `<tr>
+      <td class="c-name"><div>${esc(r.org || r.orgKey)}</div></td>
+      <td class="num">${Number(r.views) || 0}</td>
+      <td>${r.firstAt ? esc(dt(iso(new Date(Number(r.firstAt))))) : '—'}</td>
+      <td>${r.lastAt ? esc(dt(iso(new Date(Number(r.lastAt))))) : '—'}</td>
+      <td>${r.unlockedAt ? '<span class="pill p-won">Unlocked the file</span>'
+            : r.watchedAt ? '<span class="pill p-diligence">Watching</span>'
+            : '<span class="pill p-withdrawn">Looked only</span>'}</td>
+    </tr>`).join('')}</tbody></table></div>
+  <p class="note" style="margin-top:10px">Recorded by firm, never by individual. Repeat opens inside half an hour count once.</p>`;
+}
+
+/* The sponsor's portfolio view: how far their book gets down the funnel, and
+   which deals nobody has opened. It sits on the overview rather than a click
+   deep in a drawer because "has anyone even looked at this?" is the question
+   a sponsor asks first, and buried answers go unread. */
+function interestPanel(list) {
+  const live = list.filter(d => !heldBackFromMarket(d) && !d.sample);
+  if (!live.length) return '';
+
+  if (interestErr) {
+    return `<div class="card" style="margin-top:14px">
+      <div class="card-head"><div><h3>Who is looking</h3></div></div>
+      <p class="note">${esc(interestErr)}</p></div>`;
+  }
+
+  const b = bookInterest(live);
+  const offers = sum(live.map(d => Number(d.offers) || 0));
+  const cold = live.filter(d => !viewSummary(d.id).firms)
+                   .sort((x, y) => String(x.submitted).localeCompare(String(y.submitted)));
+
+  /* Each stage as a share of the one before it — that is what shows a sponsor
+     where their deals actually stall, rather than four unrelated totals. */
+  const share = (n, of) => of ? Math.round(n / of * 100) : 0;
+  const bar = (lab, n, of, colour, note) => `
+    <div style="margin-bottom:13px">
+      <div style="display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:5px">
+        <span style="color:var(--cs-muted)">${lab}</span>
+        <span style="font-weight:700">${n}${of != null ? ` <span style="font-weight:500;color:var(--cs-muted-2)">· ${share(n, of)}%</span>` : ''}</span>
+      </div>
+      <div style="height:8px;border-radius:5px;background:var(--cs-card-2);overflow:hidden">
+        <div style="height:100%;width:${of ? Math.min(100, share(n, of)) : (n ? 100 : 0)}%;background:${colour};border-radius:5px"></div>
+      </div>
+      ${note ? `<div style="font-size:11px;color:var(--cs-muted-2);margin-top:4px">${note}</div>` : ''}
+    </div>`;
+
+  return `
+  <div class="card" style="margin-top:14px">
+    <div class="card-head">
+      <div><h3>Who is looking</h3>
+        <div class="ch-sub">Capital-side engagement across ${plural(live.length, 'deal')} on the marketplace. Recorded by firm, never by individual.</div></div>
+    </div>
+
+    <div class="grid" style="grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:22px;margin-top:4px">
+      <div>
+        ${bar('Deals opened by at least one firm', b.seen, live.length, 'var(--cs-blue)',
+              b.unseen ? `${plural(b.unseen, 'deal')} not opened by anyone yet` : 'every deal has been opened')}
+        ${bar('Firms that opened them', b.firms, null, 'var(--cs-violet)',
+              `${plural(b.views, 'open')} in total`)}
+        ${bar('Unlocked the full file', b.unlocked, b.firms, 'var(--cs-amber)',
+              'a firm spending a token has read past the teaser')}
+        ${bar('Offers received', offers, b.unlocked, 'var(--cs-green)',
+              offers ? 'from the firms that opened the file' : 'none yet')}
+      </div>
+      <div>
+        <div class="kv-list">
+          <div class="kv"><span class="k">Firms watching</span><span class="v">${b.watching}</span></div>
+          <div class="kv"><span class="k">Typical time to first view</span>
+            <span class="v">${b.medianLag == null ? '\u2014' : plural(Math.round(b.medianLag), 'day')}</span></div>
+          <div class="kv"><span class="k">Deals nobody has opened</span>
+            <span class="v"${b.unseen ? ' style="color:var(--cs-amber)"' : ''}>${b.unseen}</span></div>
+        </div>
+        ${cold.length ? `<div style="margin-top:16px">
+          <h4 style="font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--cs-muted-2);margin-bottom:10px">Not opened yet</h4>
+          ${cold.slice(0, 5).map(d => `<div style="display:flex;justify-content:space-between;gap:12px;font-size:12.5px;padding:7px 0;border-bottom:1px solid var(--cs-border);cursor:pointer" data-act="open" data-val="${esc(d.id)}">
+            <span>${esc(d.name)}</span>
+            <span style="color:var(--cs-muted-2);white-space:nowrap">${plural(daysBetween(d.submitted, iso(TODAY)), 'day')} live</span>
+          </div>`).join('')}
+          ${cold.length > 5 ? `<div class="note" style="margin-top:8px">and ${cold.length - 5} more.</div>` : ''}
+        </div>` : `<p class="note" style="margin-top:16px">Every deal on the marketplace has been opened by at least one capital partner.</p>`}
+      </div>
+    </div>
+  </div>`;
+}
+
 const TABS_BASE = {
   dev: [['overview','Overview'],['timelines','Timelines'],['deals','My deals']],
   partner: [['market','Marketplace'],['watchlist','Watchlist'],['coverage','Coverage'],['reports','Reports']]
 };
 const TABS = new Proxy({}, {get: (_, k) => {
   const base = (TABS_BASE[k] || TABS_BASE.dev).slice();
-  if (SESSION && SESSION.role === 'admin') base.push(['orgs', 'Organizations'], ['people', 'People']);
+  if (SESSION && SESSION.role === 'admin') {
+    const q = reviewQueue().length;
+    base.push(['review', 'Review' + (q ? ' (' + q + ')' : '')],
+              ['orgs', 'Organizations'], ['people', 'People'], ['controls', 'Controls']);
+  }
   return base;
 }});
 
@@ -6209,6 +7281,14 @@ function render() {
   }).join('');
 
   const view = $('#view');
+  if (S.tab === 'review') {
+    view.innerHTML = reviewView();
+    return;
+  }
+  if (S.tab === 'controls') {
+    view.innerHTML = controlsView();
+    return;
+  }
   if (S.tab === 'orgs') {
     view.innerHTML = orgsView();
     if (!peopleLoaded) loadPeople();
@@ -6321,6 +7401,36 @@ document.addEventListener('click', e => {
     }
     case 'save-password':savePassword(); break;
     case 'republish':  republish(val); break;
+
+    /* intake gate, approval and first-look holds */
+    case 'approve-deal': approveModal(val); break;
+    case 'return-deal':  returnModal(val); break;
+    case 'do-return':    returnDeal(val, ($('#rvNote') || {}).value); break;
+    case 'release-hold': releaseHold(val, 'released'); break;
+    case 'take-first':   acceptFirstLook(val); break;
+    case 'pass-first':   passModal(val); break;
+    case 'do-pass':      passFirstLook(val); break;
+    case 'ap-mode': {
+      $$('#apMode button').forEach(b => b.classList.toggle('on', b.dataset.val === val));
+      const hold = val === 'hold';
+      if ($('#apHold'))   $('#apHold').style.display   = hold ? 'block' : 'none';
+      if ($('#apMarket')) $('#apMarket').style.display = hold ? 'none' : 'block';
+      break;
+    }
+    case 'do-approve': {
+      const on = $('#apMode .on');
+      const mode = on ? on.dataset.val : 'market';
+      const days = $('#apDays') ? $('#apDays').value : null;
+      approveDeal(val, mode, days);
+      break;
+    }
+    case 'ctl-tech': {
+      const cur = (INTAKE.gateTechs || []).slice();
+      const i = cur.indexOf(val);
+      if (i === -1) cur.push(val); else cur.splice(i, 1);
+      saveIntake({gateTechs: cur});
+      break;
+    }
     case 'edit-deal':  submitModal(val); break;
     case 'ask-delete': confirmDelete(val); break;
     case 'do-delete':  deleteDeal(val); break;
@@ -6370,6 +7480,28 @@ document.addEventListener('change', e => {
   /* Technology drives the labels and the asset-detail block. It is a plain
      select rather than a data-act target, so it is matched by id. */
   if (e.target.id === 'nfTech') { syncTech(null); return; }
+
+  /* Controls tab. Saved on change rather than behind a Save button — each is
+     a single independent setting, and a half-applied form is worse. */
+  if (e.target.id === 'ctlGate')    { saveIntake({gateEnabled: e.target.value === '1'}); return; }
+  if (e.target.id === 'ctlDefault') { saveIntake({holdByDefault: e.target.value === '1'}); return; }
+  if (e.target.id === 'ctlDisclose') { saveIntake({viewerDisclosure: e.target.value}); return; }
+  if (e.target.id === 'ctlOrg') {
+    const key = e.target.value;
+    const org = partnerOrgs().find(o => o.orgKey === key);
+    saveIntake({firstLookOrgKey: key, firstLookOrgName: org ? org.name : (key ? INTAKE.firstLookOrgName : '')});
+    return;
+  }
+  if (e.target.id === 'ctlDays') {
+    const raw = Number(e.target.value);
+    const n = clampDays(raw);
+    if (!isFinite(raw) || raw !== n) {
+      toast(`The window has to be between 1 and ${MAX_HOLD_DAYS} days — set to ${n}.`, true);
+    }
+    saveIntake({firstLookDays: n}).then(() => { if (S.tab === 'controls') render(); });
+    return;
+  }
+
   const rl = e.target.closest('[data-act="set-role"]');
   if (rl) { setPersonRole(rl.dataset.val, rl.value); return; }
   const tr = e.target.closest('[data-act="set-tier"]');
@@ -6590,10 +7722,20 @@ function authBusy(btn, on, label) {
    fin_projects carries fields the rules read (developerUid, status,
    awardedTo). The marketplace's own outcome lives in `outcome` so that
    `status` can stay 'open' / 'awarded' exactly as the rules expect. */
+/* Where a newly filed deal lands. A draft is nobody's business but the
+   sponsor's; a gated technology waits for an administrator; everything else
+   goes on the marketplace as it always has. An administrator filing a deal
+   themselves is not made to approve their own work. */
+function intakeStatusFor(d) {
+  if (d.draft) return FS_DRAFT;
+  if (gatedTech(d.tech) && !isPlatformAdmin()) return FS_REVIEW;
+  return FS_OPEN;
+}
+
 function dealToDoc(d, uid) {
   return {
     developerUid: uid,
-    status: d.draft ? 'draft' : 'open',      // drafts never reach the marketplace
+    status: intakeStatusFor(d),              // draft | review | open
     orgKey: myOrgKey(),                     // lets colleagues see it
     submittedBy: SESSION.name,              // who in that org filed it
     submittedByEmail: SESSION.email || null,
@@ -6614,6 +7756,9 @@ function dealToDoc(d, uid) {
     developer: d.developer, originator: d.originator,
     irr: d.irr, dscr: d.dscr, bidders: d.bidders || 0, offers: d.offers || 0,
     links: d.links || [], bill: d.bill || null,
+    /* First-look hold. Written on every deal so the fields exist to be
+       queried and compared, rather than appearing only once a hold starts. */
+    firstLookUids: [], firstLookUntil: null, firstLookDecision: null,
     createdAt: Date.now()
   };
 }
@@ -6642,6 +7787,8 @@ let seenIds = null;           // null until the first snapshot lands
 function watchDeals() {
   stopWatching();
   watchEntitlements();
+  watchIntake();
+  watchInterest();
   seenIds = null;
   if (!FB.ready || !FB.auth.currentUser) return;
 
@@ -6652,9 +7799,15 @@ function watchDeals() {
      anything of their own that predates orgId. Results are merged by document
      id, so a deal matched by both appears once. Administrators read the whole
      collection; capital partners read what is open. */
+  /* A capital partner's third query is the first-look one. It is kept
+     separate rather than folded into the status query because Firestore
+     refuses a whole query the moment one returned document fails the rules,
+     and a partner may not read another partner's held deal. Matching on the
+     uid array means every document it returns is one they are entitled to. */
   const queries = SESSION.role === 'admin'   ? [['all',  col]]
-                : SESSION.role === 'partner' ? [['open',  col.where('status', '==', 'open')],
-                                               ['mine', col.where('awardedTo', '==', uid)]]
+                : SESSION.role === 'partner' ? [['open', col.where('status', '==', 'open')],
+                                               ['mine', col.where('awardedTo', '==', uid)],
+                                               ['first', col.where('firstLookUids', 'array-contains', uid)]]
                 : [['org', col.where('orgKey', '==', myOrgKey())],
                    ['own', col.where('developerUid', '==', uid)]];
 
@@ -6666,18 +7819,45 @@ function watchDeals() {
     if (Object.keys(failed).length === queries.length) { DATA_SOURCE = 'error'; DEALS = []; }
     else DATA_SOURCE = 'live';
     lastSync = new Date();
+    decorateInterest();   // fresh deal objects lose the counts hung on them
+
+    /* Every snapshot builds fresh deal objects, so an open drawer would go on
+       showing the copy it captured when it opened — a first-look window that
+       has since been taken, passed or released would still look live. Rebind
+       it to the current object, or close it if the deal is gone. */
+    if (S.drawerDeal) {
+      const again = DEALS.concat(S.uploaded).find(x => x.id === S.drawerDeal.id);
+      if (again) { S.drawerDeal = again; renderDrawer(); }
+    }
 
     const ids = new Set(DEALS.map(d => d.id));
     if (seenIds) {
       const added = DEALS.filter(d => !seenIds.has(d.id));
       const removed = [...seenIds].filter(id => !ids.has(id)).length;
-      if (added.length) toast(added.length === 1
-        ? `New deal on the marketplace: ${added[0].name}`
-        : `${plural(added.length, 'new deal')} on the marketplace.`);
-      else if (removed) toast(`${plural(removed, 'deal')} withdrawn.`);
+      /* An administrator sees deals arrive before anyone else does, so
+         announcing them as "on the marketplace" would be wrong — that is
+         precisely what has not happened yet. */
+      const queued = added.filter(inReview).length;
+      const held   = added.filter(onHold).length;
+      if (queued && queued === added.length) {
+        toast(added.length === 1
+          ? `${added[0].name} is waiting for your approval.`
+          : `${plural(queued, 'deal')} waiting for your approval.`);
+      } else if (held && held === added.length) {
+        toast(added.length === 1
+          ? `First look: ${added[0].name} — ${holdCountdown(added[0])}.`
+          : `${plural(held, 'deal')} offered to you on first look.`);
+      } else if (added.length) {
+        toast(added.length === 1
+          ? `New deal on the marketplace: ${added[0].name}`
+          : `${plural(added.length, 'new deal')} on the marketplace.`);
+      } else if (removed) toast(`${plural(removed, 'deal')} withdrawn.`);
     }
     seenIds = ids;
     if (SESSION) render();
+    /* A hold whose clock ran out while nobody was looking is cleared here, by
+       whichever entitled client notices first. */
+    sweepFirstLook();
   };
 
   queries.forEach(([key, q]) => {
@@ -7116,9 +8296,13 @@ function isPublished(d) {
   if (!d || d.sample) return true;
   if (!d.docId) return true;                 // local-only, nothing to publish to
   if (d.draft) return true;                  // deliberately unpublished, not a fault
-  return d.fsStatus === 'open';
+  /* Waiting for approval, or held for the first-look partner, is also
+     deliberate. Only an unrecognised status is a fault worth alarming about —
+     flagging the review queue in red taught sponsors to ignore the warning. */
+  if (d.fsStatus === FS_REVIEW || d.fsStatus === FS_HOLD) return true;
+  return d.fsStatus === FS_OPEN;
 }
-const isDraft = d => !!d && (d.draft || d.fsStatus === 'draft');
+const isDraft = d => !!d && (d.draft || d.fsStatus === FS_DRAFT);
 
 async function republish(id) {
   const d = allDeals().find(x => x.id === id);
@@ -7283,10 +8467,16 @@ async function signIn(acct) {
 
 function signOut() {
   stopWatching();
+  stopEntitlements();
+  stopIntake();
+  stopInterest();
+  viewedThisSession.clear();
   DATA_SOURCE = 'none';
   if (FB.ready) { try { FB.auth.signOut(); } catch (e) {} }
   if (myProfileUnsub) { myProfileUnsub(); myProfileUnsub = null; }
   SESSION = null; pendingUser = null; PEOPLE = []; peopleErr = null;
+  peopleLoaded = false; orgsLoaded = false;
+  INTAKE = Object.assign({}, INTAKE_DEFAULTS);
   S.uploaded = []; DEALS = []; S.bannerOff = false;
   $('#appView').style.display = 'none';
   $('#authView').style.display = 'flex';
