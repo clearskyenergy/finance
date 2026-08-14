@@ -189,6 +189,19 @@ remains the sponsor's write alone.
 
 ### Deploying the rules
 
+> **`firestore.rules` in this repo is stale — do not deploy it.** Checked
+> against the live rules on 13 Aug 2026, it is missing eight production
+> collections (`dashboard_layouts`, `termsAcceptances`, `omega_contracts`,
+> `org_members`, `omega_staff`, `intake_projects`, `intake_requests`,
+> `equipment`) and fifteen helpers. Deploying replaces the whole database's
+> rules, so pushing it would delete them — and losing `termsAcceptances`
+> stops every user on every tenant from signing in, because that gate fails
+> closed.
+>
+> The financing changes are written up as a patch against the live file in
+> **`firestore.rules.PATCH.md`**. Apply that instead.
+
+
 `firestore.rules` covers *every* portal sharing the `clearsky-portal`
 database, and deploying it replaces the whole database's rules. Given the
 drift noted at the top of this file, **diff it against what is live before you
